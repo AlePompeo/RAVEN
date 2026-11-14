@@ -1,0 +1,139 @@
+[importlinter]
+include_external_packages = True
+root_packages =
+    backend
+
+[importlinter:contract:core-independent]
+name = core non dipende dagli altri livelli
+type = forbidden
+source_modules =
+    backend.core
+forbidden_modules =
+    backend.adapters
+    backend.api
+    backend.plugins
+    backend.domain
+    backend.net
+    backend.ml
+    backend.pipeline
+    backend.bootstrap
+    backend.contracts_models
+
+[importlinter:contract:core-no-web-libraries]
+name = core non importa framework web o client HTTP (vivono in backend.api e backend.adapters)
+type = forbidden
+source_modules =
+    backend.core
+forbidden_modules =
+    fastapi
+    starlette
+    pydantic
+    httpx
+    uvicorn
+    redis
+allow_indirect_imports = True
+
+[importlinter:contract:core-no-ml-libraries]
+name = core non importa librerie ML/dati (extra opzionali)
+type = forbidden
+source_modules =
+    backend.core
+forbidden_modules =
+    torch
+    sklearn
+    gymnasium
+    stable_baselines3
+    pandas
+    numpy
+    scipy
+    onnx
+    onnxruntime
+    skl2onnx
+    joblib
+    pyarrow
+    duckdb
+    polars
+    astropy
+    imufusion
+    skyfield
+    jplephem
+allow_indirect_imports = True
+
+[importlinter:contract:core-no-network-libs]
+name = core non importa socket/ssl/selectors (la rete vive in backend.net, spec 15)
+type = forbidden
+source_modules =
+    backend.core
+forbidden_modules =
+    socket
+    ssl
+    selectors
+    socketserver
+allow_indirect_imports = False
+
+# --- RAVEN (backend/domain/raven): docs/domain/raven-model.md, 2.1 ---
+# I livelli sono dall'alto in basso. Un modulo importa solo da livelli sotto di lui, mai sopra, e
+# nessuno stadio importa uno stadio successivo. `views` e `ranking` non esistono ancora (passi M11, M12):
+# i livelli sono opzionali finche' mancano.
+[importlinter:contract:raven-layers]
+name = raven: pipeline sopra gli stadi, ogni stadio solo da stadi precedenti
+type = layers
+layers =
+    backend.domain.raven.pipeline | (backend.domain.raven.views) | (backend.domain.raven.ranking)
+    backend.domain.raven.windows
+    backend.domain.raven.s7_mission
+    backend.domain.raven.s4_power
+    backend.domain.raven.s5_rf | backend.domain.raven.s6_dsn
+    backend.domain.raven.s3_illumination
+    backend.domain.raven.s2_terrain
+    backend.domain.raven.s1_geometry
+    backend.domain.raven.s0_context
+    backend.domain.raven.export
+    backend.domain.raven.known
+    backend.domain.raven.params
+
+[importlinter:contract:raven-no-web]
+name = raven non importa framework web ne' lo strato API (l'API dipende da raven, mai il contrario)
+type = forbidden
+source_modules =
+    backend.domain.raven
+forbidden_modules =
+    fastapi
+    starlette
+    pydantic
+    httpx
+    uvicorn
+    backend.api
+allow_indirect_imports = True
+
+[importlinter:contract:raven-above-core-only-domain]
+name = raven non dipende da adapters, plugin, rete, ML, pipeline generica
+type = forbidden
+source_modules =
+    backend.domain.raven
+forbidden_modules =
+    backend.adapters
+    backend.plugins
+    backend.net
+    backend.ml
+    backend.pipeline
+    backend.bootstrap
+allow_indirect_imports = True
+
+[importlinter:contract:legacy-below-stages]
+name = lunar e grazing importano da raven solo registro e tipi tri-stato (nessun ciclo con gli stadi)
+type = forbidden
+source_modules =
+    backend.domain.lunar
+    backend.domain.grazing
+forbidden_modules =
+    backend.domain.raven.s0_context
+    backend.domain.raven.s1_geometry
+    backend.domain.raven.s2_terrain
+    backend.domain.raven.s3_illumination
+    backend.domain.raven.s4_power
+    backend.domain.raven.s5_rf
+    backend.domain.raven.s6_dsn
+    backend.domain.raven.s7_mission
+    backend.domain.raven.pipeline
+allow_indirect_imports = True

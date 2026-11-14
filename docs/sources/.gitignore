@@ -1,0 +1,4 @@
+# Local copies of third-party standards, kept out of git: redistribution rights not established.
+# ITU-R P.526-9 (2005): the PDF carries no licence or copyright notice granting redistribution; it is
+# cited in the docs by clause/equation/page only. Download: https://www.itu.int/rec/R-REC-P.526-9-200508-S/en
+itu-p526-9.*

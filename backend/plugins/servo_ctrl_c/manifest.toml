@@ -1,0 +1,6 @@
+id = "servo-ctrl-c"
+kind = "simulation"
+version = "0.1.0"
+entry = "exec:bin/servo_ctrl"
+license = "Apache-2.0"
+timeout_s = 5

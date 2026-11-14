@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "trainer-rl"
+kind = "trainer"
+version = "0.1.0"
+entry = "python:backend.plugins.trainer_rl.plugin:RLTrainer"
+license = "Apache-2.0"
+timeout_s = 120
+# Eseguito solo nel subprocess del TrainerRunner. Richiede numpy, onnx, onnxruntime (extra [ml]);
+# nessun torch. Ambiente: env-servo (impianto Python di riferimento, nessun dato esterno).

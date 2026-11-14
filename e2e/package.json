@@ -1,0 +1,20 @@
+{
+  "name": "hackathon-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20.18"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:perf": "E2E_PERF=1 playwright test --workers=1",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.64.0",
+    "@types/node": "20.19.43"
+  }
+}

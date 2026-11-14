@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hackathon-base.example/contracts/state_estimate.schema.json",
+  "title": "StateEstimate",
+  "description": "Estimator output at a UTC instant: named state values (units in the names) and an optional covariance. An estimator that produces no covariance omits it. When present, covariance is a row-major n x n matrix with n = number of state entries, rows/columns ordered as state_order (or, if absent, in the key order of state). Squareness and size are not expressible in JSON Schema and are checked by consumers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "t_utc", "state"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+    },
+    "t_utc": {"type": "string", "format": "date-time"},
+    "state": {
+      "description": "Map name (with unit suffix, e.g. yaw_deg) to finite number.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "number"}
+    },
+    "state_order": {
+      "description": "Names of state entries giving the row/column order of covariance.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "covariance": {
+      "description": "Optional row-major square matrix, n x n for n = number of state entries.",
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "array", "minItems": 1, "items": {"type": "number"}}
+    }
+  }
+}

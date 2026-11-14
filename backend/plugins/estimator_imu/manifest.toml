@@ -1,0 +1,7 @@
+id = "estimator-imu"
+kind = "estimator"
+version = "0.1.0"
+entry = "python:backend.plugins.estimator_imu.plugin:ImuEstimator"
+license = "Apache-2.0"
+# Dipendenza opzionale: imufusion==1.3.3 (MIT), extra [fusion]. Senza, il plugin non si carica.
+# Senza l'extra il plugin non viene registrato: /api/estimators/estimator-imu/* risponde 404.

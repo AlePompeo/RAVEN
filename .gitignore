@@ -1,0 +1,42 @@
+# AI Agent files and local tooling (kept strictly local)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.github/copilot-instructions.md
+AGENTS.md
+.superpowers/
+.venv/
+build/
+bin/
+__pycache__/
+node_modules/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Installer (install.sh)
+.tools/
+install.log
+.install-stamp*
+.server.pid
+
+# Deployment secrets (never build or commit these).
+.env
+.env.*
+!.env.example
+!.env.oracle.example
+.secrets/
+.npmrc
+.pypirc
+*.pem
+*.key
+.netrc
+.ssh/
+id_rsa
+id_ed25519
+id_ecdsa
+id_dsa
+
+# risultati dei test del browser generati in locale
+test-results/

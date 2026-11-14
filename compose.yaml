@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+services:
+  app:
+    build: .
+    image: hackathon-base:dev
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  # Opzionale: `docker compose --profile cache up`.
+  # Valkey (licenza BSD-3-Clause, vedi COPYING nel repo valkey-io/valkey, ramo 8.1).
+  # NOTA: l'app oggi usa MemoryCache (backend/bootstrap.py); l'adapter
+  # backend/adapters/cache_valkey.py esiste ma non e' ancora selezionato dal bootstrap.
+  # SICUREZZA: nessuna porta pubblicata (raggiungibile solo dalla rete compose) e nessuna
+  # autenticazione. Se esposto o condiviso, aggiungere `--requirepass "$VALKEY_PASSWORD"`
+  # al comando (segreto da .env, mai nel repository) e usare l'URL con password.
+  valkey:
+    image: valkey/valkey:8.1.4-alpine
+    profiles: ["cache"]
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "predictor-nn"
+kind = "model"
+version = "0.1.0"
+entry = "python:backend.plugins.predictor_nn.plugin:NNPredictor"
+license = "Apache-2.0"
+# Esempio deep learning opzionale. Serve SOLO il modello promosso (ONNX) con onnxruntime: extra [ml].
+# L'addestramento richiede PyTorch CPU + onnxscript (extra [dl]). Dati sintetici (generati da seme).

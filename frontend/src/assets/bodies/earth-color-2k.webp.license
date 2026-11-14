@@ -1,0 +1,6 @@
+SPDX-FileCopyrightText: NASA Earth Observatory (public domain)
+SPDX-License-Identifier: LicenseRef-PublicDomain
+
+Derivato da NASA Blue Marble: Next Generation, dicembre 2004, con topografia e batimetria
+(world.topo.bathy.200412.3x5400x2700.jpg). Credito: NASA Earth Observatory.
+Generato da docs/design/build-bodies.py; provenienza e verifica in docs/design/credits.md.

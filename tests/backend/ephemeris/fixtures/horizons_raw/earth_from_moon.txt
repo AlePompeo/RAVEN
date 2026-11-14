@@ -1,0 +1,131 @@
+API VERSION: 1.2
+API SOURCE: NASA/JPL Horizons API
+
+
+
+*******************************************************************************
+Ephemeris / API_USER Tue Oct 20 06:03:41 2026 Pasadena, USA      / Horizons    
+*******************************************************************************
+Target body name: Earth (399)                     {source: DE441}
+Center body name: Moon (301)                      {source: DE441}
+Center-site name: BODYCENTRIC
+*******************************************************************************
+Start time      : A.D. 2026-Nov-15 03:17:41.0000 UT      
+Stop  time      : A.D. 2030-May-27 11:11:11.0000 UT      
+Step-size       : 0 steps
+*******************************************************************************
+Target pole/equ : ITRF93 (high precision)         {East-longitude positive}
+Target radii    : 6378.137, 6378.137, 6356.752 km {Equator_a, b, pole_c}       
+Center geodetic : 0.0, 0.0, -1737.4               {E-lon(deg),Lat(deg),Alt(km)}
+Center cylindric: 0.0, 0.0, 0.0                   {E-lon(deg),Dxy(km),Dz(km)}
+Center pole/equ : MEAN_ME (high precision)        {East-longitude positive}
+Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}       
+Target primary  : Sun
+Vis. interferer : EARTH (R_eq= 6378.137) km       {source: DE441}
+Rel. light bend : Sun, EARTH                      {source: DE441}
+Rel. lght bnd GM: 1.3271E+11, 3.9860E+05 km^3/s^2                              
+Atmos refraction: NO (AIRLESS)
+RA format       : DEG
+Time format     : CAL 
+Calendar mode   : Mixed Julian/Gregorian
+EOP file        : eop.261019.p270114                                           
+EOP coverage    : DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13
+Units conversion: 1 au= 149597870.700 km, c= 299792.458 km/s, 1 day= 86400.0 s 
+Table cut-offs 1: Elevation (-90.0deg=NO ),Airmass     n.a.    , Daylight (NO )
+Table cut-offs 2: Solar elongation (  0.0,180.0=NO ),Local Hour Angle( 0.0=NO )
+Table cut-offs 3: RA/DEC angular rate (     0.0=NO )                           
+Table format    : Comma Separated Values (spreadsheet)
+*******************************************************************************************************************
+ Date__(UT)__HR:MN:SC.fff, , , SunSub-LON, SunSub-LAT,                r,       rdot,             delta,     deldot,
+*******************************************************************************************************************
+$$SOE
+ 2026-Nov-15 03:17:41.000, , , 126.718082, -18.578907,  1.479943571E+08, -0.3942281,  4.0450765114E+05, -0.0182865,
+ 2027-Feb-03 14:05:09.000, , , 332.159747, -16.584292,  1.474518535E+08,  0.2625197,  4.0621146202E+05, -0.0003115,
+ 2027-Sep-21 22:41:30.000, , , 197.876452,   0.511476,  1.501892760E+08, -0.4698925,  3.7924311909E+05, -0.0441893,
+ 2028-Apr-11 09:00:00.000, , ,  45.238225,   8.625508,  1.499279249E+08,  0.4971275,  3.7185581170E+05,  0.0600454,
+ 2028-Dec-30 17:23:55.000, , , 279.742850, -23.231084,  1.471028419E+08, -0.0342519,  3.8168075058E+05, -0.0513988,
+ 2029-Jul-04 05:48:12.000, , ,  94.065802,  22.981223,  1.520965335E+08,  0.0175522,  4.0423455399E+05,  0.0063424,
+ 2029-Oct-18 20:30:00.000, , , 228.763141, -10.015124,  1.490165351E+08, -0.4928284,  4.0057737989E+05,  0.0325541,
+ 2030-May-27 11:11:11.000, , ,  11.505669,  21.474450,  1.515731904E+08,  0.3101029,  4.0091861791E+05,  0.0356771,
+$$EOE
+*******************************************************************************************************************
+Column meaning:
+ 
+TIME
+
+  Times PRIOR to 1962 are UT1, a mean-solar time closely related to the
+prior but now-deprecated GMT. Times AFTER 1962 are in UTC, the current
+civil or "wall-clock" time-scale. UTC is kept within 0.9 seconds of UT1
+using integer leap-seconds for 1972 and later years.
+
+  Conversion from the internal Barycentric Dynamical Time (TDB) of solar
+system dynamics to the non-uniform civil UT time-scale requested for output
+has not been determined for UTC times after the next July or January 1st.
+Therefore, the last known leap-second is used as a constant over future
+intervals.
+
+  Time tags refer to the UT time-scale conversion from TDB on Earth
+regardless of observer location within the solar system, although clock
+rates may differ due to the local gravity field and no analog to "UT"
+may be defined for that location.
+
+  Any 'b' symbol in the 1st-column denotes a B.C. date. First-column blank
+(" ") denotes an A.D. date.
+ 
+CALENDAR SYSTEM
+
+  Mixed calendar mode was active such that calendar dates after AD 1582-Oct-15
+(if any) are in the modern Gregorian system. Dates prior to 1582-Oct-5 (if any)
+are in the Julian calendar system, which is automatically extended for dates
+prior to its adoption on 45-Jan-1 BC.  The Julian calendar is useful for
+matching historical dates. The Gregorian calendar more accurately corresponds
+to the Earth's orbital motion and seasons. A "Gregorian-only" calendar mode is
+available if such physical events are the primary interest.
+
+  NOTE: "n.a." in output means quantity "not available" at the print-time.
+ 
+ 'SunSub-LON, SunSub-LAT,' =
+   Apparent sub-solar longitude and latitude of the Sun on the target. The
+apparent planetodetic longitude and latitude of the center of the target disc
+as seen from the Sun, as seen by the observer at print-time. This is NOT
+exactly the same as the "sub-solar" (nearest) point for a non-spherical target
+shape (since the center of the disc seen from the Sun might not be the closest
+point to the Sun), but is very close if not a highly irregular body shape.
+Light travel-time from Sun to target and from target to observer is taken into
+account.  Latitude is the angle between the equatorial plane and the line
+perpendicular to the reference ellipsoid of the body. The reference ellipsoid
+is an oblate spheroid with a single flatness coefficient in which the y-axis
+body radius is taken to be the same value as the x-axis radius.  Positive
+longitude is to the EAST for this target. Cartographic system is given in the
+header.  Units: DEGREES DEGREES
+ 
+ 'r,       rdot,' =
+   The Sun's apparent range ("r", light-time aberrated) and range-rate ("rdot")
+relative to the target center, as seen by the observer. A positive "rdot" means
+the target center was moving away from the Sun, negative means moving toward
+the Sun.  Units: KM and KM/S
+ 
+ 'delta,     deldot,' =
+   Apparent range ("delta", light-time aberrated) and range-rate ("delta-dot")
+of the target center relative to the observer. A positive "deldot" means the
+target center is moving away from the observer, negative indicates movement
+toward the observer.  Units: KM and KM/S
+
+Computations by ...
+
+    Solar System Dynamics Group, Horizons On-Line Ephemeris System
+    4800 Oak Grove Drive, Jet Propulsion Laboratory
+    Pasadena, CA  91109   USA
+
+    General site: https://ssd.jpl.nasa.gov/
+    Mailing list: https://ssd.jpl.nasa.gov/email_list.html
+    System news : https://ssd.jpl.nasa.gov/horizons/news.html
+    User Guide  : https://ssd.jpl.nasa.gov/horizons/manual.html
+    Connect     : browser        https://ssd.jpl.nasa.gov/horizons/app.html#/x
+                  API            https://ssd-api.jpl.nasa.gov/doc/horizons.html
+                  command-line   telnet ssd.jpl.nasa.gov 6775
+                  e-mail/batch   https://ssd.jpl.nasa.gov/ftp/ssd/horizons_batch.txt
+                  scripts        https://ssd.jpl.nasa.gov/ftp/ssd/SCRIPTS
+    Inquiries   : Jon.D.Giorgini@jpl.nasa.gov
+
+*******************************************************************************************************************

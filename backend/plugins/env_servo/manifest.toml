@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "env-servo"
+kind = "environment"
+version = "0.1.0"
+entry = "python:backend.plugins.env_servo.plugin:ServoEnvironment"
+license = "Apache-2.0"
+# Impianto servo di riferimento in Python puro (nessuna dipendenza). Shim Gymnasium opzionale
+# in gym_shim.py (extra [rl]).

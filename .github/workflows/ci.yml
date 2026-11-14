@@ -1,0 +1,229 @@
+# SPDX-License-Identifier: Apache-2.0
+# Le azioni sono fissate al tag major. Follow-up: fissare a SHA di commit (da verificare con
+# accesso di rete, non inventati qui).
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # json2ts (frontend/node_modules) serve a `contracts/gen.py --check`
+      - run: npm ci
+        working-directory: frontend
+      # Extra leggeri installati, cosi' mypy e pytest vedono numpy/onnx/duckdb/... come in locale.
+      # NON si installano torch, gymnasium e stable-baselines3 (ruota torch di PyPI enorme): mypy li
+      # tratta come Any (override in pyproject.toml) e i loro test si saltano. Vincoli = quelli del Dockerfile.
+      # PDF del report generato dal server (extra pdf = WeasyPrint): Pango dal sistema, poppler-utils per pdftotext/pdfinfo
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 poppler-utils
+      - run: pip install -c constraints/base.txt -e ".[dev,ml,fusion,data,sky,pdf]"
+      # Kernel NAIF per i test di efemeridi (45 MB): cache con chiave dal lock; il fetch verifica
+      # dimensione e SHA-256 dei file (anche se in cache) e fallisce se non coincidono.
+      - uses: actions/cache@v4
+        with:
+          path: build/ephemeris
+          key: naif-kernels-${{ hashFiles('backend/ephemeris/kernels.lock.json') }}
+      - run: python -m backend.ephemeris.fetch
+      # i plugin C (fspl, servo_ctrl) servono ai test; gcc e' preinstallato su ubuntu-latest
+      - run: make build-c
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+      - run: lint-imports
+      - run: pytest
+      - run: python contracts/gen.py --check
+      - name: Licenze (allowlist)
+        # revisioni manuali per versione (mai per licenze vietate): scripts/license_reviewed.txt
+        run: |
+          pip-licenses --format=json > py-licenses.json
+          python scripts/license_check.py --python-json py-licenses.json \
+            --reviewed-file scripts/license_reviewed.txt
+          python scripts/license_check.py --node-modules frontend/node_modules \
+            --lockfile frontend/package-lock.json --out frontend/public/licenses.json
+      - name: SBOM CycloneDX (solo dipendenze di produzione)
+        run: |
+          python -m venv "$RUNNER_TEMP/prod-venv"
+          "$RUNNER_TEMP/prod-venv/bin/pip" install -c constraints/base.txt .
+          cyclonedx-py environment --of JSON -o sbom.cdx.json "$RUNNER_TEMP/prod-venv"
+      - uses: actions/upload-artifact@v4
+        id: upload-sbom
+        continue-on-error: true
+        with:
+          name: sbom
+          path: sbom.cdx.json
+          retention-days: 1
+      - name: Report SBOM upload failure
+        if: steps.upload-sbom.outcome == 'failure'
+        run: |
+          echo "::warning::SBOM generated, but artifact upload failed. Check Actions storage quota and the upload log."
+          echo "SBOM generated; download unavailable because artifact upload failed. Check Actions storage quota." >> "$GITHUB_STEP_SUMMARY"
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: npm run check:bundle
+
+  e2e:
+    # Browser reale: Playwright + axe-core (a11y WCAG 2.2 AA). Strumenti solo dev, mai nel bundle distribuito.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+      # la config Playwright avvia il backend con .venv/bin/python
+      # Pango + poppler: la prova Playwright del PDF generato dal server (si salta se manca l'extra)
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 poppler-utils
+      - run: python -m venv .venv && .venv/bin/pip install -c constraints/base.txt -e ".[fusion,sky,pdf]"
+      # kernel NAIF per /api/raven/sky (stessa cache e controllo SHA-256 del job backend)
+      - uses: actions/cache@v4
+        with:
+          path: build/ephemeris
+          key: naif-kernels-${{ hashFiles('backend/ephemeris/kernels.lock.json') }}
+      - run: .venv/bin/python -m backend.ephemeris.fetch
+      # terreno LOLA reale per GrazingLink e per la maschera d'orizzonte solare (tessere di Malapert, Haworth, Nobile
+      # rim, De Gerlache, Shackleton: LDEM_85S_20M entro 10,5 km, 22,8 MB, e LDEM_75S_240M entro 201 km, 18,1 MB,
+      # lette con richieste a intervalli dal nodo PDS): la config Playwright non scarica nulla da sola
+      # (GRAZING_DEM_ALLOW_DOWNLOAD=0), quindi il job le prepara qui; la cache dipende dal file di lock del DEM
+      - uses: actions/cache@v4
+        with:
+          path: build/lola
+          key: lola-tiles-${{ hashFiles('backend/domain/grazing/dem.lock.json') }}
+      - run: .venv/bin/python -m backend.domain.grazing.prefetch
+      # i plugin C (fspl-c per /sims, servo_ctrl) non sono nel repository: senza di loro il menu Simulazione
+      # non offre fspl-c e i test che lo scelgono vanno in timeout
+      - run: make build-c
+      - run: npm ci
+        working-directory: frontend
+      - run: npm ci
+        working-directory: e2e
+      - run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - run: bash e2e/scripts/build-app.sh
+      # Il backend condiviso ammette due calcoli: una pagina puo' richiederne piu' di uno.
+      # Isolare i test funzionali evita 503 legittimi prodotti dagli altri test in parallelo.
+      - run: npx playwright test --workers=1
+        working-directory: e2e
+      # Anteprima per chi non scarica nulla: screenshot veri dell'interfaccia (PC, tablet, telefono, TV,
+      # con e senza WebGL) prodotti dai test nel browser. Si scaricano dalla pagina dell'esecuzione.
+      - uses: actions/upload-artifact@v4
+        id: upload-ui
+        continue-on-error: true
+        if: always()
+        with:
+          name: ui-screenshots
+          path: e2e/test-results/ui
+          if-no-files-found: ignore
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        id: upload-report
+        continue-on-error: true
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 1
+      - name: Report optional diagnostic upload failure
+        if: always() && (steps.upload-ui.outcome == 'failure' || steps.upload-report.outcome == 'failure')
+        run: |
+          echo "::warning::Browser artifacts could not be uploaded. Check Actions storage quota and the upload logs; test failures are not suppressed."
+          echo "Browser artifact upload failed; screenshots/traces are unavailable. Test outcomes remain authoritative." >> "$GITHUB_STEP_SUMMARY"
+
+  install-smoke:
+    # Prova end-to-end degli installer (install.sh) su macchina pulita: installa, avvia,
+    # interroga il server, ferma. Kernel NAIF inclusi (cache come nel job backend).
+    runs-on: ${{ matrix.os }}
+    continue-on-error: false
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: build/ephemeris
+          key: naif-kernels-${{ hashFiles('backend/ephemeris/kernels.lock.json') }}
+      - name: Install and start (Linux)
+        if: runner.os == 'Linux'
+        run: ./install.sh --yes --no-browser --port 8765
+      - name: Query the server (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          curl -fsS http://127.0.0.1:8765/health
+          curl -fsS -o /dev/null http://127.0.0.1:8765/
+          curl -fsS http://127.0.0.1:8765/api/raven/sky/status | grep -q '"available":true'
+      - name: Second run is idempotent (Linux)
+        if: runner.os == 'Linux'
+        run: ./install.sh --yes --no-browser --port 8765 | grep -q 'already running'
+      - name: Updated backend restarts the server (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          old_pid="$(head -n 1 .server.pid)"
+          printf '\n' >> backend/bootstrap.py
+          ./install.sh --yes --no-browser --port 8765
+          test "$(head -n 1 .server.pid)" != "$old_pid"
+          test "$(sed -n 2p .server.pid)" = 8765
+          curl -fsS http://127.0.0.1:8765/health
+      - name: Stop (Linux)
+        if: runner.os == 'Linux'
+        run: ./stop.sh
+      - uses: actions/upload-artifact@v4
+        id: upload-install-log
+        continue-on-error: true
+        if: failure()
+        with:
+          name: install-log-${{ matrix.os }}
+          path: |
+            install.log
+            build/server.log
+            build/server.err.log
+          if-no-files-found: ignore
+          retention-days: 1
+      - name: Report installer log upload failure
+        if: always() && steps.upload-install-log.outcome == 'failure'
+        run: |
+          echo "::warning::Installer log upload failed. Check Actions storage quota and the upload log."
+          echo "Installer diagnostic upload failed; the installation result is unchanged." >> "$GITHUB_STEP_SUMMARY"

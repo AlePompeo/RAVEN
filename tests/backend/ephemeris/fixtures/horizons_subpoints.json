@@ -1,0 +1,399 @@
+{
+ "description": "JPL Horizons observer-table values used to validate backend/ephemeris. Values are copied from Horizons output (raw text in horizons_raw/), never computed. obs_sub_*: apparent sub-observer point (Q14); sun_sub_*: apparent sub-solar point (Q15); r_km: target heliocentric range (Q19); delta_km: observer-target range (Q20). Angles in degrees. Longitude sign and latitude type are those of the body frame named in header['Target pole/equ'] (Mars: IAU_MARS, WEST-positive longitude, planetographic (geodetic) latitude; Moon: MOON_ME east-positive; Earth: ITRF93 east-positive, geodetic latitude).",
+ "api": {
+  "endpoint": "https://ssd.jpl.nasa.gov/api/horizons.api",
+  "doc": "https://ssd-api.jpl.nasa.gov/doc/horizons.html",
+  "version": "1.2",
+  "options": "EPHEM_TYPE=OBSERVER TIME_TYPE=UT (UTC) TLIST QUANTITIES CSV_FORMAT=YES ANG_FORMAT=DEG EXTRA_PREC=YES RANGE_UNITS=KM"
+ },
+ "configs": {
+  "moon_from_geocentre": {
+   "target": "301",
+   "observer_center": "500@399",
+   "quantities": "14,15,19,20",
+   "header": {
+    "Target body name": "Moon (301)                      {source: DE441}",
+    "Center body name": "Earth (399)                     {source: DE441}",
+    "Target pole/equ": "MOON_ME                         {East-longitude positive}",
+    "Target radii": "1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13"
+   },
+   "retrieved_utc": "2026-10-20T13:03:38+00:00",
+   "raw_file": "horizons_raw/moon_from_geocentre.txt",
+   "rows": [
+    {
+     "utc": "2026-11-15T03:17:41Z",
+     "obs_sub_lon": 357.192371,
+     "obs_sub_lat": 3.144234,
+     "sun_sub_lon": 112.759027,
+     "sun_sub_lat": -1.556915,
+     "r_km": 147818994.0,
+     "rdot_km_s": 0.4076166,
+     "delta_km": 404580.31795,
+     "deldot_km_s": -0.0182064
+    },
+    {
+     "utc": "2027-02-03T14:05:09Z",
+     "obs_sub_lon": 1.232896,
+     "obs_sub_lat": 4.379057,
+     "sun_sub_lon": 214.656577,
+     "sun_sub_lat": -0.175325,
+     "r_km": 147113605.0,
+     "rdot_km_s": -0.228479,
+     "delta_km": 406167.02733,
+     "deldot_km_s": -0.0001621
+    },
+    {
+     "utc": "2027-09-21T22:41:30Z",
+     "obs_sub_lon": 354.71139,
+     "obs_sub_lat": -5.799177,
+     "sun_sub_lon": 283.650341,
+     "sun_sub_lat": -1.169772,
+     "r_km": 150312074.3,
+     "rdot_km_s": -1.3879699,
+     "delta_km": 379172.75684,
+     "deldot_km_s": -0.0442544
+    },
+    {
+     "utc": "2028-04-11T09:00:00Z",
+     "obs_sub_lon": 5.724409,
+     "obs_sub_lat": 6.144824,
+     "sun_sub_lon": 339.532664,
+     "sun_sub_lat": 1.534032,
+     "r_km": 150260524.1,
+     "rdot_km_s": 0.1195611,
+     "delta_km": 371822.236,
+     "deldot_km_s": 0.0598716
+    },
+    {
+     "utc": "2028-12-30T17:23:55Z",
+     "obs_sub_lon": 354.906785,
+     "obs_sub_lat": -1.996053,
+     "sun_sub_lon": 7.016191,
+     "sun_sub_lat": -0.168618,
+     "r_km": 147475826.2,
+     "rdot_km_s": 0.1179718,
+     "delta_km": 381697.14052,
+     "deldot_km_s": -0.0515868
+    },
+    {
+     "utc": "2029-07-04T05:48:12Z",
+     "obs_sub_lon": 1.036979,
+     "obs_sub_lat": -6.670866,
+     "sun_sub_lon": 265.744962,
+     "sun_sub_lat": -0.236356,
+     "r_km": 152059210.3,
+     "rdot_km_s": -0.8684926,
+     "delta_km": 404156.23114,
+     "deldot_km_s": 0.0063585
+    },
+    {
+     "utc": "2029-10-18T20:30:00Z",
+     "obs_sub_lon": 5.084431,
+     "obs_sub_lat": -6.504019,
+     "sun_sub_lon": 43.968361,
+     "sun_sub_lat": -1.402649,
+     "r_km": 149327162.3,
+     "rdot_km_s": 0.0966675,
+     "delta_km": 400628.38876,
+     "deldot_km_s": 0.0324161
+    },
+    {
+     "utc": "2030-05-27T11:11:11Z",
+     "obs_sub_lon": 5.337422,
+     "obs_sub_lat": -6.075452,
+     "sun_sub_lon": 237.747442,
+     "sun_sub_lat": 0.267591,
+     "r_km": 151329539.0,
+     "rdot_km_s": -0.4274394,
+     "delta_km": 400857.03288,
+     "deldot_km_s": 0.0357859
+    }
+   ]
+  },
+  "mars_from_geocentre": {
+   "target": "499",
+   "observer_center": "500@399",
+   "quantities": "14,15,19,20",
+   "header": {
+    "Target body name": "Mars (499)                      {source: mar099}",
+    "Center body name": "Earth (399)                     {source: DE441}",
+    "Target pole/equ": "IAU_MARS                        {West-longitude positive}",
+    "Target radii": "3396.19, 3396.19, 3376.2 km     {Equator_a, b, pole_c}",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13"
+   },
+   "retrieved_utc": "2026-10-20T13:03:39+00:00",
+   "raw_file": "horizons_raw/mars_from_geocentre.txt",
+   "rows": [
+    {
+     "utc": "2026-11-15T03:17:41Z",
+     "obs_sub_lon": 11.079555,
+     "obs_sub_lat": 21.795374,
+     "sun_sub_lon": 48.382826,
+     "sun_sub_lat": 9.324735,
+     "r_km": 240696344.0,
+     "rdot_km_s": 1.7093001,
+     "delta_km": 196674037.58,
+     "deldot_km_s": -14.7553536
+    },
+    {
+     "utc": "2027-02-03T14:05:09Z",
+     "obs_sub_lon": 149.078517,
+     "obs_sub_lat": 21.465075,
+     "sun_sub_lon": 163.190186,
+     "sun_sub_lat": 21.474644,
+     "r_km": 248604951.0,
+     "rdot_km_s": 0.5027063,
+     "delta_km": 105908181.86,
+     "deldot_km_s": -6.2027205
+    },
+    {
+     "utc": "2027-09-21T22:41:30Z",
+     "obs_sub_lon": 266.232906,
+     "obs_sub_lat": 17.446352,
+     "sun_sub_lon": 240.006081,
+     "sun_sub_lat": 6.023239,
+     "r_km": 224232797.6,
+     "rdot_km_s": -2.2586063,
+     "delta_km": 305004777.12,
+     "deldot_km_s": 7.003792
+    },
+    {
+     "utc": "2028-04-11T09:00:00Z",
+     "obs_sub_lon": 223.187163,
+     "obs_sub_lat": -23.843908,
+     "sun_sub_lon": 226.774203,
+     "sun_sub_lat": -24.020576,
+     "r_km": 210346716.9,
+     "rdot_km_s": 1.3818458,
+     "delta_km": 359443904.4,
+     "deldot_km_s": 0.9924851
+    },
+    {
+     "utc": "2028-12-30T17:23:55Z",
+     "obs_sub_lon": 307.93153,
+     "obs_sub_lat": 24.049037,
+     "sun_sub_lon": 347.134045,
+     "sun_sub_lat": 22.394186,
+     "r_km": 248940998.8,
+     "rdot_km_s": 0.3470567,
+     "delta_km": 186655035.25,
+     "deldot_km_s": -16.8826217
+    },
+    {
+     "utc": "2029-07-04T05:48:12Z",
+     "obs_sub_lon": 235.671494,
+     "obs_sub_lat": 25.655436,
+     "sun_sub_lon": 193.783944,
+     "sun_sub_lat": 13.462004,
+     "r_km": 231162032.0,
+     "rdot_km_s": -2.1958474,
+     "delta_km": 176799757.36,
+     "deldot_km_s": 12.0584188
+    },
+    {
+     "utc": "2029-10-18T20:30:00Z",
+     "obs_sub_lon": 138.238589,
+     "obs_sub_lat": 3.527055,
+     "sun_sub_lon": 107.502314,
+     "sun_sub_lat": -11.081324,
+     "r_km": 211896173.3,
+     "rdot_km_s": -1.5924194,
+     "delta_km": 267072699.25,
+     "deldot_km_s": 7.640219
+    },
+    {
+     "utc": "2030-05-27T11:11:11Z",
+     "obs_sub_lon": 339.30487,
+     "obs_sub_lat": -8.153458,
+     "sun_sub_lon": 339.53657,
+     "sun_sub_lat": -8.488555,
+     "r_km": 225473357.8,
+     "rdot_km_s": 2.2631689,
+     "delta_km": 377032946.84,
+     "deldot_km_s": 2.4532428
+    }
+   ]
+  },
+  "mars_from_phobos": {
+   "target": "499",
+   "observer_center": "500@401",
+   "quantities": "15,19,20",
+   "header": {
+    "Target body name": "Mars (499)                      {source: mar099}",
+    "Center body name": "Phobos (401)                    {source: mar099}",
+    "Target pole/equ": "IAU_MARS                        {West-longitude positive}",
+    "Target radii": "3396.19, 3396.19, 3376.2 km     {Equator_a, b, pole_c}",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13"
+   },
+   "retrieved_utc": "2026-10-20T13:03:40+00:00",
+   "raw_file": "horizons_raw/mars_from_phobos.txt",
+   "rows": [
+    {
+     "utc": "2026-11-15T03:17:41Z",
+     "sun_sub_lon": 51.043718,
+     "sun_sub_lat": 9.32617,
+     "r_km": 240697465.3,
+     "rdot_km_s": 1.7092082,
+     "delta_km": 9357.0363756,
+     "deldot_km_s": 0.0320316
+    },
+    {
+     "utc": "2027-02-03T14:05:09Z",
+     "sun_sub_lon": 164.622914,
+     "sun_sub_lat": 21.475078,
+     "r_km": 248605128.6,
+     "rdot_km_s": 0.5026373,
+     "delta_km": 9487.603069,
+     "deldot_km_s": 0.0194652
+    },
+    {
+     "utc": "2027-09-21T22:41:30Z",
+     "sun_sub_lon": 244.132006,
+     "sun_sub_lat": 6.020573,
+     "r_km": 224230499.8,
+     "rdot_km_s": -2.2585859,
+     "delta_km": 9509.2821813,
+     "deldot_km_s": 0.0100717
+    },
+    {
+     "utc": "2028-04-11T09:00:00Z",
+     "sun_sub_lon": 231.634234,
+     "sun_sub_lat": -24.019294,
+     "r_km": 210348373.9,
+     "rdot_km_s": 1.3821125,
+     "delta_km": 9237.8915153,
+     "deldot_km_s": -0.0089926
+    },
+    {
+     "utc": "2028-12-30T17:23:55Z",
+     "sun_sub_lon": 349.659183,
+     "sun_sub_lat": 22.394864,
+     "r_km": 248941214.8,
+     "rdot_km_s": 0.3469336,
+     "delta_km": 9499.6114155,
+     "deldot_km_s": 0.0152094
+    },
+    {
+     "utc": "2029-07-04T05:48:12Z",
+     "sun_sub_lon": 196.175594,
+     "sun_sub_lat": 13.460716,
+     "r_km": 231160737.1,
+     "rdot_km_s": -2.1958803,
+     "delta_km": 9251.6836008,
+     "deldot_km_s": -0.0167504
+    },
+    {
+     "utc": "2029-10-18T20:30:00Z",
+     "sun_sub_lon": 111.114344,
+     "sun_sub_lat": -11.083766,
+     "r_km": 211894754.8,
+     "rdot_km_s": -1.5922449,
+     "delta_km": 9255.2140678,
+     "deldot_km_s": 0.0179462
+    },
+    {
+     "utc": "2030-05-27T11:11:11Z",
+     "sun_sub_lon": 344.636883,
+     "sun_sub_lat": -8.485381,
+     "r_km": 225476204.0,
+     "rdot_km_s": 2.263176,
+     "delta_km": 9495.0218038,
+     "deldot_km_s": -0.0170332
+    }
+   ]
+  },
+  "earth_from_moon": {
+   "target": "399",
+   "observer_center": "500@301",
+   "quantities": "15,19,20",
+   "header": {
+    "Target body name": "Earth (399)                     {source: DE441}",
+    "Center body name": "Moon (301)                      {source: DE441}",
+    "Target pole/equ": "ITRF93 (high precision)         {East-longitude positive}",
+    "Target radii": "6378.137, 6378.137, 6356.752 km {Equator_a, b, pole_c}",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13"
+   },
+   "retrieved_utc": "2026-10-20T13:03:41+00:00",
+   "raw_file": "horizons_raw/earth_from_moon.txt",
+   "rows": [
+    {
+     "utc": "2026-11-15T03:17:41Z",
+     "sun_sub_lon": 126.718082,
+     "sun_sub_lat": -18.578907,
+     "r_km": 147994357.1,
+     "rdot_km_s": -0.3942281,
+     "delta_km": 404507.65114,
+     "deldot_km_s": -0.0182865
+    },
+    {
+     "utc": "2027-02-03T14:05:09Z",
+     "sun_sub_lon": 332.159747,
+     "sun_sub_lat": -16.584292,
+     "r_km": 147451853.5,
+     "rdot_km_s": 0.2625197,
+     "delta_km": 406211.46202,
+     "deldot_km_s": -0.0003115
+    },
+    {
+     "utc": "2027-09-21T22:41:30Z",
+     "sun_sub_lon": 197.876452,
+     "sun_sub_lat": 0.511476,
+     "r_km": 150189276.0,
+     "rdot_km_s": -0.4698925,
+     "delta_km": 379243.11909,
+     "deldot_km_s": -0.0441893
+    },
+    {
+     "utc": "2028-04-11T09:00:00Z",
+     "sun_sub_lon": 45.238225,
+     "sun_sub_lat": 8.625508,
+     "r_km": 149927924.9,
+     "rdot_km_s": 0.4971275,
+     "delta_km": 371855.8117,
+     "deldot_km_s": 0.0600454
+    },
+    {
+     "utc": "2028-12-30T17:23:55Z",
+     "sun_sub_lon": 279.74285,
+     "sun_sub_lat": -23.231084,
+     "r_km": 147102841.9,
+     "rdot_km_s": -0.0342519,
+     "delta_km": 381680.75058,
+     "deldot_km_s": -0.0513988
+    },
+    {
+     "utc": "2029-07-04T05:48:12Z",
+     "sun_sub_lon": 94.065802,
+     "sun_sub_lat": 22.981223,
+     "r_km": 152096533.5,
+     "rdot_km_s": 0.0175522,
+     "delta_km": 404234.55399,
+     "deldot_km_s": 0.0063424
+    },
+    {
+     "utc": "2029-10-18T20:30:00Z",
+     "sun_sub_lon": 228.763141,
+     "sun_sub_lat": -10.015124,
+     "r_km": 149016535.1,
+     "rdot_km_s": -0.4928284,
+     "delta_km": 400577.37989,
+     "deldot_km_s": 0.0325541
+    },
+    {
+     "utc": "2030-05-27T11:11:11Z",
+     "sun_sub_lon": 11.505669,
+     "sun_sub_lat": 21.47445,
+     "r_km": 151573190.4,
+     "rdot_km_s": 0.3101029,
+     "delta_km": 400918.61791,
+     "deldot_km_s": 0.0356771
+    }
+   ]
+  }
+ }
+}

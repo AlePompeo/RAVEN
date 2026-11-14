@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "echo-llm"
+kind = "llm"
+version = "0.1.0"
+entry = "python:backend.plugins.example_llm.plugin:EchoLLM"
+license = "Apache-2.0"
+terms_url = "docs/terms/echo-llm.md"
+timeout_s = 10

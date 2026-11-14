@@ -1,0 +1,6 @@
+SPDX-FileCopyrightText: NASA (public domain)
+SPDX-License-Identifier: LicenseRef-PublicDomain
+
+Derivato da NASA 3D Resources, Images and Textures/Mars/Mars.jpg (repository nasa/NASA-3D-Resources),
+"free and without copyright" secondo il README del repository.
+Generato da docs/design/build-bodies.py; provenienza e verifica in docs/design/credits.md.

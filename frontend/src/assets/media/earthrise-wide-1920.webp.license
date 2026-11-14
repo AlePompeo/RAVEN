@@ -1,0 +1,7 @@
+SPDX-FileCopyrightText: NASA (public domain)
+SPDX-License-Identifier: LicenseRef-PublicDomain
+
+earthrise-*.webp / earthrise-*.jpg: ritagli ridimensionati di NASA AS08-14-2383 ("Earthrise", Apollo 8,
+24 dicembre 1968), https://images.nasa.gov/details/as08-14-2383. Le immagini NASA non sono protette da
+copyright negli Stati Uniti; secondo le linee guida NASA l'uso non deve suggerire approvazione della NASA.
+Procedura di generazione: docs/design/build-assets.py.

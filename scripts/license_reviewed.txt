@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Revisioni manuali di licenze "da rivedere". Una chiave per riga: eco:nome@versione  # motivo
+# Valgono solo per quella versione esatta e mai per licenze vietate (GPL/AGPL/LGPL).
+# Una nuova versione va rivista di nuovo.
+pip:certifi@2026.7.22  # MPL-2.0 a livello di file, non modificato, solo redistribuito
+pip:certifi@2026.10.19  # MPL-2.0 confermata nei metadati; bundle CA upstream non modificato, redistribuito
+pip:fqdn@1.6.0  # MPL-2.0 a livello di file, non modificato; dipendenza transitiva di jsonschema (dev)
+pip:pathspec@1.1.1  # MPL-2.0 a livello di file, non modificato; dipendenza di mypy (dev)

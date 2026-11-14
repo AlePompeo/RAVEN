@@ -1,0 +1,16 @@
+[
+  {
+    "id": "membro-1",
+    "firstName": "Nome",
+    "lastName": "Cognome",
+    "role": "Elettronica e telecomunicazioni",
+    "bio": "Aggiungi qui una breve presentazione"
+  },
+  {
+    "id": "membro-2",
+    "firstName": "Nome",
+    "lastName": "Cognome",
+    "role": "Informatica, robotica e AI",
+    "bio": "Aggiungi qui una breve presentazione"
+  }
+]

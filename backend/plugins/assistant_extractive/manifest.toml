@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "assistant-extractive"
+kind = "llm"
+version = "0.1.0"
+entry = "python:backend.plugins.assistant_extractive.plugin:ExtractiveProvider"
+license = "Apache-2.0"
+terms_url = "docs/assistant.md"
+timeout_s = 10
+description = "Provider deterministico senza chiave ne' rete: compone la risposta dai passaggi recuperati (Learning Assistant)."

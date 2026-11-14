@@ -1,0 +1,51 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * WeasyPrint-only part of the report print design (docs/design/design-system.md, section "Print").
+ * The palette, verdict page, cards, bars, chips, formulas and tables are shared with the browser print and travel with
+ * the markup (frontend/src/pages/planner/reportPrint.css). This file adds what only the PDF engine understands: page
+ * boxes with the running header and "Page X of Y", bookmarks, the short table of contents with dot leaders and page
+ * numbers, and engine workarounds. It is appended AFTER the client's CSS. The report is English only.
+ *
+ * No CSS grid anywhere (WeasyPrint 70 is very slow on grids and asserts on some): blocks, tables, floats and
+ * inline-blocks only. @PAGE@ and @OF@ are replaced by the adapter with the footer words.
+ */
+@page { size: A4; margin: 21mm 16mm 19mm 16mm;
+  @top-left { content: element(rvhdr); font: 400 8.5pt/1.2 'HB Sans', sans-serif; color: #4a4f57;
+    border-bottom: 0.6pt solid #8d939c; padding-bottom: 2mm; vertical-align: bottom; width: 100%; }
+  @bottom-right { content: "@PAGE@" counter(page) "@OF@" counter(pages);
+    font: 400 8.5pt 'HB Sans', sans-serif; color: #4a4f57; }
+  @bottom-left { content: "RAVEN · Preliminary study, not a certificate"; font: 400 8pt 'HB Sans', sans-serif; color: #4a4f57; } }
+
+html { font-family: 'HB Sans', sans-serif; font-size: 10.25pt; line-height: 1.42; color: #1d1d1f; background: #fff; }
+body { display: block !important; min-height: 0 !important; height: auto !important; margin: 0; padding: 0;
+  background: #fff; color: #1d1d1f; }
+/* Grids were turned into blocks (see _engine_compat): neutralise their placement properties. */
+.report-root *, [data-report-root] * { grid-area: auto !important; grid-column: auto !important; }
+.rv-running-header { position: running(rvhdr); }
+.report-root, .report-print, [data-report-root] { padding: 0 !important; margin: 0 !important;
+  max-width: none !important; width: auto !important; box-shadow: none !important; border: 0 !important;
+  background: #fff !important; font-family: 'HB Sans', sans-serif; }
+h1, h2, h3, h4, h5, h6, th, strong, b, caption, figcaption, dt { font-family: 'HB Sans', sans-serif; }
+h1, h2, h3, h4, h5, h6, th, strong, b, caption, figcaption, dt { font-weight: 700; font-variation-settings: 'wght' 700; }
+h1, h2, h3, h4, h5, h6 { break-after: avoid; page-break-after: avoid; }
+h5 { bookmark-level: none; }
+h1 { bookmark-level: 1; } h2 { bookmark-level: 2; } h3 { bookmark-level: 3; } h4 { bookmark-level: 4; }
+img, svg, figure, tr { break-inside: avoid; }
+a { color: inherit; text-decoration: none; }
+[data-report-root] details > summary { display: block; font-weight: 700; margin: 2mm 0 1mm; }
+
+/* short table of contents: parts and appendices, with dot leaders and the page of each */
+.report-toc { break-inside: avoid; margin: 0 0 4mm; }
+.report-toc a { color: inherit; }
+.report-toc a::after { content: leader('.') target-counter(attr(href), page); font-variant-numeric: tabular-nums; font-weight: 400; }
+.report-toc ol, .report-toc ul { list-style: none; padding-left: 0; margin: 0; }
+.report-toc li { display: block; margin: 0.8mm 0; }
+.no-pdf, [data-no-pdf] { display: none !important; }
+
+/* tables never overflow: wide cells wrap */
+table { table-layout: auto; }
+table.rp-kpi { table-layout: fixed; }
+td, th { overflow-wrap: anywhere; }
+.table-wrap, .parameter-table { overflow: visible !important; }
+.seal { display: block; width: 36mm; min-height: 36mm; margin: 2mm 0; border: 2pt double #1d1d1f; border-radius: 50%; text-align: center; padding-top: 7mm; box-sizing: border-box; }
+.seal img { width: 20mm; height: auto; display: block; margin: 0 auto 1mm; }

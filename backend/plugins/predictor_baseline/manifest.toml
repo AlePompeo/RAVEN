@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "predictor-baseline"
+kind = "model"
+version = "0.1.0"
+entry = "python:backend.plugins.predictor_baseline.plugin:BaselinePredictor"
+license = "Apache-2.0"
+# Dati sintetici (origine: generati da seme, licenza Apache-2.0). Richiede l'extra [ml]
+# (scikit-learn, skl2onnx, onnxruntime) per addestrare/servire; senza, il plugin si carica ma non predice.

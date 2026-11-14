@@ -1,0 +1,249 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Print design system of the Mission Planner report (docs/design/design-system.md, section "Print").
+ * Shared by the server PDF (the page stylesheet is sent with the markup) and the browser print fallback.
+ * Print-first: white paper, ink #1d1d1f (the site's --c-text), accent blue #0066cc (the site's --c-action).
+ * Layout rules avoid CSS grid on purpose (the PDF engine is slow and asserts on it): blocks, tables, floats,
+ * inline-blocks only. Engine-specific rules (page boxes, leaders, bookmarks) live in backend/assets/report-print.css.
+ *
+ * Every role has three tokens: -bg (tint), -fg (text on the tint), -rule (strong colour: bands, left rules, icons).
+ * reportPrintContrast.test.ts reads the block below and fails if any pair is under WCAG AA
+ * (text 4.5:1 on -bg and on white for -rule bands, graphics 3:1). Hex colours only inside the block.
+ */
+
+/* @tokens:print */
+:root {
+  --pp-ink: #1d1d1f;
+  --pp-muted: #4a4f57;
+  --pp-paper: #ffffff;
+  --pp-hair: #8d939c;
+  --pp-cover-bg: #0b2a4a;
+  --pp-cover-fg: #ffffff;
+  --pp-zebra: #f3f5f8;
+  --pp-thead-bg: #dde4ee;
+  --pp-thead-fg: #14213a;
+  --pp-ph0-bg: #e9edf2; --pp-ph0-fg: #1f2a37; --pp-ph0-rule: #46566a;
+  --pp-phA-bg: #e3eefb; --pp-phA-fg: #0d2f57; --pp-phA-rule: #0b5cad;
+  --pp-phB-bg: #ddf2f0; --pp-phB-fg: #0a3f3d; --pp-phB-rule: #0b6b68;
+  --pp-phC-bg: #eae8fa; --pp-phC-fg: #2a2470; --pp-phC-rule: #5046a8;
+  --pp-phD-bg: #f6e6f0; --pp-phD-fg: #521a3d; --pp-phD-rule: #8a2f6a;
+  --pp-phE-bg: #fbeadb; --pp-phE-fg: #4d2600; --pp-phE-rule: #8f4a00;
+  --pp-phF-bg: #e2f2e6; --pp-phF-fg: #0f3d1e; --pp-phF-rule: #1f6b3a;
+  --pp-engine-bg: #e4f1f8; --pp-engine-fg: #0b3a57; --pp-engine-rule: #0a5f8f;
+  --pp-proposed-bg: #f0f1f3; --pp-proposed-fg: #3a404a; --pp-proposed-rule: #6b7280;
+  --pp-warning-bg: #fff2cc; --pp-warning-fg: #5a3300; --pp-warning-rule: #a15c00;
+  --pp-limit-bg: #f7f6ef; --pp-limit-fg: #1d1d1f; --pp-limit-rule: #1d1d1f;
+  --pp-esg-bg: #e3f3e8; --pp-esg-fg: #0f3d1e; --pp-esg-rule: #1f7a3d;
+  --pp-appendix-bg: #edf0f4; --pp-appendix-fg: #1e293b; --pp-appendix-rule: #475569;
+  --pp-verified-bg: #e1f3e8; --pp-verified-fg: #0f4d2a; --pp-verified-rule: #14663a;
+  --pp-plausible-bg: #e2ecfa; --pp-plausible-fg: #17407a; --pp-plausible-rule: #1d56a6;
+  --pp-notvalidated-bg: #fff0cc; --pp-notvalidated-fg: #5a3300; --pp-notvalidated-rule: #a15c00;
+  --pp-unknown-bg: #eceef1; --pp-unknown-fg: #2f3540; --pp-unknown-rule: #4b5563;
+  --pp-knownno-bg: #ffffff; --pp-knownno-fg: #1d1d1f; --pp-knownno-rule: #1d1d1f;
+  --pp-series-a: #0066cc;
+  --pp-series-b: #b25000;
+}
+/* @end */
+
+/*
+ * Screen and print rules of the report document (English only). Both the on-screen preview and the print/PDF use the same
+ * classes (rp-*), so what the user previews is what is printed. Blocks, tables and inline-blocks only (no grid, no flex).
+ */
+.compact-report .rp-kicker { display: block; font-size: 8.5pt; text-transform: uppercase; color: var(--pp-muted); margin: 0 0 2mm; }
+.compact-report .rp-kicker strong { display: inline-block; margin-left: 3mm; border: 0.8pt solid var(--pp-ink); padding: 0.4mm 2mm; color: var(--pp-ink); }
+.compact-report .rp-title { font: 700 20pt/1.15 'HB Sans', Arial, sans-serif; color: var(--pp-cover-bg); margin: 0 0 1.5mm; letter-spacing: -.01em; }
+.compact-report .rp-meta { font-size: 9pt; color: var(--pp-muted); margin: 0 0 4mm; }
+
+/* section bands: parts 1-4 and appendices */
+.compact-report [data-rp="section"] { font: 700 12.5pt/1.25 'HB Sans', Arial, sans-serif; margin: 5mm 0 2mm; padding: 2mm 3.5mm; color: #ffffff; background: var(--pp-ph0-rule); break-after: avoid; page-break-after: avoid; }
+.compact-report .rp-appendix > [data-rp="section"] { background: var(--pp-appendix-rule); }
+.compact-report .rp-verdict-page > [data-rp="section"] { background: var(--pp-cover-bg); margin-top: 0; }
+.compact-report .report-toc [data-rp="section"] { background: none; color: var(--pp-ink); font-size: 11pt; padding: 0 0 1mm; border-bottom: 0.8pt solid var(--pp-ink); margin: 3mm 0 1mm; }
+.compact-report [data-rp="sub"] { font: 700 11pt/1.25 'HB Sans', Arial, sans-serif; margin: 4mm 0 1.5mm; padding-bottom: 0.8mm; border-bottom: 0.6pt solid var(--pp-hair); color: var(--pp-ink); break-after: avoid; }
+.compact-report [data-rp="minor"] { font: 700 10pt/1.3 'HB Sans', Arial, sans-serif; margin: 3.5mm 0 1mm; color: var(--pp-ink); break-after: avoid; }
+.compact-report p { margin: 0 0 2mm; line-height: 1.4; max-inline-size: none; }
+
+/* part 1: verdict */
+.compact-report .rp-verdict { font: 700 12.5pt/1.35 'HB Sans', Arial, sans-serif; background: var(--pp-engine-bg); color: var(--pp-engine-fg); border-left: 2.4mm solid var(--pp-cover-bg); padding: 3mm 4mm; margin: 0 0 3mm; }
+.compact-report table.rp-kpi { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0 0 2mm; font-size: 9pt; }
+.compact-report .rp-kpi th, .compact-report .rp-kpi td { vertical-align: top; padding: 1.6mm 2.2mm; border-bottom: 0.5pt solid var(--pp-hair); text-align: left; background: none; }
+.compact-report .rp-kpi thead th { background: var(--pp-thead-bg); color: var(--pp-thead-fg); }
+.compact-report .rp-kpi thead th.col-a { border-bottom: 2pt solid var(--pp-series-a); }
+.compact-report .rp-kpi thead th.col-b { border-bottom: 2pt solid var(--pp-series-b); }
+.compact-report .rp-kpi tbody th { width: 20%; font-weight: 700; }
+.compact-report .rp-kpi .sc-tag { display: inline-block; width: 5mm; height: 5mm; line-height: 5mm; text-align: center; color: #ffffff; font-weight: 700; background: var(--pp-series-a); margin-right: 1.5mm; }
+.compact-report .rp-kpi .col-b .sc-tag { background: var(--pp-series-b); }
+.compact-report .rp-kpi .big { display: block; font: 700 15pt/1.15 'HB Sans', Arial, sans-serif; color: var(--pp-ink); }
+.compact-report .rp-kpi .sub { display: block; font-size: 8pt; color: var(--pp-muted); margin: 0.4mm 0; }
+.compact-report .rp-kpi .bar { display: block; height: 3.4mm; margin: 1mm 0; border: 0.6pt solid var(--pp-ink); font-size: 0; line-height: 0; white-space: nowrap; background: #ffffff; }
+.compact-report .seg { display: inline-block; height: 3.4mm; vertical-align: top; }
+.compact-report .bar-a .seg.yes, .compact-report .seg-key.yes { background: var(--pp-series-a); }
+.compact-report .bar-b .seg.yes { background: var(--pp-series-b); }
+.compact-report .seg.no { background: #ffffff; }
+.compact-report .seg.unk, .compact-report .seg-key.unk { background: repeating-linear-gradient(45deg, #4b5563 0, #4b5563 0.5mm, #eceef1 0.5mm, #eceef1 1.3mm); }
+.compact-report .chipline { display: inline-block; margin-left: 2.5mm; vertical-align: 1mm; }
+.compact-report .rp-kpi .big { display: inline-block; white-space: nowrap; }
+.compact-report .rp-legend { border: 0.6pt solid var(--pp-limit-rule); border-left: 2.2mm double var(--pp-limit-rule); background: var(--pp-limit-bg); padding: 2mm 3mm; font-size: 8.5pt; margin: 0 0 3mm; break-inside: avoid; }
+.compact-report .seg-key { display: inline-block; width: 5mm; height: 3mm; border: 0.5pt solid var(--pp-ink); vertical-align: middle; margin: 0 1mm 0 2mm; background: #ffffff; }
+.compact-report .seg-key.yes { background: var(--pp-ink); }
+.compact-report h4.rp-means { margin: 3mm 0 1mm; font-size: 11pt; }
+.compact-report .rp-bullets { margin: 0 0 2mm; padding-left: 5mm; }
+.compact-report .rp-bullets li { margin: 0 0 1.4mm; line-height: 1.4; }
+.compact-report .rp-risks .rp-bullets { font-size: 8.5pt; }
+.compact-report .rp-risks .rp-bullets li { margin: 0 0 1mm; line-height: 1.3; }
+.compact-report .rp-totals h4.rp-means { margin: 2mm 0 1mm; }
+.compact-report .rp-totals table { font-size: 8.5pt; margin-bottom: 1mm; }
+.compact-report .rp-totals .rp-how { font-size: 8pt; margin: 0 0 2mm; }
+.compact-report .rp-decision { border-left: 1.2mm solid var(--pp-proposed-rule); background: var(--pp-proposed-bg); padding: 1.6mm 3mm; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* chips: the icon is its own inline-block with a margin, so it never overlaps the text or the number next to it */
+.compact-report .rp-chip { display: inline-block; padding: 0.4mm 2mm 0.4mm 1.4mm; border: 0.7pt solid currentColor; font-size: 8pt; font-weight: 700; line-height: 1.35; white-space: nowrap; }
+.compact-report .rp-chip-icon { display: inline-block; width: 3.2mm; height: 3.2mm; margin-right: 1.4mm; vertical-align: -0.6mm; }
+.compact-report .rp-chip-icon svg { display: block; width: 3.2mm; height: 3.2mm; }
+.compact-report .rp-chip-text { display: inline-block; vertical-align: baseline; }
+.compact-report .rp-chip-known, .compact-report .rp-chip-verified, .compact-report .rp-chip-provided { background: var(--pp-verified-bg); color: var(--pp-verified-fg); border-color: var(--pp-verified-rule); }
+.compact-report .rp-chip-plausible, .compact-report .rp-chip-estimated { background: var(--pp-plausible-bg); color: var(--pp-plausible-fg); border-color: var(--pp-plausible-rule); }
+.compact-report .rp-chip-notvalidated { background: var(--pp-notvalidated-bg); color: var(--pp-notvalidated-fg); border-color: var(--pp-notvalidated-rule); }
+.compact-report .rp-chip-unknown { background: var(--pp-unknown-bg); color: var(--pp-unknown-fg); border-color: var(--pp-unknown-rule); border-style: dashed; }
+.compact-report .rp-chip-knownno { background: var(--pp-knownno-bg); color: var(--pp-knownno-fg); border-color: var(--pp-knownno-rule); }
+
+/* part 2: charts, two per row */
+.compact-report .rp-charts { display: block; }
+.compact-report figure.rp-chart { display: inline-block; width: 48.6%; vertical-align: top; box-sizing: border-box; margin: 0 1% 3mm 0; padding: 1.5mm 2mm; border: 0.5pt solid var(--pp-hair); background: #ffffff; break-inside: avoid; page-break-inside: avoid; }
+.compact-report figure.rp-chart:nth-of-type(even) { margin-right: 0; }
+.compact-report .rp-chart figcaption { font: 700 9.5pt/1.25 'HB Sans', Arial, sans-serif; margin: 0 0 1mm; min-height: 9mm; }
+.compact-report .rp-chart svg { display: block; width: 100%; height: auto; }
+.compact-report .rp-chart p { font-size: 8pt; line-height: 1.3; margin: 0.8mm 0 0; }
+.compact-report .rp-chart .rp-formula { color: var(--pp-muted); }
+.compact-report .rp-key { display: inline-block; width: 6mm; height: 0; border-top: 2pt solid var(--pp-series-a); vertical-align: middle; margin: 0 1mm 0 0; }
+.compact-report .rp-key-b { border-top: 2pt dashed var(--pp-series-b); margin-left: 2.5mm; }
+
+/* part 3: formulas */
+.compact-report .rp-how { font-size: 9pt; }
+.compact-report .rp-formula-block { margin: 0 0 3.5mm; }
+.compact-report .rp-formula-block h5 { font: 700 10pt/1.3 'HB Sans', Arial, sans-serif; margin: 3mm 0 1mm; border-bottom: 0.6pt solid var(--pp-hair); padding-bottom: 0.8mm; break-after: avoid; }
+.compact-report .rp-tag { display: inline-block; white-space: nowrap; margin: 0 1mm 0 2mm; font-size: 8pt; font-weight: 700; border: 0.6pt solid var(--pp-ink); padding: 0.2mm 1.4mm; }
+.compact-report .rp-flines { margin: 0 0 1.5mm; }
+.compact-report .rp-fline { display: block; padding: 0.8mm 2.5mm; margin: 0 0 0.6mm; font-size: 9.25pt; line-height: 1.4; background: var(--pp-engine-bg); border-left: 1.4mm solid var(--pp-engine-rule); overflow-wrap: anywhere; }
+.compact-report .rp-fline var, .compact-report .rp-vars var { font-style: italic; font-weight: 700; color: var(--pp-engine-fg); font-family: 'HB Sans', Arial, sans-serif; }
+.compact-report table.rp-vars { width: 100%; table-layout: fixed; font-size: 7.75pt; margin: 0 0 1.5mm; }
+.compact-report .rp-vars thead th { font-size: 7.5pt; padding: 0.5mm 1.4mm; }
+.compact-report .rp-vars th:nth-child(1) { width: 21%; font-weight: 400; }
+.compact-report .rp-vars thead th:nth-child(1) { font-weight: 700; }
+.compact-report .rp-vars th:nth-child(2), .compact-report .rp-vars td:nth-child(2) { width: 27%; }
+.compact-report .rp-vars th:nth-child(3), .compact-report .rp-vars td:nth-child(3) { width: 6%; }
+.compact-report .rp-vars th:nth-child(4), .compact-report .rp-vars td:nth-child(4) { width: 14%; color: var(--pp-muted); }
+.compact-report .rp-vars thead th:nth-child(4) { color: var(--pp-thead-fg); }
+.compact-report .rp-vars .rp-run { width: 16%; border-left: 0.5pt solid var(--pp-hair); }
+.compact-report .rp-vars thead th.rp-run { background: var(--pp-engine-bg); color: var(--pp-engine-fg); }
+.compact-report .rp-vars th, .compact-report .rp-vars td { padding: 0.35mm 1.4mm; vertical-align: top; }
+
+/* part 3 in the Learn report: the main formulas, dense, to fit one page */
+.compact-report .rp-formula-block.rp-learn { margin: 0 0 1.5mm; }
+.compact-report .rp-learn h5 { margin: 1.5mm 0 0.5mm; font-size: 9pt; }
+.compact-report .rp-learn .rp-fline { padding: 0.3mm 2mm; margin: 0 0 0.3mm; font-size: 8pt; line-height: 1.3; }
+.compact-report .rp-learn table.rp-vars { font-size: 6.75pt; margin: 0 0 1mm; }
+.compact-report .rp-learn .rp-vars thead th { font-size: 6.75pt; padding: 0.2mm 1mm; }
+.compact-report .rp-learn .rp-vars th, .compact-report .rp-learn .rp-vars td { padding: 0.1mm 1mm; line-height: 1.2; }
+.compact-report .rp-learn .rp-vars th:nth-child(1) { width: 22%; }
+.compact-report .rp-learn .rp-vars th:nth-child(2), .compact-report .rp-learn .rp-vars td:nth-child(2) { width: 33%; }
+.compact-report .rp-learn .rp-vars th:nth-child(3), .compact-report .rp-learn .rp-vars td:nth-child(3) { width: 5%; }
+.compact-report .rp-learn .rp-vars th:nth-child(4), .compact-report .rp-learn .rp-vars td:nth-child(4) { width: 12%; }
+.compact-report .rp-learn .rp-vars .rp-run { width: 14%; }
+
+/* part 4: limits */
+.compact-report .rp-limit-box { background: var(--pp-limit-bg); border: 0.6pt solid var(--pp-limit-rule); border-left: 2.2mm double var(--pp-limit-rule); padding: 2mm 3.5mm; margin: 0 0 3mm; }
+.compact-report .rp-limit-box ul { margin: 0; padding-left: 4mm; font-size: 9pt; }
+.compact-report .rp-limit-box li { margin: 0 0 1mm; }
+.compact-report table.rp-stages { width: 70%; margin: 0 0 3mm; }
+.compact-report table.rp-stages th, .compact-report table.rp-stages td { padding-top: 0.4mm; padding-bottom: 0.4mm; }
+.compact-report .rp-disclaimer { font-size: 9pt; }
+.compact-report .rp-model { font-size: 8pt; color: var(--pp-muted); overflow-wrap: anywhere; }
+
+/* appendices */
+.compact-report .rp-dossier th { width: 28%; font-weight: 700; }
+.compact-report .rp-dossier td:nth-child(2) { width: 14%; }
+.compact-report .rp-missing { font-size: 8.5pt; color: var(--pp-muted); }
+.compact-report .rp-params tr.differs > * { background: var(--pp-warning-bg); }
+.compact-report table.rp-params { font-size: 8.5pt; }
+.compact-report .rp-note { border-left: 1mm solid var(--pp-warning-rule); background: var(--pp-warning-bg); padding: 1.2mm 2.6mm; }
+.compact-report .registry, .compact-report .evidence { color: var(--pp-muted); overflow-wrap: anywhere; font-size: 8pt; }
+.compact-report section.phase { margin: 0 0 3mm; }
+.compact-report .narrative { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* shared with the reliability results, the estimates and the planning statistics */
+.compact-report table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 0 0 3mm; }
+.compact-report caption { text-align: left; font-weight: 700; padding: 0 0 1.2mm; caption-side: top; }
+.compact-report thead { display: table-header-group; }
+.compact-report tr { break-inside: avoid; page-break-inside: avoid; }
+.compact-report th, .compact-report td { border: 0; border-bottom: 0.5pt solid var(--pp-hair); padding: 1.2mm 2mm; text-align: left; vertical-align: top; }
+.compact-report thead th { background: var(--pp-thead-bg); color: var(--pp-thead-fg); border-bottom: 1pt solid var(--pp-thead-fg); font-weight: 700; }
+.compact-report tbody tr:nth-child(even) > * { background: var(--pp-zebra); }
+.compact-report .estimate-box, .compact-report .estimate { break-inside: avoid; border: 0.5pt solid var(--pp-hair); padding: 2mm 3mm; margin: 0 0 3mm; }
+.compact-report figure.chart, .compact-report figure.composition-chart, .compact-report figure.comparison-bars, .compact-report figure.reliability-timeline {
+  display: block; margin: 0 0 3mm; padding: 2mm 2.5mm 1.5mm; border: 0.5pt solid var(--pp-hair); background: #ffffff; break-inside: avoid; page-break-inside: avoid; }
+.compact-report figcaption { font-weight: 700; font-size: 10pt; color: var(--pp-ink); margin: 0 0 1mm; }
+.compact-report .chart .purpose { color: var(--pp-muted); font-size: 8.5pt; margin-bottom: 1mm; }
+.compact-report .chart svg { border: 0.5pt solid var(--pp-hair); }
+.compact-report .axis-title, .compact-report .axis, .compact-report .y-axis { color: var(--pp-ink); font-size: 8.5pt; }
+.compact-report .legend { color: var(--pp-ink); font-size: 9pt; }
+.compact-report .seal { text-align: center; }
+.compact-report p, .compact-report li, .compact-report dd { orphans: 3; widows: 3; }
+
+@media print {
+  html .compact-report { font: 10.25pt/1.42 'HB Sans', Arial, sans-serif; color: var(--pp-ink); background: var(--pp-paper); }
+  html .compact-report .rp-verdict-page { break-after: auto; }
+  html .compact-report .rp-part { break-before: auto; }
+  html .compact-report .rp-appendix { break-before: auto; }
+}
+/* sustainability and cost (part 3): range charts laid out as tables, no CSS grid (the PDF engine) */
+.compact-report .rp-range { margin: 1mm 0 3mm; break-inside: avoid; }
+.compact-report .rp-range figcaption { font: 700 9.5pt/1.25 'HB Sans', Arial, sans-serif; margin: 0 0 1mm; }
+.compact-report .rp-rangetable { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 8.5pt; margin: 0; }
+.compact-report .rp-rangetable th { width: 30%; text-align: left; font-weight: 700; padding: 0.8mm 2mm 0.8mm 0; vertical-align: middle; }
+.compact-report .rp-rangetable td { padding: 0.8mm 0; vertical-align: middle; }
+.compact-report .rp-rangetable td.cell { width: 34%; padding: 0.8mm 2mm; }
+.compact-report .rp-rangetable .track { position: relative; height: 3.2mm; border-bottom: 0.5pt solid var(--pp-hair); }
+.compact-report .rp-rangetable .bar { position: absolute; top: 0.5mm; bottom: 0.3mm; background: var(--pp-engine-rule); }
+.compact-report .rp-rangetable .bar.open-end, .compact-report .rp-rangetable .bar.open-start { background: var(--pp-proposed-rule); }
+.compact-report .rp-rangetable .tick { position: absolute; top: 0; bottom: 0; border-left: 1.2pt solid var(--pp-warning-rule); }
+.compact-report .rp-rangetable tr.sel th { text-decoration: underline; }
+.compact-report table.rp-risktable { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0 0 2mm; font-size: 8.5pt; }
+.compact-report .rp-risktable th, .compact-report .rp-risktable td { vertical-align: top; padding: 1.2mm 2mm; border-bottom: 0.5pt solid var(--pp-hair); text-align: left; overflow-wrap: anywhere; }
+.compact-report .rp-risktable thead th { background: var(--pp-thead-bg); color: var(--pp-thead-fg); }
+.compact-report .rp-risktable th[scope="row"] { width: 11%; font-weight: 700; }
+.compact-report .rp-risktable tr[data-severity="high"] th[scope="row"] { border-left: 1.6mm solid var(--pp-notvalidated-rule); }
+@media screen and (max-width: 650px) {
+  .compact-report figure.rp-chart { display: block; width: 100%; margin-right: 0; }
+  .compact-report table.rp-stages { width: 100%; }
+  .compact-report .rp-title { font-size: 16pt; }
+}
+
+/* Moon with the two sites (an <img> in the PDF) */
+.compact-report .rp-moon { margin: 1mm 0 3mm; break-inside: avoid; }
+.compact-report .rp-moon figcaption { font: 700 9.5pt/1.25 'HB Sans', Arial, sans-serif; margin: 0 0 1mm; }
+.compact-report .rp-moon canvas, .compact-report .rp-moon img { display: block; width: 62mm; height: auto; margin: 0 auto 1.5mm; }
+.compact-report .rp-moon ul { list-style: none; padding: 0; margin: 0; font-size: 8.5pt; }
+
+/* Sun and Earth against the horizon: one panel per site */
+.compact-report .rp-sky { margin: 1mm 0 3mm; break-inside: avoid; }
+.compact-report .rp-sky figcaption { font: 700 9.5pt/1.25 'HB Sans', Arial, sans-serif; margin: 0 0 1mm; }
+.compact-report .rp-sky svg { display: block; width: 100%; max-width: 100%; height: auto; margin: 1mm 0; }
+.compact-report .rp-sky p { font-size: 8pt; line-height: 1.3; margin: 0.8mm 0 0; }
+
+/* the map overlays: three pictures across (table layout, the PDF engine has no grid) */
+.compact-report .rp-overlays { margin: 1mm 0 3mm; }
+.compact-report .rp-overlays figcaption { font: 700 9.5pt/1.25 'HB Sans', Arial, sans-serif; margin: 0 0 1mm; }
+.compact-report .rp-overlays table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.compact-report .rp-overlays td { width: 33.33%; padding: 0 1mm 1.5mm; vertical-align: top; text-align: center; }
+.compact-report .rp-overlays canvas, .compact-report .rp-overlays img { display: block; width: 52mm; max-width: 100%; height: auto; margin: 0 auto 0.5mm; }
+.compact-report .rp-overlays .cap { display: block; font: 700 7.5pt/1.2 'HB Sans', Arial, sans-serif; }
+.compact-report .rp-overlays .classes { display: block; font: 6.5pt/1.2 'HB Sans', Arial, sans-serif; text-align: left; }
+.compact-report .rp-overlays ul { list-style: none; padding: 0; margin: 0; font-size: 7pt; }
+
+/* lateral section of each scenario (an <img> in the PDF) */
+.compact-report .rp-section { margin: 1mm 0 3mm; }
+.compact-report .rp-section figcaption { font: 700 9.5pt/1.25 'HB Sans', Arial, sans-serif; margin: 0 0 1mm; }
+.compact-report .rp-section .one { margin: 2mm 0; break-inside: avoid; font-size: 8.5pt; }
+.compact-report .rp-section img { display: block; width: 100%; height: auto; }
+.compact-report .rp-section .host:has(img) { height: auto; }

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "example-data"
+kind = "data_source"
+version = "0.1.0"
+entry = "python:backend.plugins.example_data.plugin:FixtureData"
+license = "Apache-2.0"
+terms_url = "docs/terms/example-data.md"
+timeout_s = 5

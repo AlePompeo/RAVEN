@@ -1,0 +1,114 @@
+{
+ "model": "raven.economics.v1",
+ "mission_class": "small_lander",
+ "cost": {
+  "unit": "M USD",
+  "tag": "D",
+  "source": "NASA CLPS / HLS award values 2019-2023, nominal USD (Wikipedia pages of CLPS, Nova-C, Peregrine, Blue Ghost, Griffin, Blue Moon, read 9 Nov 2026); docs/domain/scenario-archetypes.md; not the provider's own cost",
+  "min": 47,
+  "typical": 100.65,
+  "max": 118
+ },
+ "development_years": {
+  "unit": "years",
+  "tag": "D",
+  "min": 3.92,
+  "typical": 4.455,
+  "max": 4.71
+ },
+ "launch_mass": {
+  "unit": "kg",
+  "tag": "D",
+  "min": 1283,
+  "typical": 1517,
+  "max": 1900
+ },
+ "launch_class": "Falcon 9 Block 5 or Vulcan",
+ "co2e": {
+  "unit": "t CO2e",
+  "launch": {
+   "tag": "I",
+   "vehicle": "Falcon 9",
+   "propellant": "RP-1 tank capacity 123.5 t (stage 1) + 32.3 t (stage 2)",
+   "source": "Wikipedia Falcon 9 Block 5, Falcon Heavy and New Glenn pages (tank capacities, 12 Nov 2026); stoichiometry C + O2 -> CO2 (44.01/12.011) and CH4 + 2 O2 -> CO2 + 2 H2O (44.01/16.04)",
+   "min": 412,
+   "typical": 466,
+   "max": 497
+  },
+  "production": {
+   "tag": "I",
+   "source": "primary aluminium 8.24-15.1 kg CO2e/kg (ICE v3 via a calculator page; global average 15.1; web search, 12 Nov 2026); not read from the ICE tables",
+   "min": 11.0,
+   "typical": 18.0,
+   "max": 29.0
+  },
+  "total": {
+   "min": 423.0,
+   "typical": 484.0,
+   "max": 526.0
+  }
+ },
+ "limits": [
+  "Class scenario from public award values and vehicle data: not a quote, not an LCA, not a forecast of this mission.",
+  "Secondary sources, not checked against the primary NASA documents.",
+  "CO2 of combustion only: a lower bound of the launch CO2e.",
+  "Production is an aluminium-equivalent of the launch mass (propellant included): an order of magnitude, tag I."
+ ],
+ "unknown": [
+  "Cost of a rover or payload; development time of the rover and large classes",
+  "Cost per line item (structure, propulsion, avionics, operations): no adequate public source",
+  "Manufacturing CO2e per material and component: only an aluminium-equivalent order of magnitude is given",
+  "Operations CO2e (ground stations, electricity): no source read",
+  "Black carbon, NOx, water vapour and propellant production of the launch are not included"
+ ],
+ "context": [
+  {
+   "mission_class": "rover",
+   "cost": {
+    "min": null,
+    "typical": null,
+    "max": null
+   },
+   "co2e_launch": null
+  },
+  {
+   "mission_class": "small_lander",
+   "cost": {
+    "min": 47,
+    "typical": 100.65,
+    "max": 118
+   },
+   "co2e_launch": {
+    "min": 412,
+    "typical": 466,
+    "max": 497
+   }
+  },
+  {
+   "mission_class": "medium_lander",
+   "cost": {
+    "min": null,
+    "typical": 199.5,
+    "max": null
+   },
+   "co2e_launch": {
+    "min": 1066,
+    "typical": 1206,
+    "max": 1284
+   }
+  },
+  {
+   "mission_class": "large_lander",
+   "cost": {
+    "min": 2890,
+    "typical": null,
+    "max": 3400
+   },
+   "co2e_launch": {
+    "min": 662,
+    "typical": 768,
+    "max": 838
+   }
+  }
+ ]
+}

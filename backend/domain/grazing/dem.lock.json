@@ -1,0 +1,83 @@
+{
+  "schema": "dem.lock v1: pinned LOLA products (datasets[0] = LDEM_85S_20M for RF terrain and the near solar horizon; ldem_75s_240m_float = far solar horizon). Ranged responses must report this size and ETag; tiles are checked against min/max; `python -m backend.domain.grazing.dem --verify-full` re-checks the sha256 of the whole file.",
+  "provenance": "Trust-on-first-use: sha256 computed by streaming the whole file once over HTTPS from pds-geosciences.wustl.edu (PDS publishes no checksum for this file). Retrieval date 2026-10-26. Label values (scale, offset, size, DERIVED_MINIMUM/MAXIMUM) read from the .lbl. LDEM_75S_240M: sha256 of the whole 58 125 376-byte file computed by streaming it once over HTTPS on 2026-11-04 (file not kept); size, ETag and label sha256 recorded the same day. LDEM_128_FLOAT (2026-11-05): size, ETag and label sha256 recorded from the PDS server; `sha256` is the whole-file hash (4 246 732 800 bytes, computed once by streaming on 2026-11-05, file not kept); an empty `sha256` would mean NOT computed.",
+  "datasets": [
+    {
+      "id": "ldem_85s_20m_float",
+      "url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/float_img/ldem_85s_20m_float.img",
+      "label_url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/float_img/ldem_85s_20m_float.lbl",
+      "size": 920272896,
+      "etag": "\"d1e5a47badbd21:0\"",
+      "sha256": "bbfd0295c7ae0759dd7b2513e1ebd61fd5e3d304e35b3fa2ae9e6840054d9b7a",
+      "label_sha256": "7ad5bed3dc8c4e48ace39f10b0f8aa5b8e1eff8bcece89f89ed11297a9ff04ed",
+      "lines": 15168,
+      "samples": 15168,
+      "scale_m": 20.0,
+      "center_px": 7583.5,
+      "radius_km": 1737.4,
+      "min_km": -5.502,
+      "max_km": 7.027,
+      "max_lat_deg": 85.0,
+      "orientation": {
+        "swap": 0,
+        "sx": 1,
+        "sy": -1,
+        "note": "col = c0 + rho sin(lon)/scale, row = c0 - rho cos(lon)/scale, rho = 2 R tan((90+lat)/2); checked 2026-10-26 on Shackleton (bowl: floor -2.8 km, rim ~ +0.6 km at 9-10 km), Haworth (-3.3 km), Malapert Massif (+4.9 km); each of the 7 mirrored/rotated variants fails on at least one of these features"
+      },
+      "retrieved": "2026-10-26",
+      "credit": "LRO LOLA Gridded Data Record LDEM_85S_20M (NASA/GSFC, D. E. Smith PI), PDS Geosciences Node; heights in km relative to a 1737.4 km sphere, polar stereographic (spherical), pixel registration"
+    },
+    {
+      "id": "ldem_75s_240m_float",
+      "url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/float_img/ldem_75s_240m_float.img",
+      "label_url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/float_img/ldem_75s_240m_float.lbl",
+      "size": 58125376,
+      "etag": "\"89f3b64badbd21:0\"",
+      "sha256": "82f40337cf42b3d478b255f22e6fce06d7273ff3bd4ac879b0f1ea4712dc280c",
+      "label_sha256": "8ad7ed746f0944762d249281db50667d4e1e9a0059eb836b4003909c1a5b336a",
+      "lines": 3812,
+      "samples": 3812,
+      "scale_m": 240.0,
+      "center_px": 1905.5,
+      "radius_km": 1737.4,
+      "min_km": -7.765,
+      "max_km": 7.025,
+      "max_lat_deg": 75.0,
+      "orientation": {
+        "swap": 0,
+        "sx": 1,
+        "sy": -1,
+        "note": "same polar stereographic convention as LDEM_85S_20M (shared PDS map projection); confirmed independently on 2026-11-04 by the LROC WAC illumination map comparison (docs/domain/validation.md)"
+      },
+      "retrieved": "2026-11-04",
+      "credit": "LRO LOLA Gridded Data Record LDEM_75S_240M (NASA/GSFC, D. E. Smith PI), PDS Geosciences Node; heights in km relative to a 1737.4 km sphere, polar stereographic (spherical); used only for the far solar horizon (10-200 km)"
+    },
+    {
+      "id": "ldem_128_float",
+      "url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/float_img/ldem_128_float.img",
+      "label_url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/float_img/ldem_128_float.lbl",
+      "size": 4246732800,
+      "etag": "\"8c7512ec2927d31:0\"",
+      "sha256": "ffb5f1df3c6f394fe66984f277ca757df7f06c625c34818cbb3023bbc6ec1422",
+      "label_sha256": "6f31dbc5dd95d96ed06916dcdd4456e48b3ff92582b859ae6fed5934987975c8",
+      "lines": 23040,
+      "samples": 46080,
+      "scale_m": 236.901,
+      "center_px": 0.0,
+      "radius_km": 1737.4,
+      "min_km": -9.127,
+      "max_km": 10.779,
+      "max_lat_deg": 0.0,
+      "orientation": {
+        "swap": 0,
+        "sx": 1,
+        "sy": 1,
+        "note": "simple cylindrical, pixel registered, 128 pixel/deg: row = (90 - lat) * 128 - 0.5, col = lon_east(0..360) * 128 - 0.5 (label: LINE_PROJECTION_OFFSET 11519.5, SAMPLE_PROJECTION_OFFSET 23039.5, CENTER_LONGITUDE 180, WESTERNMOST_LONGITUDE 0, POSITIVE_LONGITUDE_DIRECTION EAST); orientation checked 2026-11-05 against LDEM_75S_240M at 18 points (86 to 88 S, six longitudes 10..330 E): rms difference 1.9 m on a 924 m standard deviation, correlation 0.999998"
+      },
+      "retrieved": "2026-11-05",
+      "credit": "LRO LOLA Gridded Data Record LDEM_128_FLOAT (NASA/GSFC, D. E. Smith PI), PDS Geosciences Node; global shape map, simple cylindrical, 128 pixel/degree (0.236901 km/pixel at the equator), heights in km relative to a 1737.4 km sphere; used for custom sites outside the polar products, tiles only (the 4.2 GB file is never downloaded whole)",
+      "projection": "cylindrical",
+      "pixels_per_deg": 128.0
+    }
+  ]
+}

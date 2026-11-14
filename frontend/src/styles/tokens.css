@@ -1,0 +1,151 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Token del design system (docs/design/design-system.md).
+ * I blocchi colore sono delimitati da marcatori @tokens:<nome> ... @end: contrast.test.ts li legge
+ * da questo file e verifica il contrasto di ogni coppia usata (testo 4.5:1, UI 3:1).
+ * Valori colore SOLO in esadecimale #rrggbb dentro i blocchi marcati (il test non risolve altro).
+ */
+
+:root {
+  /* --- tipografia --- */
+  --font-sans: 'HB Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fs-display: clamp(2.75rem, 1.2rem + 6.4vw, 6.5rem);
+  --fs-h1: clamp(2.25rem, 1.75rem + 2.2vw, 3.5rem);
+  --fs-h2: clamp(1.75rem, 1.35rem + 1.9vw, 3rem);
+  --fs-h3: 1.3125rem;
+  --fs-lead: clamp(1.1875rem, 1.05rem + 0.6vw, 1.5rem);
+  --fs-body: 1.0625rem;
+  --fs-small: 0.875rem;
+  --fs-micro: 0.75rem;
+  --fs-readout: clamp(2rem, 1.6rem + 1.6vw, 3rem);
+  --lh-body: 1.47;
+  --lh-tight: 1.08;
+  --lh-heading: 1.12;
+  --wdth-display: 125%;
+  --wdth-heading: 112%;
+  --measure: 68ch;
+
+  /* --- spazio (unità 8px) --- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2rem;
+  --space-6: 3rem;
+  --space-7: 5rem;
+  --chapter-pad: 5rem;
+  --gutter: clamp(1.25rem, 4vw, 2.5rem);
+  --content: 980px;
+  --content-wide: 1200px;
+
+  /* --- forme --- */
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 18px;
+  --radius-pill: 980px;
+  --shadow-media: 3px 5px 30px rgb(0 0 0 / 0.22); /* solo per immagini */
+  --nav-h: 44px;
+  --subnav-h: 52px;
+  --target: 44px;
+
+  /* --- movimento --- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-press: 120ms;
+  --dur-ui: 240ms;
+}
+
+@media (max-width: 479px) {
+  :root {
+    --chapter-pad: 3rem;
+  }
+}
+
+/* Schema chiaro (predefinito) per le superfici "auto". */
+/* @tokens:light */
+:root {
+  --c-bg: #ffffff;
+  --c-bg-alt: #f5f5f7;
+  --c-raised: #ffffff;
+  --c-text: #1d1d1f;
+  --c-muted: #6e6e73;
+  --c-link: #0066cc;
+  --c-action: #0066cc;
+  --c-on-action: #ffffff;
+  --c-focus: #0071e3;
+  --c-control: #86868b;
+  --c-hairline: #d2d2d7;
+  --c-danger: #c4001a;
+  --c-success: #1a7f37;
+  --c-power: #b25000;
+  --c-uplink: #0066cc;
+  --c-bubble-user: #0066cc;
+  --c-on-bubble-user: #ffffff;
+  --c-bubble: #e8e8ed;
+  --c-frost: rgb(255 255 255 / 0.82);
+  color-scheme: light;
+}
+/* @end */
+
+/* Schema scuro per le superfici "auto". */
+@media (prefers-color-scheme: dark) {
+  /* @tokens:dark */
+  :root {
+    --c-bg: #000000;
+    --c-bg-alt: #1d1d1f;
+    --c-raised: #2a2a2c;
+    --c-text: #f5f5f7;
+    --c-muted: #a1a1a6;
+    --c-link: #2997ff;
+    --c-action: #0071e3;
+    --c-on-action: #ffffff;
+    --c-focus: #2997ff;
+    --c-control: #86868b;
+    --c-hairline: #424245;
+    --c-danger: #ff6961;
+    --c-success: #30d158;
+    --c-power: #ffb340;
+    --c-uplink: #2997ff;
+    --c-bubble-user: #0071e3;
+    --c-on-bubble-user: #ffffff;
+    --c-bubble: #2a2a2c;
+    --c-frost: rgb(22 22 23 / 0.8);
+    color-scheme: dark;
+  }
+  /* @end */
+}
+
+/* Tile e palco sempre scuri (home, visualizzatore, navigazione), in entrambi gli schemi. */
+/* @tokens:tone-dark */
+.tone-dark {
+  --c-bg: #000000;
+  --c-bg-alt: #1d1d1f;
+  --c-raised: #272729;
+  --c-text: #f5f5f7;
+  --c-muted: #a1a1a6;
+  --c-link: #2997ff;
+  --c-action: #0071e3;
+  --c-on-action: #ffffff;
+  --c-focus: #2997ff;
+  --c-control: #86868b;
+  --c-hairline: #424245;
+  --c-danger: #ff6961;
+  --c-success: #30d158;
+  --c-power: #ffb340;
+  --c-uplink: #2997ff;
+  --c-bubble-user: #0071e3;
+  --c-on-bubble-user: #ffffff;
+  --c-bubble: #2a2a2c;
+  --c-frost: rgb(22 22 23 / 0.72);
+  color-scheme: dark;
+}
+/* @end */
+
+/* Scrim (nero traslucido) sotto testo posato su media: anche sopra un pixel BIANCO il testo --c-text del
+   tono scuro resta >= 4.5:1 (verificato in contrast.test.ts). Il testo sopra i media usa solo --c-text. */
+/* @tokens:scrim */
+:root {
+  --scrim-strong: rgb(0 0 0 / 0.85);
+  --scrim-min: rgb(0 0 0 / 0.6);
+}
+/* @end */

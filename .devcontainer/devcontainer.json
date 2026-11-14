@@ -1,0 +1,18 @@
+{
+  "name": "Space Hackathon Base (demo)",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "overrideCommand": false,
+  "containerEnv": {
+    "RATE_LIMIT_PER_MIN": "600"
+  },
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Space Hackathon Base",
+      "onAutoForward": "openBrowser"
+    }
+  }
+}

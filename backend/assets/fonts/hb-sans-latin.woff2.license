@@ -1,0 +1,6 @@
+SPDX-FileCopyrightText: 2022 The Mona Sans Project Authors (https://github.com/github/mona-sans)
+SPDX-License-Identifier: OFL-1.1
+
+HB Sans: sottoinsieme latino (wght 300-700, wdth 100-125) di Mona Sans, rinominato perché "Mona" è un
+Reserved Font Name (OFL 1.1, condizione 3). Testo completo della licenza: OFL.txt in questa cartella.
+Procedura di generazione: docs/design/build-assets.py.

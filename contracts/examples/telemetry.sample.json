@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0.0",
+  "t_utc": "2026-10-12T12:00:00Z",
+  "site_id": "demo",
+  "power_w": 12.5,
+  "link_margin_db": 6.2,
+  "sun": {"az_deg": 120.5, "el_deg": 35.0},
+  "earth": {"az_deg": 250.0, "el_deg": 5.5}
+}

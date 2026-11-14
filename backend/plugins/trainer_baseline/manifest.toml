@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "trainer-baseline"
+kind = "trainer"
+version = "0.1.0"
+entry = "python:backend.plugins.trainer_baseline.plugin:BaselineTrainer"
+license = "Apache-2.0"
+timeout_s = 120
+# Eseguito solo nel subprocess del TrainerRunner (mai nel processo web). Richiede l'extra [ml].

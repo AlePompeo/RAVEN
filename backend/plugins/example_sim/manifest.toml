@@ -1,0 +1,6 @@
+id = "example-sim"
+kind = "simulation"
+version = "0.1.0"
+entry = "python:backend.plugins.example_sim.plugin:ExampleSim"
+license = "Apache-2.0"
+timeout_s = 5

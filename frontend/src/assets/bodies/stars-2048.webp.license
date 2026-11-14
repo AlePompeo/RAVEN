@@ -1,0 +1,6 @@
+SPDX-FileCopyrightText: NASA Scientific Visualization Studio (public domain)
+SPDX-License-Identifier: LicenseRef-PublicDomain
+
+Derivato da NASA SVS 4851 "Deep Star Maps 2020" (https://svs.gsfc.nasa.gov/4851): starmap_2020_4k.exr.
+Credito: NASA's Scientific Visualization Studio.
+Generato da docs/design/build-bodies.py; provenienza e verifica in docs/design/credits.md.

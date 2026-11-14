@@ -1,0 +1,38 @@
+{
+  "schema": "kernels.lock v1: pinned NAIF kernels. sha256 and size are verified on every download and every engine load; a mismatch is refused.",
+  "provenance": "Trust-on-first-use: hashes computed from the first download over HTTPS from naif.jpl.nasa.gov (NAIF publishes no checksums for these files). Retrieval date 2026-10-20. To refresh run `python -m backend.ephemeris.fetch --write-lock` and review the diff.",
+  "kernels": [
+    {
+      "name": "de440s.bsp",
+      "role": "planetary SPK (Sun, Earth, Moon, Mars; DE440 short, 1849-12-26 to 2150-01-22)",
+      "url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440s.bsp",
+      "size": 32726016,
+      "sha256": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+      "retrieved": "2026-10-20"
+    },
+    {
+      "name": "moon_pa_de440_200625.bpc",
+      "role": "binary PCK, Moon principal-axes orientation from the DE440 libration",
+      "url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/moon_pa_de440_200625.bpc",
+      "size": 12863488,
+      "sha256": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f",
+      "retrieved": "2026-10-20"
+    },
+    {
+      "name": "moon_de440_250416.tf",
+      "role": "frame kernel defining MOON_PA_DE440 and MOON_ME_DE440_ME421 (alias MOON_ME)",
+      "url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_de440_250416.tf",
+      "size": 19478,
+      "sha256": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768",
+      "retrieved": "2026-10-20"
+    },
+    {
+      "name": "pck00011.tpc",
+      "role": "text PCK with the IAU rotation constants (Mars) and body radii",
+      "url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/pck00011.tpc",
+      "size": 131226,
+      "sha256": "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1",
+      "retrieved": "2026-10-20"
+    }
+  ]
+}

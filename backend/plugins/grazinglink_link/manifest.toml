@@ -1,0 +1,6 @@
+id = "grazinglink-link"
+kind = "simulation"
+version = "0.1.0"
+entry = "python:backend.plugins.grazinglink_link.plugin:GrazingLinkSimulation"
+license = "Apache-2.0"
+timeout_s = 5

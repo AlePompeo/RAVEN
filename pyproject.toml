@@ -1,0 +1,54 @@
+[project]
+name = "hackathon-base"
+version = "0.1.0"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = ["fastapi", "pydantic>=2", "uvicorn[standard]", "httpx"]
+[project.optional-dependencies]
+valkey = ["redis"]
+fusion = ["imufusion==1.3.3", "numpy"]
+ml = ["numpy", "scipy==1.18.1", "scikit-learn==1.9.1", "skl2onnx==1.20.0", "onnx==1.23.2", "onnxruntime==1.31.0"]
+data = ["pyarrow==26.0.0", "duckdb==1.5.6"]
+# rl/dl: installare torch CPU PRIMA dal suo indice (altrimenti PyPI porta la build CUDA, GB di
+# dipendenze): pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+rl = ["numpy", "onnx==1.23.2", "onnxruntime==1.31.0", "gymnasium==1.4.0", "stable-baselines3==2.9.0"]
+dl = ["numpy", "torch==2.14.1", "onnx==1.23.2", "onnxscript==0.7.2", "onnxruntime==1.31.0"]
+sky = ["numpy", "scipy==1.18.1", "skyfield==1.55", "jplephem==2.24"]  # efemeridi (backend/ephemeris); i kernel NAIF si scaricano con `make ephemeris`
+assistant = ["pyyaml"]  # gia' presente via uvicorn[standard] (constraints/base.txt: PyYAML==6.0.3)
+pdf = ["weasyprint==70.0"]  # PDF del report generato dal server (BSD-3); richiede Pango di sistema (vedi docs/knowledge/run-install.md)
+dev = ["pypdf==6.11.0", "pytest", "pytest-asyncio", "jsonschema", "ruff", "mypy", "import-linter", "datamodel-code-generator", "cyclonedx-bom", "pip-licenses"]
+[tool.setuptools.packages.find]
+include = ["backend*"]
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+testpaths = ["tests/backend"]
+[tool.ruff]
+line-length = 100
+# la cartella dei materiali di ricerca contiene script del team, non codice del progetto
+extend-exclude = ["backend/contracts_models.py", "research papers, scripts and planning"]
+[tool.mypy]
+strict = true
+files = ["backend"]
+# La CI installa gli extra leggeri (ml, fusion, data) ma NON torch/gymnasium/stable-baselines3 (la ruota
+# torch di PyPI e' enorme). Senza quelle librerie i loro tipi diventano Any: si ignora l'import mancante e,
+# solo nei due moduli che le usano, si disattivano i controlli che scattano per Any (sottoclasse di Any,
+# `type: ignore` scritti per i tipi reali di torch). Con torch installato (dev locale) il codice passa
+# comunque; i `type: ignore[codice]` altrove restano specifici.
+[[tool.mypy.overrides]]
+module = ["torch", "torch.*", "gymnasium", "gymnasium.*", "stable_baselines3", "stable_baselines3.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["backend.plugins.predictor_nn.training", "backend.plugins.env_servo.gym_shim"]
+disallow_subclassing_any = false
+warn_unused_ignores = false
+
+# scipy non porta tipi inclusi (scipy-stubs non e' una dipendenza): si usa solo scipy.special.fresnel
+[[tool.mypy.overrides]]
+module = ["scipy", "scipy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["weasyprint", "weasyprint.*", "pypdf", "pypdf.*"]
+ignore_missing_imports = true

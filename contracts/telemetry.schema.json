@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hackathon-base.example/contracts/telemetry.schema.json",
+  "title": "Telemetry",
+  "description": "Telemetry sample. Times are UTC ISO-8601; units are in field names.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "t_utc", "site_id", "power_w"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+    },
+    "t_utc": {"type": "string", "format": "date-time"},
+    "site_id": {"type": "string", "minLength": 1},
+    "power_w": {"type": "number"},
+    "link_margin_db": {"type": "number"},
+    "sun": {"$ref": "#/$defs/AzEl"},
+    "earth": {"$ref": "#/$defs/AzEl"}
+  },
+  "$defs": {
+    "AzEl": {
+      "title": "AzEl",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["az_deg", "el_deg"],
+      "properties": {
+        "az_deg": {"type": "number"},
+        "el_deg": {"type": "number"}
+      }
+    }
+  }
+}

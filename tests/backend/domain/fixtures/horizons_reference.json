@@ -1,0 +1,530 @@
+{
+ "description": "Reference ephemeris values from JPL Horizons for validating our own Sun/Earth azimuth-elevation computation for surface sites on the Moon. Phase A fixture; values are copied from Horizons, never hand-computed.",
+ "generated_by": "scratch script (fetch_h.py/assemble.py) calling the public Horizons API; no API key",
+ "api": {
+  "endpoint": "https://ssd.jpl.nasa.gov/api/horizons.api",
+  "doc": "https://ssd-api.jpl.nasa.gov/doc/horizons.html",
+  "api_version_reported": {
+   "version": "1.2",
+   "source": "NASA/JPL Horizons API"
+  },
+  "accessed": "2026-10-20"
+ },
+ "ephemeris": {
+  "sun_moon_earth": "DE441 (Horizons header '{source: DE441}' for Sun, Moon and Earth)",
+  "moon_body_fixed_frame": "MEAN_ME (high precision), east-longitude positive (Horizons header 'Center pole/equ')",
+  "moon_radius_used_km": "1737.4 sphere (header 'Center radii'); site altitude 0 above that sphere",
+  "eop_file": "eop.261019.p270114",
+  "eop_coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13",
+  "note": "Horizons does not print the DE441 vs DE440/DE421 library version of the lunar orientation beyond this header; MEAN_ME(high precision) is what it reports."
+ },
+ "observer": {
+  "CENTER": "coord@301",
+  "COORD_TYPE": "GEODETIC",
+  "SITE_COORD_format": "E-lon(deg), lat(deg), alt(km)",
+  "lat_is": "planetocentric on a 1737.4 km sphere (geodetic == planetocentric because radii are equal)",
+  "refraction": "none: header says 'Atmos refraction: NO (AIRLESS)'; request APPARENT=AIRLESS"
+ },
+ "quantities": {
+  "4": "Apparent azimuth/elevation ('a-app', airless): includes light-time and stellar aberration and relativistic light bending per Horizons; azimuth measured from the Moon's local north (toward MEAN_ME pole) eastward, elevation above the local horizontal plane of the sphere (no terrain)",
+  "20": "delta = observer-to-target range (km, RANGE_UNITS=KM) and deldot = range rate (km/s)",
+  "10,14 (geocentric Moon)": "illuminated percent and observer sub-longitude/latitude: libration of the Earth-facing point"
+ },
+ "time": {
+  "input_scale": "UT (UTC civil, TIME_TYPE=UT) via TLIST calendar dates; all epochs are 00:00:00 UT. Horizons converts internally to TDB. UTC after 2027-01-13 is predicted (EOP predictions) and the next leap second is unknown, so the UT-to-TDB conversion for 2027-2028 epochs carries an uncertainty that is not quantified here (Horizons states the last known leap second is used as a constant for future dates).",
+  "epochs_ut": [
+   "2026-Dec-24 00:00",
+   "2027-Apr-07 00:00",
+   "2027-Aug-09 00:00",
+   "2028-Jan-19 00:00"
+  ]
+ },
+ "epoch_context": [
+  {
+   "time_ut": "2026-Dec-24 00:00:00.000",
+   "moon_illuminated_percent": 99.87621,
+   "sub_earth_lon_deg_E_360": 359.409356,
+   "sub_earth_lat_deg": -5.142133,
+   "note": "near full Moon",
+   "sub_earth_lon_deg_E_signed": -0.5906439999999975
+  },
+  {
+   "time_ut": "2027-Apr-07 00:00:00.000",
+   "moon_illuminated_percent": 0.14233,
+   "sub_earth_lon_deg_E_360": 354.634739,
+   "sub_earth_lat_deg": -5.625318,
+   "note": "near new Moon",
+   "sub_earth_lon_deg_E_signed": -5.365260999999975
+  },
+  {
+   "time_ut": "2027-Aug-09 00:00:00.000",
+   "moon_illuminated_percent": 48.00591,
+   "sub_earth_lon_deg_E_360": 7.631528,
+   "sub_earth_lat_deg": 6.832641,
+   "note": "about quarter; largest sub-Earth latitude (+6.83) and longitude (+7.63) libration of the 2026-12..2028-12 scan",
+   "sub_earth_lon_deg_E_signed": 7.631528
+  },
+  {
+   "time_ut": "2028-Jan-19 00:00:00.000",
+   "moon_illuminated_percent": 48.05957,
+   "sub_earth_lon_deg_E_360": 6.872203,
+   "sub_earth_lat_deg": 6.824379,
+   "note": "see moon_illuminated_percent",
+   "sub_earth_lon_deg_E_signed": 6.872203
+  }
+ ],
+ "sites_used": [
+  {
+   "apollo11": 23.47314,
+   "id": "apollo11",
+   "coordinate_basis": "point"
+  },
+  {
+   "malapert-massif": -1.67,
+   "id": "malapert-massif",
+   "coordinate_basis": "feature_centre"
+  },
+  {
+   "haworth": -5.17,
+   "id": "haworth",
+   "coordinate_basis": "feature_centre"
+  }
+ ],
+ "requests": [
+  {
+   "site": "apollo11",
+   "target": "10",
+   "raw_file": "horizons_raw/apollo11_sun.txt",
+   "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%2723.47314%2C0.67416%2C0%27&TLIST=%272026-Dec-24+00%3A00%27+%272027-Apr-07+00%3A00%27+%272027-Aug-09+00%3A00%27+%272028-Jan-19+00%3A00%27&TIME_TYPE=%27UT%27&QUANTITIES=%274%2C20%27&APPARENT=%27AIRLESS%27&ANG_FORMAT=%27DEG%27&RANGE_UNITS=%27KM%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27",
+   "retrieved_utc": "2026-10-20T07:36:40+00:00",
+   "api_signature": {
+    "version": "1.2",
+    "source": "NASA/JPL Horizons API"
+   },
+   "header": {
+    "Target body name": "Sun (10)                        {source: DE441}",
+    "Center body name": "Moon (301)                      {source: DE441}",
+    "Center geodetic": "23.47314, .67416, -4.31358E-13  {E-lon(deg),Lat(deg),Alt(km)}",
+    "Center cylindric": "23.47314, 1737.27973, 20.44232  {E-lon(deg),Dxy(km),Dz(km)}",
+    "Center pole/equ": "MEAN_ME (high precision)        {East-longitude positive}",
+    "Center radii": "1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+    "Vis. interferer": "EARTH (R_eq= 6378.137) km       {source: DE441}",
+    "Rel. light bend": "Sun, EARTH                      {source: DE441}",
+    "Atmos refraction": "NO (AIRLESS)",
+    "Time format": "CAL",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13",
+    "Units conversion": "1 au= 149597870.700 km, c= 299792.458 km/s, 1 day= 86400.0 s"
+   }
+  },
+  {
+   "site": "apollo11",
+   "target": "399",
+   "raw_file": "horizons_raw/apollo11_earth.txt",
+   "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27399%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%2723.47314%2C0.67416%2C0%27&TLIST=%272026-Dec-24+00%3A00%27+%272027-Apr-07+00%3A00%27+%272027-Aug-09+00%3A00%27+%272028-Jan-19+00%3A00%27&TIME_TYPE=%27UT%27&QUANTITIES=%274%2C20%27&APPARENT=%27AIRLESS%27&ANG_FORMAT=%27DEG%27&RANGE_UNITS=%27KM%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27",
+   "retrieved_utc": "2026-10-20T07:36:40+00:00",
+   "api_signature": {
+    "source": "NASA/JPL Horizons API",
+    "version": "1.2"
+   },
+   "header": {
+    "Target body name": "Earth (399)                     {source: DE441}",
+    "Center body name": "Moon (301)                      {source: DE441}",
+    "Center geodetic": "23.47314, .67416, -4.31358E-13  {E-lon(deg),Lat(deg),Alt(km)}",
+    "Center cylindric": "23.47314, 1737.27973, 20.44232  {E-lon(deg),Dxy(km),Dz(km)}",
+    "Center pole/equ": "MEAN_ME (high precision)        {East-longitude positive}",
+    "Center radii": "1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+    "Vis. interferer": "EARTH (R_eq= 6378.137) km       {source: DE441}",
+    "Rel. light bend": "Sun, EARTH                      {source: DE441}",
+    "Atmos refraction": "NO (AIRLESS)",
+    "Time format": "CAL",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13",
+    "Units conversion": "1 au= 149597870.700 km, c= 299792.458 km/s, 1 day= 86400.0 s"
+   }
+  },
+  {
+   "site": "malapert-massif",
+   "target": "10",
+   "raw_file": "horizons_raw/malapert-massif_sun.txt",
+   "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%27-1.67%2C-85.98%2C0%27&TLIST=%272026-Dec-24+00%3A00%27+%272027-Apr-07+00%3A00%27+%272027-Aug-09+00%3A00%27+%272028-Jan-19+00%3A00%27&TIME_TYPE=%27UT%27&QUANTITIES=%274%2C20%27&APPARENT=%27AIRLESS%27&ANG_FORMAT=%27DEG%27&RANGE_UNITS=%27KM%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27",
+   "retrieved_utc": "2026-10-20T07:36:41+00:00",
+   "api_signature": {
+    "version": "1.2",
+    "source": "NASA/JPL Horizons API"
+   },
+   "header": {
+    "Target body name": "Sun (10)                        {source: DE441}",
+    "Center body name": "Moon (301)                      {source: DE441}",
+    "Center geodetic": "358.33, -85.98, -3.86534E-13    {E-lon(deg),Lat(deg),Alt(km)}",
+    "Center cylindric": "358.33, 121.79988, -1733.1254   {E-lon(deg),Dxy(km),Dz(km)}",
+    "Center pole/equ": "MEAN_ME (high precision)        {East-longitude positive}",
+    "Center radii": "1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+    "Vis. interferer": "EARTH (R_eq= 6378.137) km       {source: DE441}",
+    "Rel. light bend": "Sun, EARTH                      {source: DE441}",
+    "Atmos refraction": "NO (AIRLESS)",
+    "Time format": "CAL",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13",
+    "Units conversion": "1 au= 149597870.700 km, c= 299792.458 km/s, 1 day= 86400.0 s"
+   }
+  },
+  {
+   "site": "malapert-massif",
+   "target": "399",
+   "raw_file": "horizons_raw/malapert-massif_earth.txt",
+   "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27399%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%27-1.67%2C-85.98%2C0%27&TLIST=%272026-Dec-24+00%3A00%27+%272027-Apr-07+00%3A00%27+%272027-Aug-09+00%3A00%27+%272028-Jan-19+00%3A00%27&TIME_TYPE=%27UT%27&QUANTITIES=%274%2C20%27&APPARENT=%27AIRLESS%27&ANG_FORMAT=%27DEG%27&RANGE_UNITS=%27KM%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27",
+   "retrieved_utc": "2026-10-20T07:36:42+00:00",
+   "api_signature": {
+    "version": "1.2",
+    "source": "NASA/JPL Horizons API"
+   },
+   "header": {
+    "Target body name": "Earth (399)                     {source: DE441}",
+    "Center body name": "Moon (301)                      {source: DE441}",
+    "Center geodetic": "358.33, -85.98, -3.86534E-13    {E-lon(deg),Lat(deg),Alt(km)}",
+    "Center cylindric": "358.33, 121.79988, -1733.1254   {E-lon(deg),Dxy(km),Dz(km)}",
+    "Center pole/equ": "MEAN_ME (high precision)        {East-longitude positive}",
+    "Center radii": "1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+    "Vis. interferer": "EARTH (R_eq= 6378.137) km       {source: DE441}",
+    "Rel. light bend": "Sun, EARTH                      {source: DE441}",
+    "Atmos refraction": "NO (AIRLESS)",
+    "Time format": "CAL",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13",
+    "Units conversion": "1 au= 149597870.700 km, c= 299792.458 km/s, 1 day= 86400.0 s"
+   }
+  },
+  {
+   "site": "haworth",
+   "target": "10",
+   "raw_file": "horizons_raw/haworth_sun.txt",
+   "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%27-5.17%2C-87.45%2C0%27&TLIST=%272026-Dec-24+00%3A00%27+%272027-Apr-07+00%3A00%27+%272027-Aug-09+00%3A00%27+%272028-Jan-19+00%3A00%27&TIME_TYPE=%27UT%27&QUANTITIES=%274%2C20%27&APPARENT=%27AIRLESS%27&ANG_FORMAT=%27DEG%27&RANGE_UNITS=%27KM%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27",
+   "retrieved_utc": "2026-10-20T07:36:43+00:00",
+   "api_signature": {
+    "source": "NASA/JPL Horizons API",
+    "version": "1.2"
+   },
+   "header": {
+    "Target body name": "Sun (10)                        {source: DE441}",
+    "Center body name": "Moon (301)                      {source: DE441}",
+    "Center geodetic": "354.83, -87.45, 0.0             {E-lon(deg),Lat(deg),Alt(km)}",
+    "Center cylindric": "354.83, 77.29902, -1735.68      {E-lon(deg),Dxy(km),Dz(km)}",
+    "Center pole/equ": "MEAN_ME (high precision)        {East-longitude positive}",
+    "Center radii": "1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+    "Vis. interferer": "EARTH (R_eq= 6378.137) km       {source: DE441}",
+    "Rel. light bend": "Sun, EARTH                      {source: DE441}",
+    "Atmos refraction": "NO (AIRLESS)",
+    "Time format": "CAL",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13",
+    "Units conversion": "1 au= 149597870.700 km, c= 299792.458 km/s, 1 day= 86400.0 s"
+   }
+  },
+  {
+   "site": "haworth",
+   "target": "399",
+   "raw_file": "horizons_raw/haworth_earth.txt",
+   "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27399%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%27-5.17%2C-87.45%2C0%27&TLIST=%272026-Dec-24+00%3A00%27+%272027-Apr-07+00%3A00%27+%272027-Aug-09+00%3A00%27+%272028-Jan-19+00%3A00%27&TIME_TYPE=%27UT%27&QUANTITIES=%274%2C20%27&APPARENT=%27AIRLESS%27&ANG_FORMAT=%27DEG%27&RANGE_UNITS=%27KM%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27",
+   "retrieved_utc": "2026-10-20T07:36:44+00:00",
+   "api_signature": {
+    "version": "1.2",
+    "source": "NASA/JPL Horizons API"
+   },
+   "header": {
+    "Target body name": "Earth (399)                     {source: DE441}",
+    "Center body name": "Moon (301)                      {source: DE441}",
+    "Center geodetic": "354.83, -87.45, 0.0             {E-lon(deg),Lat(deg),Alt(km)}",
+    "Center cylindric": "354.83, 77.29902, -1735.68      {E-lon(deg),Dxy(km),Dz(km)}",
+    "Center pole/equ": "MEAN_ME (high precision)        {East-longitude positive}",
+    "Center radii": "1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+    "Vis. interferer": "EARTH (R_eq= 6378.137) km       {source: DE441}",
+    "Rel. light bend": "Sun, EARTH                      {source: DE441}",
+    "Atmos refraction": "NO (AIRLESS)",
+    "Time format": "CAL",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13",
+    "Units conversion": "1 au= 149597870.700 km, c= 299792.458 km/s, 1 day= 86400.0 s"
+   }
+  },
+  {
+   "site": "moon_centre",
+   "target": "399",
+   "raw_file": "horizons_raw/moon_centre_to_earth_centre.txt",
+   "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27399%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27500%40301%27&TLIST=%272026-Dec-24+00%3A00%27+%272027-Apr-07+00%3A00%27+%272027-Aug-09+00%3A00%27+%272028-Jan-19+00%3A00%27&TIME_TYPE=%27UT%27&QUANTITIES=%2720%27&ANG_FORMAT=%27DEG%27&RANGE_UNITS=%27KM%27&CSV_FORMAT=%27YES%27",
+   "retrieved_utc": "2026-10-20T07:36:45+00:00",
+   "api_signature": {
+    "version": "1.2",
+    "source": "NASA/JPL Horizons API"
+   },
+   "header": {
+    "Target body name": "Earth (399)                     {source: DE441}",
+    "Center body name": "Moon (301)                      {source: DE441}",
+    "Center geodetic": "0.0, 0.0, -1737.4               {E-lon(deg),Lat(deg),Alt(km)}",
+    "Center cylindric": "0.0, 0.0, 0.0                   {E-lon(deg),Dxy(km),Dz(km)}",
+    "Center pole/equ": "MEAN_ME (high precision)        {East-longitude positive}",
+    "Center radii": "1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+    "Vis. interferer": "EARTH (R_eq= 6378.137) km       {source: DE441}",
+    "Rel. light bend": "Sun, EARTH                      {source: DE441}",
+    "Atmos refraction": "NO (AIRLESS)",
+    "Time format": "CAL",
+    "EOP file": "eop.261019.p270114",
+    "EOP coverage": "DATA-BASED 1962-JAN-20 TO 2026-OCT-19. PREDICTS-> 2027-JAN-13",
+    "Units conversion": "1 au= 149597870.700 km, c= 299792.458 km/s, 1 day= 86400.0 s"
+   }
+  },
+  {
+   "site": "geocentre",
+   "target": "301",
+   "raw_file": "horizons_raw/moon_phase_libration_geocentric.txt",
+   "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27301%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27500%40399%27&TLIST=%272026-Dec-24+00%3A00%27+%272027-Apr-07+00%3A00%27+%272027-Aug-09+00%3A00%27+%272028-Jan-19+00%3A00%27&TIME_TYPE=%27UT%27&QUANTITIES=%2710%2C14%27&ANG_FORMAT=%27DEG%27&CSV_FORMAT=%27YES%27",
+   "retrieved_utc": "2026-10-20T07:37:34+00:00",
+   "api_signature": {
+    "version": "1.2",
+    "source": "NASA/JPL Horizons API"
+   },
+   "header": {}
+  }
+ ],
+ "moon_centre_to_earth_centre_km": [
+  {
+   "time_ut": "2026-Dec-24 00:00:00.000",
+   "range_km": 356777.8469
+  },
+  {
+   "time_ut": "2027-Apr-07 00:00:00.000",
+   "range_km": 383615.46395
+  },
+  {
+   "time_ut": "2027-Aug-09 00:00:00.000",
+   "range_km": 387212.6197
+  },
+  {
+   "time_ut": "2028-Jan-19 00:00:00.000",
+   "range_km": 379449.6372
+  }
+ ],
+ "values": [
+  {
+   "site": "apollo11",
+   "target": "sun",
+   "time_ut": "2026-Dec-24 00:00:00",
+   "az_deg": 265.418857339,
+   "el_deg": 66.678086063,
+   "range_km": 147498177.49,
+   "range_rate_km_s": -0.0842968
+  },
+  {
+   "site": "apollo11",
+   "target": "sun",
+   "time_ut": "2027-Apr-07 00:00:00",
+   "az_deg": 86.086615735,
+   "el_deg": -61.075961549,
+   "range_km": 149335100.76,
+   "range_rate_km_s": 0.5439214
+  },
+  {
+   "site": "apollo11",
+   "target": "sun",
+   "time_ut": "2027-Aug-09 00:00:00",
+   "az_deg": 90.304752853,
+   "el_deg": 13.553037942,
+   "range_km": 151668021.92,
+   "range_rate_km_s": 0.6455829
+  },
+  {
+   "site": "apollo11",
+   "target": "sun",
+   "time_ut": "2028-Jan-19 00:00:00",
+   "az_deg": 270.148959198,
+   "el_deg": -18.832162111,
+   "range_km": 147168356.34,
+   "range_rate_km_s": -0.8098225
+  },
+  {
+   "site": "apollo11",
+   "target": "earth",
+   "time_ut": "2026-Dec-24 00:00:00",
+   "az_deg": 256.121389475,
+   "el_deg": 65.15971107,
+   "range_km": 355200.36919,
+   "range_rate_km_s": -0.0085999
+  },
+  {
+   "site": "apollo11",
+   "target": "earth",
+   "time_ut": "2027-Apr-07 00:00:00",
+   "az_deg": 257.291567494,
+   "el_deg": 60.388804016,
+   "range_km": 382104.09341,
+   "range_rate_km_s": -0.0451319
+  },
+  {
+   "site": "apollo11",
+   "target": "earth",
+   "time_ut": "2027-Aug-09 00:00:00",
+   "az_deg": 291.675995415,
+   "el_deg": 72.96655107,
+   "range_km": 385551.26262,
+   "range_rate_km_s": 0.0654429
+  },
+  {
+   "site": "apollo11",
+   "target": "earth",
+   "time_ut": "2028-Jan-19 00:00:00",
+   "az_deg": 290.773592643,
+   "el_deg": 72.257340688,
+   "range_km": 377794.3402,
+   "range_rate_km_s": 0.0590683
+  },
+  {
+   "site": "malapert-massif",
+   "target": "sun",
+   "time_ut": "2026-Dec-24 00:00:00",
+   "az_deg": 1.902505411,
+   "el_deg": 5.209726463,
+   "range_km": 147499615.25,
+   "range_rate_km_s": -0.085976
+  },
+  {
+   "site": "malapert-massif",
+   "target": "sun",
+   "time_ut": "2027-Apr-07 00:00:00",
+   "az_deg": 176.269344122,
+   "el_deg": -5.313371386,
+   "range_km": 149333740.88,
+   "range_rate_km_s": 0.5459748
+  },
+  {
+   "site": "malapert-massif",
+   "target": "sun",
+   "time_ut": "2027-Aug-09 00:00:00",
+   "az_deg": 101.568550713,
+   "el_deg": -0.669518681,
+   "range_km": 151668449.22,
+   "range_rate_km_s": 0.6494486
+  },
+  {
+   "site": "malapert-massif",
+   "target": "sun",
+   "time_ut": "2028-Jan-19 00:00:00",
+   "az_deg": 276.290458034,
+   "el_deg": 0.51732125,
+   "range_km": 147167779.99,
+   "range_rate_km_s": -0.8135527
+  },
+  {
+   "site": "malapert-massif",
+   "target": "earth",
+   "time_ut": "2026-Dec-24 00:00:00",
+   "az_deg": 1.094576499,
+   "el_deg": 8.885654804,
+   "range_km": 356505.35726,
+   "range_rate_km_s": -0.0078622
+  },
+  {
+   "site": "malapert-massif",
+   "target": "earth",
+   "time_ut": "2027-Apr-07 00:00:00",
+   "az_deg": 356.263882514,
+   "el_deg": 9.380765006,
+   "range_km": 383328.45012,
+   "range_rate_km_s": -0.0454151
+  },
+  {
+   "site": "malapert-massif",
+   "target": "earth",
+   "time_ut": "2027-Aug-09 00:00:00",
+   "az_deg": 9.246053135,
+   "el_deg": -3.122333637,
+   "range_km": 387303.37372,
+   "range_rate_km_s": 0.0654041
+  },
+  {
+   "site": "malapert-massif",
+   "target": "earth",
+   "time_ut": "2028-Jan-19 00:00:00",
+   "az_deg": 8.491352485,
+   "el_deg": -3.110120751,
+   "range_km": 379539.92642,
+   "range_rate_km_s": 0.0591195
+  },
+  {
+   "site": "haworth",
+   "target": "sun",
+   "time_ut": "2026-Dec-24 00:00:00",
+   "az_deg": 5.405371908,
+   "el_deg": 3.730616423,
+   "range_km": 147499659.96,
+   "range_rate_km_s": -0.085984
+  },
+  {
+   "site": "haworth",
+   "target": "sun",
+   "time_ut": "2027-Apr-07 00:00:00",
+   "az_deg": 179.784001281,
+   "el_deg": -3.851831877,
+   "range_km": 149333696.71,
+   "range_rate_km_s": 0.5459936
+  },
+  {
+   "site": "haworth",
+   "target": "sun",
+   "time_ut": "2027-Aug-09 00:00:00",
+   "az_deg": 105.078474413,
+   "el_deg": -0.526044683,
+   "range_km": 151668444.86,
+   "range_rate_km_s": 0.6495589
+  },
+  {
+   "site": "haworth",
+   "target": "sun",
+   "time_ut": "2028-Jan-19 00:00:00",
+   "az_deg": 279.798314452,
+   "el_deg": 0.510265063,
+   "range_km": 147167780.21,
+   "range_rate_km_s": -0.8136629
+  },
+  {
+   "site": "haworth",
+   "target": "earth",
+   "time_ut": "2026-Dec-24 00:00:00",
+   "az_deg": 4.607951416,
+   "el_deg": 7.407162608,
+   "range_km": 356549.70618,
+   "range_rate_km_s": -0.0078591
+  },
+  {
+   "site": "haworth",
+   "target": "earth",
+   "time_ut": "2027-Apr-07 00:00:00",
+   "az_deg": 359.79774204,
+   "el_deg": 7.918209794,
+   "range_km": 383372.26346,
+   "range_rate_km_s": -0.045416
+  },
+  {
+   "site": "haworth",
+   "target": "earth",
+   "time_ut": "2027-Aug-09 00:00:00",
+   "az_deg": 12.745849354,
+   "el_deg": -4.602475758,
+   "range_km": 387348.16255,
+   "range_rate_km_s": 0.0654042
+  },
+  {
+   "site": "haworth",
+   "target": "earth",
+   "time_ut": "2028-Jan-19 00:00:00",
+   "az_deg": 11.989899113,
+   "el_deg": -4.591225441,
+   "range_km": 379584.75415,
+   "range_rate_km_s": 0.0591193
+  }
+ ],
+ "accuracy_expectations": {
+  "reference_precision": "Horizons prints ~1e-9 deg; this is output resolution, not accuracy. Horizons does not state a per-value uncertainty; treat this as the reference truth for the validation and note that the DE441 accuracy is not quantified here (see JPL planetary ephemeris documentation).",
+  "suggested_tolerances_for_own_code_vs_this_fixture": "ILLUSTRATIVE, NOT VERIFIED starting point: 0.1 deg on az/el for a low-precision own implementation; tighten once the own implementation is characterised (the residual depends on which Moon orientation model, which Sun/Moon/Earth ephemeris, and whether aberration/light time are applied). Compare residuals against this fixture rather than assuming them. Azimuth is ill-conditioned near zenith and for sites within ~1 deg of a pole: compare direction vectors or angular separation there.",
+  "not_covered": "Terrain/horizon masking (polar sites), Earth's and Sun's finite angular size (limb), Earth atmosphere effects at the DSN station, and Horizons' own interpolation limits"
+ }
+}

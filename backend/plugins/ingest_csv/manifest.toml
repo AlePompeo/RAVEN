@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "ingest-csv"
+kind = "data_source"
+version = "0.1.0"
+entry = "python:backend.plugins.ingest_csv.plugin:CsvIngestSource"
+license = "Apache-2.0"
+terms_url = "docs/pipeline.md"
+timeout_s = 5

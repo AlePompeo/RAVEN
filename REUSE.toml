@@ -1,0 +1,28 @@
+version = 1
+
+# File di dati/configurazione/documentazione che non possono (o non conviene) portare un
+# header SPDX inline: coperti da glob.
+[[annotations]]
+path = ["LICENSE", "docs/**", "**.toml", "**.json", ".*", ".importlinter", "Makefile"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Hackathon Base contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+# Dati e metadati senza sintassi per commenti o generati: CSV di fixture (un commento
+# corromperebbe l'intestazione), lockfile, markdown, .gitignore in qualunque sottocartella.
+[[annotations]]
+path = ["**.csv", "**.lock", "**.md", "**/.gitignore", "**/.gitattributes", "**/.gitkeep"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Hackathon Base contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+# __init__.py vuoti dei pacchetti di test: nessun contenuto da proteggere, header superfluo.
+[[annotations]]
+path = [
+    "tests/backend/ml/__init__.py",
+    "tests/backend/pipeline/__init__.py",
+    "tests/backend/plugins/__init__.py",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Hackathon Base contributors"
+SPDX-License-Identifier = "Apache-2.0"

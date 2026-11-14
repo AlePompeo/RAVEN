@@ -1,0 +1,6 @@
+id = "fspl-c"
+kind = "simulation"
+version = "0.1.0"
+entry = "exec:bin/fspl"
+license = "Apache-2.0"
+timeout_s = 5

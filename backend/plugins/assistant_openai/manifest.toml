@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+id = "assistant-openai-compat"
+kind = "llm"
+version = "0.1.0"
+entry = "python:backend.plugins.assistant_openai.plugin:OpenAICompatProvider"
+license = "Apache-2.0"
+# Le condizioni d'uso sono quelle dell'endpoint scelto dall'operatore (vedi docs/assistant.md).
+terms_url = "docs/assistant.md"
+timeout_s = 60
+description = "Provider LLM generico compatibile OpenAI (Ollama in locale o endpoint ospitato). Configurazione solo da env ASSISTANT_LLM_*."

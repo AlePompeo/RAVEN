@@ -1,0 +1,737 @@
+{
+  "schema": {
+    "fields": [
+      "id",
+      "name",
+      "lat_deg",
+      "lon_deg_east",
+      "kind",
+      "source{url,accessed,note}",
+      "verified",
+      "coordinate_basis"
+    ],
+    "frame": "Moon mean-Earth/polar-axis (ME/PA) body-fixed frame; latitude planetocentric (Moon treated as sphere R=1737.4 km, as in JPL Horizons); longitude east-positive in -180..180. Altitude not specified (use 0 over the 1737.4 km sphere unless a DEM is added).",
+    "verified_meaning": "true = coordinates copied from a retrieved primary source (NSSDCA/LROC/IAU Gazetteer). It does NOT mean they are NASA landing-region centres: see coordinate_basis.",
+    "coordinate_basis_values": {
+      "point": "published point coordinate of the site",
+      "feature_centre": "IAU Gazetteer centre of the named feature; the NASA Artemis III region is on/near it but its centre is not published by NASA"
+    },
+    "accessed": "2026-10-20"
+  },
+  "sites": [
+    {
+      "id": "apollo11",
+      "name": "Apollo 11 (Lunar Module, Statio Tranquillitatis)",
+      "lat_deg": 0.67416,
+      "lon_deg_east": 23.47314,
+      "kind": "landing_reference_equatorial_nearside",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+        "accessed": "2026-10-20",
+        "note": "Wagner et al. 2017 (Icarus 283, 92-103) via NSSDCA, page updated 2017-03-06; planetocentric Mean Earth/Polar Axis, DE421. Matches frontend/src/viewports/bodies/registry.ts. IAU Gazetteer Statio Tranquillitatis (feature 5684) rounds to 0.67, 23.47."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "apollo17",
+      "name": "Apollo 17 (Lunar Module, Taurus-Littrow)",
+      "lat_deg": 20.1911,
+      "lon_deg_east": 30.7723,
+      "kind": "landing_reference_nearside_highland_valley",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+        "accessed": "2026-10-20",
+        "note": "Same source and frame as Apollo 11. Matches frontend registry.ts."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "malapert-massif",
+      "name": "Malapert Massif (Artemis III candidate region; Mons Malapert)",
+      "lat_deg": -85.98,
+      "lon_deg_east": -1.67,
+      "kind": "polar_massif_artemis_candidate",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/16338",
+        "accessed": "2026-10-20",
+        "note": "IAU Gazetteer centre of Mons Malapert (feature 16338), not a NASA region centre. NASA lists the region by name only (no coordinates). LROC page https://lroc.im-ldi.com/images/1294 (2023-03-14) says '(86S, 0E)' is the heart of the Artemis 3 region, consistent within ~2 deg of longitude. Gazetteer coordinate-system field: 'Planetographic, +East, -180-180'."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "haworth",
+      "name": "Haworth (Artemis III candidate region; crater)",
+      "lat_deg": -87.45,
+      "lon_deg_east": -5.17,
+      "kind": "polar_crater_rim_artemis_candidate",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/14502",
+        "accessed": "2026-10-20",
+        "note": "IAU Gazetteer centre of Haworth crater (51.42 km diameter), feature 14502. NASA names the region but publishes no coordinates; actual landing sites would be on/near the rim, offset from this centre."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "mons-mouton",
+      "name": "Mons Mouton (Artemis III candidate region)",
+      "lat_deg": -84.6,
+      "lon_deg_east": 31.0,
+      "kind": "polar_massif_artemis_candidate",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/16070",
+        "accessed": "2026-10-20",
+        "note": "IAU Gazetteer centre of Mons Mouton (feature 16070, 130 km extent, so region offset may be tens of km). LROC https://lroc.im-ldi.com/images/1401 (2025-02-26) gives IM-2 intended landing site -84.78, 29.13E, stated to be in the central portion of an Artemis III candidate region."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "nobile-rim",
+      "name": "Nobile Rim 1/2 (Artemis III candidate regions; Nobile crater)",
+      "lat_deg": -85.28,
+      "lon_deg_east": 53.27,
+      "kind": "polar_crater_rim_artemis_candidate",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/4321",
+        "accessed": "2026-10-20",
+        "note": "IAU Gazetteer centre of Nobile crater (79.27 km diameter), feature 4321. Nobile Rim 1 and 2 are on the rim, so true region centres are up to ~40 km from this point; NASA gives no coordinates."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "de-gerlache",
+      "name": "de Gerlache (Artemis III candidate 'de Gerlache Rim 2'; crater)",
+      "lat_deg": -88.48,
+      "lon_deg_east": -88.34,
+      "kind": "polar_crater_rim_artemis_candidate",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/1439",
+        "accessed": "2026-10-20",
+        "note": "IAU Gazetteer centre of de Gerlache crater (32.71 km), feature 1439. NASA names region 'de Gerlache Rim 2' only; rim offset up to ~16 km from centre."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "shackleton",
+      "name": "Shackleton (2022 candidate 'Peak near Shackleton'; crater)",
+      "lat_deg": -89.67,
+      "lon_deg_east": 129.78,
+      "kind": "polar_crater_near_permanent_light",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/5450",
+        "accessed": "2026-10-20",
+        "note": "IAU Gazetteer centre of Shackleton crater (feature 5450). 'Peak near Shackleton' was in NASA's 2022 list of 13 but not in the 2024 list of nine. Included as a near-pole extreme-geometry case. At |lat|>89.6 deg longitude is nearly degenerate."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "apollo12",
+      "name": "Apollo 12 (Lunar Module, Oceanus Procellarum)",
+      "lat_deg": -3.0128,
+      "lon_deg_east": -23.4219,
+      "kind": "landing_reference_nearside",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+        "accessed": "2026-11-10",
+        "note": "Lunar Module coordinates of the NSSDCA page (Wagner et al. 2017, Icarus 283, 92-103, from LRO images); planetocentric Mean Earth/Polar Axis, DE421. No numeric uncertainty is given by the page. Read 2026-11-10."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "apollo14",
+      "name": "Apollo 14 (Lunar Module, Fra Mauro)",
+      "lat_deg": -3.64589,
+      "lon_deg_east": -17.47194,
+      "kind": "landing_reference_nearside",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+        "accessed": "2026-11-10",
+        "note": "Lunar Module coordinates of the NSSDCA page (Wagner et al. 2017, Icarus 283, 92-103, from LRO images); planetocentric Mean Earth/Polar Axis, DE421. No numeric uncertainty is given by the page. Read 2026-11-10."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "apollo15",
+      "name": "Apollo 15 (Lunar Module, Hadley-Apennine)",
+      "lat_deg": 26.13239,
+      "lon_deg_east": 3.6333,
+      "kind": "landing_reference_nearside",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+        "accessed": "2026-11-10",
+        "note": "Lunar Module coordinates of the NSSDCA page (Wagner et al. 2017, Icarus 283, 92-103, from LRO images); planetocentric Mean Earth/Polar Axis, DE421. No numeric uncertainty is given by the page. Read 2026-11-10."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "apollo16",
+      "name": "Apollo 16 (Lunar Module, Descartes)",
+      "lat_deg": -8.9734,
+      "lon_deg_east": 15.5011,
+      "kind": "landing_reference_nearside",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html",
+        "accessed": "2026-11-10",
+        "note": "Lunar Module coordinates of the NSSDCA page (Wagner et al. 2017, Icarus 283, 92-103, from LRO images); planetocentric Mean Earth/Polar Axis, DE421. No numeric uncertainty is given by the page. Read 2026-11-10."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "change4",
+      "name": "Chang'e 4 (Statio Tianhe, far side)",
+      "lat_deg": -45.45,
+      "lon_deg_east": 177.6,
+      "kind": "landing_reference_other_programme",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/15781",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 15781, read 2026-11-10: centre of the named station, planetographic east-positive (equal to planetocentric on the sphere used here). Not a landing-error ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "chandrayaan3",
+      "name": "Chandrayaan-3 (Statio Shiv Shakti)",
+      "lat_deg": -69.37,
+      "lon_deg_east": 32.32,
+      "kind": "landing_reference_other_programme",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/16272",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 16272, read 2026-11-10: centre of the named station, planetographic east-positive (equal to planetocentric on the sphere used here). Not a landing-error ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "amundsen",
+      "name": "Amundsen (crater)",
+      "lat_deg": -84.44,
+      "lon_deg_east": 83.07,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/247",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 247, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "cabeus",
+      "name": "Cabeus (crater)",
+      "lat_deg": -85.33,
+      "lon_deg_east": -42.13,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/953",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 953, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "bay",
+      "name": "Bay (crater)",
+      "lat_deg": -88.76,
+      "lon_deg_east": -36.85,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/16417",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 16417, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "brill",
+      "name": "Brill (crater)",
+      "lat_deg": -88.27,
+      "lon_deg_east": -93.41,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/16195",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 16195, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "burbidge",
+      "name": "Burbidge (crater)",
+      "lat_deg": -86.35,
+      "lon_deg_east": 48.6,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/16250",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 16250, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "cartwright",
+      "name": "Cartwright (crater)",
+      "lat_deg": -87.65,
+      "lon_deg_east": -46.95,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/16416",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 16416, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "boguslawsky",
+      "name": "Boguslawsky (crater)",
+      "lat_deg": -72.9,
+      "lon_deg_east": 43.26,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/796",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 796, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "boussingault",
+      "name": "Boussingault (crater)",
+      "lat_deg": -70.21,
+      "lon_deg_east": 53.73,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/844",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 844, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "casatus",
+      "name": "Casatus (crater)",
+      "lat_deg": -72.7,
+      "lon_deg_east": -30.75,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/1040",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 1040, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "boltzmann",
+      "name": "Boltzmann (crater)",
+      "lat_deg": -74.82,
+      "lon_deg_east": -90.41,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/805",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 805, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "bailly",
+      "name": "Bailly (crater)",
+      "lat_deg": -66.82,
+      "lon_deg_east": -68.9,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/561",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 561, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "brashear",
+      "name": "Brashear (crater)",
+      "lat_deg": -73.54,
+      "lon_deg_east": -171.57,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/864",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 864, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "antoniadi",
+      "name": "Antoniadi (crater)",
+      "lat_deg": -69.3,
+      "lon_deg_east": -173.06,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/296",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 296, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "alekhin",
+      "name": "Alekhin (crater)",
+      "lat_deg": -67.94,
+      "lon_deg_east": -131.85,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/174",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 174, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "ashbrook",
+      "name": "Ashbrook (crater)",
+      "lat_deg": -81.1,
+      "lon_deg_east": -110.58,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/422",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 422, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "braude",
+      "name": "Braude (crater)",
+      "lat_deg": -81.82,
+      "lon_deg_east": 158.88,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/14564",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 14564, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "blancanus",
+      "name": "Blancanus (crater)",
+      "lat_deg": -63.77,
+      "lon_deg_east": -21.63,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/767",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 767, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "bettinus",
+      "name": "Bettinus (crater)",
+      "lat_deg": -63.4,
+      "lon_deg_east": -45.16,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/724",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 724, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "berlage",
+      "name": "Berlage (crater)",
+      "lat_deg": -63.04,
+      "lon_deg_east": -163.61,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/703",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 703, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "cabannes",
+      "name": "Cabannes (crater)",
+      "lat_deg": -61.24,
+      "lon_deg_east": -170.21,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/952",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 952, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "bellinsgauzen",
+      "name": "Bellinsgauzen (crater)",
+      "lat_deg": -60.72,
+      "lon_deg_east": -164.85,
+      "kind": "polar_crater_feature",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/674",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 674, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "change6",
+      "name": "Chang'e 6 (Statio Tianjiang, far side)",
+      "lat_deg": -41.63,
+      "lon_deg_east": -153.98,
+      "kind": "landing_reference_other_programme",
+      "source": {
+        "url": "https://planetarynames.wr.usgs.gov/Feature/16328",
+        "accessed": "2026-11-10",
+        "note": "IAU Gazetteer of Planetary Nomenclature (USGS), feature 16328, read 2026-11-10: centre of the named feature, planetographic east-positive (equal to planetocentric on the sphere used here). It is a feature centre, not a landing target or an ellipse."
+      },
+      "verified": true,
+      "coordinate_basis": "feature_centre"
+    },
+    {
+      "id": "luna9",
+      "name": "Luna 9 (soft landing, Oceanus Procellarum)",
+      "lat_deg": 7.13,
+      "lon_deg_east": -64.37,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Luna 9, 3 Feb 1966\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "surveyor1",
+      "name": "Surveyor 1 (soft landing)",
+      "lat_deg": -2.4745,
+      "lon_deg_east": -43.3398,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Surveyor 1, 2 Jun 1966\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "luna13",
+      "name": "Luna 13 (soft landing)",
+      "lat_deg": 18.87,
+      "lon_deg_east": -62.05,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Luna 13, 24 Dec 1966\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "surveyor3",
+      "name": "Surveyor 3 (soft landing)",
+      "lat_deg": -3.0162,
+      "lon_deg_east": -23.418,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Surveyor 3, 20 Apr 1967\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "surveyor5",
+      "name": "Surveyor 5 (soft landing, Mare Tranquillitatis)",
+      "lat_deg": 1.4551,
+      "lon_deg_east": 23.1943,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Surveyor 5, 11 Sep 1967\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "surveyor6",
+      "name": "Surveyor 6 (soft landing, Sinus Medii)",
+      "lat_deg": 0.4742,
+      "lon_deg_east": -1.4275,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Surveyor 6, 10 Nov 1967\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "surveyor7",
+      "name": "Surveyor 7 (soft landing, Tycho ejecta)",
+      "lat_deg": -40.9812,
+      "lon_deg_east": -11.5127,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Surveyor 7, 10 Jan 1968\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "luna16",
+      "name": "Luna 16 (soft landing, Mare Fecunditatis)",
+      "lat_deg": -0.5137,
+      "lon_deg_east": 56.3638,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Luna 16, 20 Sep 1970\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "luna17",
+      "name": "Luna 17 (soft landing, Lunokhod 1)",
+      "lat_deg": 38.23764,
+      "lon_deg_east": -35.00163,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Luna 17, 17 Nov 1970\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "luna20",
+      "name": "Luna 20 (soft landing)",
+      "lat_deg": 3.7863,
+      "lon_deg_east": 56.6242,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Luna 20, 21 Feb 1972\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "luna21",
+      "name": "Luna 21 (soft landing, Lunokhod 2)",
+      "lat_deg": 25.9994,
+      "lon_deg_east": 30.4076,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Luna 21, 15 Jan 1973\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "luna23",
+      "name": "Luna 23 (soft landing)",
+      "lat_deg": 12.6667,
+      "lon_deg_east": 62.1511,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Luna 23, 6 Nov 1974\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "luna24",
+      "name": "Luna 24 (soft landing, Mare Crisium)",
+      "lat_deg": 12.7142,
+      "lon_deg_east": 62.2129,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Luna 24, 18 Aug 1976\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "change3",
+      "name": "Chang'e 3 (soft landing, Mare Imbrium)",
+      "lat_deg": 44.1214,
+      "lon_deg_east": -19.5117,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Chang'e 3, 14 Dec 2013\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    },
+    {
+      "id": "change5",
+      "name": "Chang'e 5 (soft landing, Oceanus Procellarum)",
+      "lat_deg": 43.0576,
+      "lon_deg_east": -51.9161,
+      "kind": "landing_reference_robotic",
+      "source": {
+        "url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html",
+        "accessed": "2026-11-10",
+        "note": "NSSDCA table of lunar artifact landings and impacts, row \"Chang'e 5, 1 Dec 2020\"; Mean Earth/Polar Axis, DE421; West longitude written as negative east longitude. The table gives no numeric uncertainty."
+      },
+      "verified": true,
+      "coordinate_basis": "point"
+    }
+  ]
+}

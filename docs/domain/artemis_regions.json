@@ -1,0 +1,570 @@
+{
+ "meta": {
+  "note": "lat_deg/lon_deg_east are null on purpose: NASA does not publish region centres (2022 release: regions about 15x15 km, landing site about 100 m radius, within 6 deg of the pole; 2024 release: no sizes, no coordinates). derived_box_centre_* are the centre of the PUBLISHED GeoTIFF extent (header ModelTiepoint, 5 m pixel scale, raster size) converted with spherical R=1737.4 km polar stereographic, x=rho sin(lon), y=rho cos(lon) (convention of backend/domain/grazing/dem.lock.json). They locate the DEM tile, NOT the landing region, and must not be used as site coordinates.",
+  "dem_frame": "south polar stereographic X/Y metres, MOON_ME frame of DE421, pixel-registered (README of pgda LOLA_5mpp)",
+  "retrieved": "2026-11-05"
+ },
+ "regions": [
+  {
+   "name": "Faustini Rim A",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": false,
+   "dem5m_products": [
+    {
+     "id": "LM7",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM7/LM7_final_adj_5mpp_surf.tif",
+     "size_bytes": 64033675,
+     "width_px": 4000,
+     "height_px": 4000,
+     "x_min_m": 54000.0,
+     "x_max_m": 74000.0,
+     "y_min_m": -10000.0,
+     "y_max_m": 10000.0,
+     "derived_box_centre_lat_deg": -87.89,
+     "derived_box_centre_lon_deg_east": 90.0
+    }
+   ],
+   "product_mapping_note": "mapping from the project Tutorial only; the PGDA 78 page lists LM1-LM8 as 'Shackleton Rim B; Shoemaker Rims A-F; Faustini Rim A', which by order would give LM8: unverified",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Peak Near Shackleton",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": false,
+   "dem5m_products": [
+    {
+     "id": "Site07",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site07/Site07_final_adj_5mpp_surf.tif",
+     "size_bytes": 40980808,
+     "width_px": 3200,
+     "height_px": 3200,
+     "x_min_m": 22000.0,
+     "x_max_m": 38000.0,
+     "y_min_m": -28000.0,
+     "y_max_m": -12000.0,
+     "derived_box_centre_lat_deg": -88.81,
+     "derived_box_centre_lon_deg_east": 123.7
+    }
+   ],
+   "product_mapping_note": "PGDA name 'Peak near Shackleton'",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Connecting Ridge",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": false,
+   "dem5m_products": [
+    {
+     "id": "Site01",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_surf.tif",
+     "size_bytes": 40980810,
+     "width_px": 3200,
+     "height_px": 3200,
+     "x_min_m": -19000.0,
+     "x_max_m": -3000.0,
+     "y_min_m": -20000.0,
+     "y_max_m": -4000.0,
+     "derived_box_centre_lat_deg": -89.46,
+     "derived_box_centre_lon_deg_east": -137.5
+    }
+   ],
+   "product_mapping_note": "PGDA name 'Connecting ridge'",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Connecting Ridge Extension",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": false,
+   "dem5m_products": [
+    {
+     "id": "SL3",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/SL3/SL3_final_adj_5mpp_surf.tif",
+     "size_bytes": 64025611,
+     "width_px": 4000,
+     "height_px": 4000,
+     "x_min_m": -38700.0,
+     "x_max_m": -18700.0,
+     "y_min_m": -16100.0,
+     "y_max_m": 3900.0,
+     "derived_box_centre_lat_deg": -89.03,
+     "derived_box_centre_lon_deg_east": -102.0
+    }
+   ],
+   "product_mapping_note": "PGDA name 'Connecting ridge extension'",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "de Gerlache Rim 1",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": false,
+   "dem5m_products": [
+    {
+     "id": "Site11",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site11/Site11_final_adj_5mpp_surf.tif",
+     "size_bytes": 40980806,
+     "width_px": 3200,
+     "height_px": 3200,
+     "x_min_m": -45000.0,
+     "x_max_m": -29000.0,
+     "y_min_m": 7000.0,
+     "y_max_m": 23000.0,
+     "derived_box_centre_lat_deg": -88.68,
+     "derived_box_centre_lon_deg_east": -67.9
+    },
+    {
+     "id": "SL2",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/SL2/SL2_final_adj_5mpp_surf.tif",
+     "size_bytes": 64025605,
+     "width_px": 4000,
+     "height_px": 4000,
+     "x_min_m": -58500.0,
+     "x_max_m": -38500.0,
+     "y_min_m": 13000.0,
+     "y_max_m": 33000.0,
+     "derived_box_centre_lat_deg": -88.23,
+     "derived_box_centre_lon_deg_east": -64.6
+    }
+   ],
+   "product_mapping_note": "PGDA names both 'de Gerlache rim'; which is Rim 1 or Rim 2 is not stated: unverified",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "de Gerlache Rim 2",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; 2024 list https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": true,
+   "dem5m_products": [
+    {
+     "id": "Site11",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site11/Site11_final_adj_5mpp_surf.tif",
+     "size_bytes": 40980806,
+     "width_px": 3200,
+     "height_px": 3200,
+     "x_min_m": -45000.0,
+     "x_max_m": -29000.0,
+     "y_min_m": 7000.0,
+     "y_max_m": 23000.0,
+     "derived_box_centre_lat_deg": -88.68,
+     "derived_box_centre_lon_deg_east": -67.9
+    },
+    {
+     "id": "SL2",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/SL2/SL2_final_adj_5mpp_surf.tif",
+     "size_bytes": 64025605,
+     "width_px": 4000,
+     "height_px": 4000,
+     "x_min_m": -58500.0,
+     "x_max_m": -38500.0,
+     "y_min_m": 13000.0,
+     "y_max_m": 33000.0,
+     "derived_box_centre_lat_deg": -88.23,
+     "derived_box_centre_lon_deg_east": -64.6
+    }
+   ],
+   "product_mapping_note": "same ambiguity",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "de Gerlache-Kocher Massif",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": false,
+   "dem5m_products": [
+    {
+     "id": "Site42",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site42/Site42_final_adj_5mpp_surf.tif",
+     "size_bytes": 64025611,
+     "width_px": 4000,
+     "height_px": 4000,
+     "x_min_m": -123400.0,
+     "x_max_m": -103400.0,
+     "y_min_m": -66100.0,
+     "y_max_m": -46100.0,
+     "derived_box_centre_lat_deg": -85.83,
+     "derived_box_centre_lon_deg_east": -116.3
+    }
+   ],
+   "product_mapping_note": "PGDA name",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Haworth",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; 2024 list https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": true,
+   "dem5m_products": [
+    {
+     "id": "Haworth",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Haworth/Haworth_final_adj_5mpp_surf.tif",
+     "size_bytes": 142123767,
+     "width_px": 5960,
+     "height_px": 5960,
+     "x_min_m": -52900.0,
+     "x_max_m": -23100.0,
+     "y_min_m": 75600.0,
+     "y_max_m": 105400.0,
+     "derived_box_centre_lat_deg": -86.76,
+     "derived_box_centre_lon_deg_east": -22.8
+    }
+   ],
+   "product_mapping_note": "PGDA name",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Malapert Massif",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; 2024 list https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": true,
+   "dem5m_products": [
+    {
+     "id": "Site23",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site23/Site23_final_adj_5mpp_surf.tif",
+     "size_bytes": 70586804,
+     "width_px": 4200,
+     "height_px": 4200,
+     "x_min_m": -11000.0,
+     "x_max_m": 10000.0,
+     "y_min_m": 111000.0,
+     "y_max_m": 132000.0,
+     "derived_box_centre_lat_deg": -85.99,
+     "derived_box_centre_lon_deg_east": -0.2
+    }
+   ],
+   "product_mapping_note": "PGDA name",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Leibnitz Beta Plateau",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": false,
+   "dem5m_products": [
+    {
+     "id": "Site20",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site20/Site20_final_adj_5mpp_surf.tif",
+     "size_bytes": 40980802,
+     "width_px": 3200,
+     "height_px": 3200,
+     "x_min_m": 65000.0,
+     "x_max_m": 81000.0,
+     "y_min_m": 110000.0,
+     "y_max_m": 126000.0,
+     "derived_box_centre_lat_deg": -85.43,
+     "derived_box_centre_lon_deg_east": 31.7
+    },
+    {
+     "id": "Site20v2",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site20v2/Site20v2_final_adj_5mpp_surf.tif",
+     "size_bytes": 108192905,
+     "width_px": 5200,
+     "height_px": 5200,
+     "x_min_m": 60000.0,
+     "x_max_m": 86000.0,
+     "y_min_m": 105000.0,
+     "y_max_m": 131000.0,
+     "derived_box_centre_lat_deg": -85.43,
+     "derived_box_centre_lon_deg_east": 31.7
+    }
+   ],
+   "product_mapping_note": "PGDA name",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Nobile Rim 1",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; 2024 list https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": true,
+   "dem5m_products": [
+    {
+     "id": "Site06",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site06/Site06_final_adj_5mpp_surf.tif",
+     "size_bytes": 64025603,
+     "width_px": 4000,
+     "height_px": 4000,
+     "x_min_m": 74000.0,
+     "x_max_m": 94000.0,
+     "y_min_m": 100000.0,
+     "y_max_m": 120000.0,
+     "derived_box_centre_lat_deg": -85.44,
+     "derived_box_centre_lon_deg_east": 37.4
+    }
+   ],
+   "product_mapping_note": "PGDA name",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Nobile Rim 2",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; 2024 list https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": true,
+   "dem5m_products": [
+    {
+     "id": "DM2",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/DM2/DM2_final_adj_5mpp_surf.tif",
+     "size_bytes": 64025607,
+     "width_px": 4000,
+     "height_px": 4000,
+     "x_min_m": 147000.0,
+     "x_max_m": 167000.0,
+     "y_min_m": 85000.0,
+     "y_max_m": 105000.0,
+     "derived_box_centre_lat_deg": -83.95,
+     "derived_box_centre_lon_deg_east": 58.8
+    }
+   ],
+   "product_mapping_note": "PGDA name",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Amundsen Rim",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": true,
+   "in_2024_list_9": false,
+   "dem5m_products": [
+    {
+     "id": "DM1",
+     "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/DM1/DM1_final_adj_5mpp_surf.tif",
+     "size_bytes": 64033681,
+     "width_px": 4000,
+     "height_px": 4000,
+     "x_min_m": 154000.0,
+     "x_max_m": 174000.0,
+     "y_min_m": 51500.0,
+     "y_max_m": 71500.0,
+     "derived_box_centre_lat_deg": -84.23,
+     "derived_box_centre_lon_deg_east": 69.4
+    }
+   ],
+   "product_mapping_note": "PGDA name",
+   "dem_status": "dem5m_available"
+  },
+  {
+   "name": "Peak near Cabeus B",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; 2024 list https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": false,
+   "in_2024_list_9": true,
+   "dem5m_products": [],
+   "product_mapping_note": "no PGDA 78 product name matches (NPA is 'Cabeus exterior wall 1', a different name)",
+   "dem_status": "no_5m_dem_identified"
+  },
+  {
+   "name": "Mons Mouton Plateau",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; 2024 list https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": false,
+   "in_2024_list_9": true,
+   "dem5m_products": [],
+   "product_mapping_note": "no product identified",
+   "dem_status": "no_5m_dem_identified"
+  },
+  {
+   "name": "Mons Mouton",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; 2024 list https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": false,
+   "in_2024_list_9": true,
+   "dem5m_products": [],
+   "product_mapping_note": "no product identified",
+   "dem_status": "no_5m_dem_identified"
+  },
+  {
+   "name": "Slater Plain",
+   "lat_deg": null,
+   "lon_deg_east": null,
+   "source": "NASA names only: 2022 list https://www.nasa.gov/press-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/ ; 2024 list https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ ; no coordinates in either release",
+   "frame": "not applicable (no coordinate published)",
+   "status": "not_published",
+   "in_2022_list_13": false,
+   "in_2024_list_9": true,
+   "dem5m_products": [],
+   "product_mapping_note": "no product identified",
+   "dem_status": "no_5m_dem_identified"
+  }
+ ],
+ "other_5m_products_not_mapped_to_a_nasa_region": [
+  {
+   "id": "Site04",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site04/Site04_final_adj_5mpp_surf.tif",
+   "size_bytes": 40980806,
+   "x_min_m": -9000.0,
+   "x_max_m": 7000.0,
+   "y_min_m": -15000.0,
+   "y_max_m": 1000.0
+  },
+  {
+   "id": "Shoemaker",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Shoemaker/Shoemaker_final_adj_5mpp_surf.tif",
+   "size_bytes": 64025605,
+   "x_min_m": 66000.0,
+   "x_max_m": 86000.0,
+   "y_min_m": 29000.0,
+   "y_max_m": 49000.0
+  },
+  {
+   "id": "NPA",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/NPA/NPA_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033687,
+   "x_min_m": -98500.0,
+   "x_max_m": -78500.0,
+   "y_min_m": 19500.0,
+   "y_max_m": 39500.0
+  },
+  {
+   "id": "NPB",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/NPB/NPB_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033687,
+   "x_min_m": 175000.0,
+   "x_max_m": 195000.0,
+   "y_min_m": -8500.0,
+   "y_max_m": 11500.0
+  },
+  {
+   "id": "NPC",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/NPC/NPC_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033691,
+   "x_min_m": 122500.0,
+   "x_max_m": 142500.0,
+   "y_min_m": -109500.0,
+   "y_max_m": -89500.0
+  },
+  {
+   "id": "NPD",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/NPD/NPD_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033687,
+   "x_min_m": 13000.0,
+   "x_max_m": 33000.0,
+   "y_min_m": 146000.0,
+   "y_max_m": 166000.0
+  },
+  {
+   "id": "LM1",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM1/LM1_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033673,
+   "x_min_m": 2000.0,
+   "x_max_m": 22000.0,
+   "y_min_m": -2000.0,
+   "y_max_m": 18000.0
+  },
+  {
+   "id": "LM2",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM2/LM2_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033675,
+   "x_min_m": 2000.0,
+   "x_max_m": 22000.0,
+   "y_min_m": 47000.0,
+   "y_max_m": 67000.0
+  },
+  {
+   "id": "LM3",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM3/LM3_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033679,
+   "x_min_m": 4000.0,
+   "x_max_m": 24000.0,
+   "y_min_m": 37000.0,
+   "y_max_m": 57000.0
+  },
+  {
+   "id": "LM4",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM4/LM4_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033675,
+   "x_min_m": 9000.0,
+   "x_max_m": 29000.0,
+   "y_min_m": 15000.0,
+   "y_max_m": 35000.0
+  },
+  {
+   "id": "LM5",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM5/LM5_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033679,
+   "x_min_m": 30000.0,
+   "x_max_m": 50000.0,
+   "y_min_m": 1000.0,
+   "y_max_m": 21000.0
+  },
+  {
+   "id": "LM6",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM6/LM6_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033677,
+   "x_min_m": 49000.0,
+   "x_max_m": 69000.0,
+   "y_min_m": 10000.0,
+   "y_max_m": 30000.0
+  },
+  {
+   "id": "LM8",
+   "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/LM8/LM8_final_adj_5mpp_surf.tif",
+   "size_bytes": 64033679,
+   "x_min_m": 60000.0,
+   "x_max_m": 80000.0,
+   "y_min_m": 30000.0,
+   "y_max_m": 50000.0
+  }
+ ]
+}
