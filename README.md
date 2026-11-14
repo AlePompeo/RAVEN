@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # 🌑 RAVEN — Lunar Landing Site Navigator
-### *Rapid Assessment & Visual Exploration of Lunar Navigation*
+### *Radio Analysis, Visibility, Energy and Networks*
 
 [![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-2026%20Challenge-0B3D91?style=for-the-badge&logo=nasa&logoColor=white)](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg?style=for-the-badge)](LICENSE)
@@ -61,8 +61,8 @@ flowchart TB
             S7["S7: Pareto Optimization, Usable Hours & Site Ranking"]
         end
 
-        subgraph SI["🧠 RAVEN SI (Synthetic Intelligence)"]
-            LocalLLM["llama.cpp Engine (IBM Granite 350M / 1B Q4_K_M)"]
+        subgraph SI["🧠 RAVEN SI (Super Intelligence)"]
+            LocalLLM["llama.cpp Engine (IBM Granite 1B Q4_K_M / 3B)"]
             RAG["BM25F Citation-Grounded Knowledge RAG"]
             Intent["Natural Language Mission Intent Parser"]
             Verdict["Autonomous Report Verdict Synthesizer"]
@@ -113,9 +113,9 @@ The mathematical backbone of RAVEN executes an uncompromised 8-stage physical pi
 * **Stage S6 — Deep Space Network (DSN) Visibility:** Geometric tracking from Earth ground complexes (Goldstone, Madrid, Canberra) above standard $6^\circ$ elevation operational masks.
 * **Stage S7 — Operational Synthesis:** Algorithmic calculation of continuous operational mission windows, uninterrupted useful hours, and multi-criteria site ranking.
 
-### 3. 🧠 RAVEN SI (Synthetic Intelligence & Local Learning Assistant)
-* **100% Offline & Zero-Token Cost:** Driven by `llama.cpp` hosting optimized quantized Small Language Models (SLMs) such as **IBM Granite 350M / 1B Q4_K_M** directly on `127.0.0.1`. No external API keys or cloud tokens are required, and no private mission data leaves the host.
-* **Lazy Daemon Management:** Automatically started on demand and unloads from system RAM after 5 minutes of inactivity, keeping steady-state memory below 2–3 GB.
+### 3. 🧠 RAVEN SI (Super Intelligence & Local Learning Assistant)
+* **100% Offline & Zero-Token Cost:** Driven by `llama.cpp` hosting optimized quantized Small Language Models (SLMs) such as **IBM Granite 1B Q4_K_M / 3B** directly on `127.0.0.1`. No external API keys or cloud tokens are required, and no private mission data leaves the host.
+* **Lazy Daemon Management:** Automatically started on demand and unloads from system RAM after 5 minutes of inactivity, keeping steady-state memory below 4 GB.
 * **BM25F Citation-Grounded RAG:** Answers queries by grounding responses strictly in verified repository scientific documentation. Every answer provides traceable references, eliminating LLM hallucinations.
 * **Natural Language Intent Extraction:** Allows planners to input mission profiles in natural language (e.g. *"I need a site with at least 100 continuous hours of Earth communication between March and May 2027"*), which RAVEN SI translates into active filter parameters.
 * **Automated Executive PDF Verdict:** Automatically drafts a comparative scientific conclusion included at the end of the downloadable mission PDF dossier.
@@ -125,6 +125,25 @@ The mathematical backbone of RAVEN executes an uncompromised 8-stage physical pi
 * **Sensor Fusion & Attitude Estimation:** Integrates Extended Kalman Filtering (EKF) and Madgwick AHRS estimators (via `imufusion`) to model lander orientation and directional antenna gimbal tracking.
 * **Multi-Objective Pareto Frontiers:** Computes optimal trade-offs between conflicting mission requirements (e.g. maximizing solar power vs. maximizing Earth contact time).
 * **Safe ML Governance:** Incorporates human-in-the-loop promotion gates; models cannot alter active production logic without Passing explicit validation test suites.
+
+
+## 🌌 Sites
+The catalogue has **51 entries**:
+
+- **27 south-polar features**, five of them tagged as Artemis III candidate features (rims and massifs);
+- **24 historical landing sites** (Apollo, Luna, Surveyor, Chang'e, Chandrayaan-3) used as reference points;
+- plus **custom coordinates**: terrain is fetched on demand after a size estimate and confirmation.
+
+
+## 💡 Other features
+
+- **Compare / Mission Planner:** side-by-side A-versus-B scenarios, 7-day default window, N-site ranking in Compare.
+- **Site Finder:** automatic search of the polar region with a Gaussian-process surrogate and active learning. The surrogate only chooses where to look; every proposed site is re-evaluated by the full engine, and a Pareto front is shown.
+- **RAVEN SI (assistant):** answers grounded in this repository's documentation (BM25F retrieval, with sources). It works with no model at all (extractive mode). Optionally it uses a local `llama.cpp` model on loopback, a local Ollama, or a cloud provider **only if the operator configures one**. Requests to "find the best sites" open the Site Finder (rule-based routing).
+- **Report:** printable comparison report with formulas, assumptions and the verdict. Server-side PDF needs the optional `pdf` extra (WeasyPrint and system Pango).
+- **Learning and Advanced modes**, English and Italian.
+- **Rendering:** Three.js WebGL with a pure Canvas 2D fallback, tested without WebGL.
+- **Accessibility:** automated axe-core checks (WCAG 2.2 AA tags) on every page in light and dark themes, plus keyboard navigation tests. Automated checks cover only part of WCAG.
 
 ---
 
@@ -156,7 +175,7 @@ timeline
 * **Phase 1 — Core Baseline (Current Release):**
   - Complete 8-stage physical pipeline with verified astronomical ephemerides (JPL DE440) and LOLA topography.
   - Interactive Svelte 5 frontend with WebGL/Canvas2D dual renderers.
-  - Local offline Synthetic Intelligence (`llama.cpp` + Granite SLM) and automated PDF reporting.
+  - Local offline Super Intelligence (`llama.cpp` + Granite SLM) and automated PDF reporting.
 * **Phase 2 — Multi-Hop Relays & Lunar Constellations:**
   - Support for orbital communication relays (**LunaNet** architecture and **ESA Moonlight** constellation) when direct-to-Earth line of sight is obstructed.
   - Sub-meter microtopographic hazard ingestion for landing precision.
@@ -165,13 +184,13 @@ timeline
   - Multi-variable cost-function optimization combining slope slip risk, solar recharge windows, and RF tethering.
 * **Phase 4 — Flight Hardware In-The-Loop (HIL) & Real Telemetry:**
   - Native integration with CCSDS space telecommand and telemetry packet streams.
-  - Embedded micro-controller simulation (FreeRTOS / ESP32 HAL) for testing lander guidance, navigation, and control (GNC).
+  - Embedded micro-controller simulation (ESP32 HAL) for testing lander guidance, navigation, and control (GNC).
 
 ---
 
 ## 💰 Economic Viability & Environmental Sustainability
 
-* **Zero Cloud Expenditure ($0/mo SaaS Footprint):** By architecting RAVEN with lightweight, quantized local models (Granite 350M/1B) and an in-process FastAPI engine, the platform requires no recurring cloud API subscriptions, no external token billing, and no costly remote server clusters.
+* **Zero Cloud Expenditure ($0/mo SaaS Footprint):** By architecting RAVEN with lightweight, quantized local models (Granite 1B / 3B) and an in-process FastAPI engine, the platform requires no recurring cloud API subscriptions, no external token billing, and no costly remote server clusters.
 * **Green Computing & Low-Power Hardware:** Designed to run comfortably on standard commercial off-the-shelf (COTS) consumer laptops and edge devices with $\le 4$ CPU cores and $\le 4$ GB of available RAM. Automatic process unloading ensures zero passive energy waste.
 * **Mission De-risking for CLPS & Explorers:** Pre-Phase A and Phase A lunar mission design cycles typically cost hundreds of thousands of dollars in engineering person-hours. RAVEN compresses site feasibility trade-offs from weeks into minutes, providing immediate scientific feedback and preventing costly late-stage mission redesigns.
 
@@ -185,8 +204,8 @@ timeline
 
 | Contributor | Focus Area | Role & Background | Links |
 |:---:|:---:|:---:|:---:|
-| **Alessio Pompeo** | *Electronics, Telecommunications & Power* | RF Link Budget, Topographic Diffraction, Power & Battery Modeling, System Verification | [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com) [![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/AlePompeo) |
-| **Team Collaborator** | *Informatics, AI & Space Robotics* | Ephemeris Integration, Backend & Frontend Architecture, 3D Rendering, Machine Learning | [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com) [![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com) |
+| **Chiara Fazi** | *Electronics, Telecommunications & Power* | RF Link Budget, Topographic Diffraction, Power & Battery Modeling, System Verification and Mission Planning | [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/chiara-fazi) [![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/Kiraa252) |
+| **Alessio Pompeo** | *Embedded Software Engineer, Embodied AI, Space, Satellites, Robotics, Autonomous Systems, GNC and Guidance, System Engineering, V&V * | Ephemeris Integration, Backend & Frontend Architecture, 3D Rendering, Machine Learning* | [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/alessio-pompeo-it) [![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/AlePompeo) |
 
 </div>
 
@@ -252,12 +271,33 @@ cd frontend && npm run build
 
 ## 📜 Scientific References & Acknowledgments
 
-* **Planetary Ephemerides:** NASA NAIF / JPL DE440 Solar System Planetary Ephemeris.
-* **Topography Data:** NASA Planetary Data System (PDS) Lunar Reconnaissance Orbiter (LRO) Lunar Orbiter Laser Altimeter (LOLA) Science Team.
-* **Diffraction Standards:** International Telecommunication Union (ITU-R) Recommendation P.526-9 *"Propagation by diffraction"*.
-* **Ground Stations:** NASA Deep Space Network (DSN) Telecommunications Link Design Handbook (810-005).
-* **Star Mapping:** NASA Scientific Visualization Studio (SVS) Deep Star Maps 2020.
-* **Visual Imagery:** NASA Apollo 8 AS08-14-2383 *"Earthrise"*.
+### 🪐 Ephemerides & Orbits
+- **NASA NAIF / JPL DE440 Solar System Planetary Ephemeris** — [DOI: 10.3847/1538-3881/abd414](https://doi.org/10.3847/1538-3881/abd414) ([NAIF Archive](https://naif.jpl.nasa.gov/))
+- **Park et al. (2021)**, *The JPL Planetary and Lunar Ephemerides DE440 and DE441* — [DOI: 10.3847/1538-3881/abd414](https://doi.org/10.3847/1538-3881/abd414)
+- **Acton (1996)**, *Ancillary data services of NASA’s Navigation and Ancillary Information Facility* — [DOI: 10.1016/0032-0633(95)00107-7](https://doi.org/10.1016/0032-0633(95)00107-7)
+- **NASA/JPL Horizons System** — [Access Portal](https://ssd.jpl.nasa.gov/horizons/)
+
+### 🗺️ Topography & Cartography
+- **NASA PDS Lunar Reconnaissance Orbiter (LRO) LOLA Science Team** — [LOLA Data Archive](https://pds-geosciences.wustl.edu/missions/lro/lola.htm)
+- **Mazarico et al. (2011)**, *Illumination conditions of the lunar polar regions using LOLA topography* — [NTRS Citation](https://ntrs.nasa.gov/citations/20120010094)
+- **NASA PGDA 69**, *Lunar polar illumination products* — [PGDA Portal](https://pgda.gsfc.nasa.gov/products/69)
+- **IAU / USGS Gazetteer of Planetary Nomenclature** — [Nomenclature Database](https://planetarynames.wr.usgs.gov/)
+
+### 📡 Telecommunications & Standards
+- **International Telecommunication Union (ITU-R) Recommendation P.526-9**, *Propagation by diffraction* — [ITU Rec P.526-9](https://www.itu.int/rec/R-REC-P.526-9-200508-S/en)
+- **NASA Deep Space Network (DSN) Telecommunications Link Design Handbook (810-005)** — [DSN Docs Portal](https://deepspace.jpl.nasa.gov/dsndocs/810-005/)
+  - *Module 104, Rev. Q* — [PDF Document](https://deepspace.jpl.nasa.gov/dsndocs/810-005/104/104Q.pdf)
+  - *Module 301, Rev. P* — [PDF Document](https://deepspace.jpl.nasa.gov/dsndocs/810-005/301/301P.pdf)
+- **NASA Small Spacecraft Technology State-of-the-Art (2022)**, *Power Subsystems* — [NASA Report](https://www.nasa.gov/wp-content/uploads/2023/05/3.-soa-power-2022.pdf)
+
+### 🚀 Historical & Spacecraft Reference Reports
+- **NASA CR-69102**, *Surveyor Reference Report (1966)* — [NTRS Citation](https://ntrs.nasa.gov/citations/19660005264)
+- **Simpson & Tyler**, NASA CR-119032 (1971) — [NTRS Citation](https://ntrs.nasa.gov/citations/19710019588)
+- **NASA/TP-2019-220391**, *NASA Lunar Lander Reference Design* — [LPI Document](https://www.lpi.usra.edu/lunar/strategies/NASA-TP-2019-220391.pdf)
+
+### 🌌 Star Mapping & Visual Imagery
+- **NASA Scientific Visualization Studio (SVS)**, *Deep Star Maps 2020* — [SVS 4851](https://svs.gsfc.nasa.gov/4851/)
+- **NASA Apollo 8 AS08-14-2383**, *"Earthrise"* — [NASA Image Details](https://images.nasa.gov/details/as08-14-2383)
 
 ---
 

@@ -1,16 +1,20 @@
 [
   {
-    "id": "membro-1",
-    "firstName": "Nome",
-    "lastName": "Cognome",
-    "role": "Elettronica e telecomunicazioni",
-    "bio": "Aggiungi qui una breve presentazione"
+    "id": "chiara-fazi",
+    "firstName": "Chiara",
+    "lastName": "Fazi",
+    "role": "Electronics, Telecommunications & Power",
+    "bio": "RF Link Budget, Topographic Diffraction, Power & Battery Modeling, System Verification and Mission Planning",
+    "photo": "/team/chia.jpg",
+    "linkedin": "https://www.linkedin.com/in/chiara-fazi"
   },
   {
-    "id": "membro-2",
-    "firstName": "Nome",
-    "lastName": "Cognome",
-    "role": "Informatica, robotica e AI",
-    "bio": "Aggiungi qui una breve presentazione"
+    "id": "alessio-pompeo",
+    "firstName": "Alessio",
+    "lastName": "Pompeo",
+    "role": "Embedded Software Engineer, AI, Satellites, Autonomous Systems",
+    "bio": "Ephemeris Integration, Backend & Frontend Architecture, 3D Rendering, Machine Learning",
+    "photo": "/team/ale.jpg",
+    "linkedin": "https://www.linkedin.com/in/alessio-pompeo-it"
   }
 ]
