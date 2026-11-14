@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!--
-  Home di RAVEN, voce "Il problema" (docs/design/grazinglink-ux.md): palco con la Luna e UNA domanda, un'azione
-  principale ("Prova tu" -> Simula) e un'ancora secondaria ("Come funziona"). Poi la storia in 4 passi a scorrimento,
+  Home di RAVEN, voce "Il problema" (docs/design/grazinglink-ux.md): palco con la Luna, una domanda, un pitch
+  essenziale, un'azione principale verso Simula e un'ancora secondaria ("Come funziona"). Poi la storia in 4 passi a scorrimento,
   ognuno con titolo, due righe e un'immagine: (1) la Terra quasi sull'orizzonte (foto a tutto schermo), (2) perché un
   crinale conta (linea di vista contro diffrazione), (3) cosa calcola RAVEN con il mini-simulatore dal vivo (chunk
   pigro, caricato quando si avvicina allo schermo), (4) cosa significa per una missione (un mese illustrativo).
@@ -105,6 +105,7 @@
   <div class="hero-copy">
     <h1 id="home-title" class="display"><img src={ravenLogo} alt="" width="800" height="550" /><span class="visually-hidden">RAVEN</span></h1>
     <p class="hero-lead">{t('home.question')}</p>
+    <p class="hero-support">{t('home.pitch')}</p>
     <p class="hero-actions">
       <Button href={href('/simula')} size="lg">{t('home.try')}</Button>
       <Button href="#come-funziona" size="lg" variant="ghost">{t('home.how')}</Button>
@@ -253,7 +254,13 @@
     line-height: 1.33;
     color: var(--c-text); /* sopra lo scrim solo --c-text: AA garantito anche su pixel chiari */
     max-inline-size: 32ch;
+    margin: 0 0 var(--space-2);
+  }
+  .hero-support {
+    max-inline-size: 48ch;
     margin: 0 0 var(--space-5);
+    color: var(--c-text);
+    line-height: 1.45;
   }
   .hero-actions {
     display: flex;

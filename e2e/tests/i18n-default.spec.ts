@@ -9,7 +9,7 @@ test('predefinito inglese senza scelta salvata', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
   await expect(page).toHaveTitle('Home | RAVEN');
   await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Home' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Try it' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Try the simulator' })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Mode' }).getByRole('button', { name: 'Learning' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('lang-switch')).toContainText('English');
   expect(await page.evaluate(() => localStorage.getItem('hb.lang'))).toBeNull();

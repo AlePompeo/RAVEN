@@ -10,8 +10,8 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 // stringhe della shell per lingua (dai cataloghi frontend/src/i18n/*.json)
 const SHELL = {
-  en: { tag: 'en', native: 'English', lab: 'Lab', try: 'Try it', footer: 'Licenses', title: 'Home | RAVEN', nav: 'Main' },
-  it: { tag: 'it', native: 'Italiano', lab: 'Laboratorio', try: 'Prova tu', footer: 'Licenze', title: 'Home | RAVEN', nav: 'Principale' },
+  en: { tag: 'en', native: 'English', lab: 'Lab', try: 'Try the simulator', footer: 'Licenses', title: 'Home | RAVEN', nav: 'Main' },
+  it: { tag: 'it', native: 'Italiano', lab: 'Laboratorio', try: 'Prova il simulatore', footer: 'Licenze', title: 'Home | RAVEN', nav: 'Principale' },
 } as const;
 type L = keyof typeof SHELL;
 const LANGS = Object.keys(SHELL) as L[];

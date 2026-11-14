@@ -158,13 +158,26 @@ def test_parameters_and_model(client: TestClient) -> None:
 def test_parameters_used_are_reported(client: TestClient) -> None:
     r = client.post(
         "/api/raven/evaluate",
-        json={**BODY, "days": 1, "include_steps": False, "rf_overrides": {"tx_gain_dbi": 20.0}},
+        json={
+            **BODY,
+            "days": 1,
+            "include_steps": False,
+            "mission_shift_days": 28,
+            "rf_overrides": {"tx_gain_dbi": 20.0},
+        },
     )
     assert r.status_code == 200
+    assert r.json()["base_start_utc"] == BODY["start_utc"]
+    assert r.json()["mission_shift_days"] == 28
+    assert r.json()["window"]["start_utc"] == "2027-01-29T00:00:00Z"
     u = r.json()["parameters_used"]
     assert u["rf"]["tx_gain_dbi"] == 20.0 and u["rf"]["frequency_ghz"] == 8.425
     assert u["rf"]["station_gain_dbi"] == 68.29 and u["scenario"]["required_margin_db"] == 3.0
     assert "battery_capacity_wh" in u["energy"]
+    assert (
+        client.post("/api/raven/evaluate", json={**BODY, "mission_shift_days": 4}).status_code
+        == 422
+    )
 
 
 def test_compensation_table_is_served_by_the_single_model(client: TestClient) -> None:
@@ -521,10 +534,12 @@ async def test_horizon_admission_keeps_worker_lease_after_cancellation_or_timeou
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as c:
-        task = asyncio.create_task(c.get("/api/raven/horizon", params={"site": "apollo11"}))
+        task = asyncio.create_task(c.get("/api/raven/horizon", params={"site": "malapert-massif"}))
         try:
             await asyncio.wait_for(entered.wait(), timeout=3)
-            busy = await c.get("/api/raven/horizon", params={"site": "apollo11", "height_m": 3})
+            busy = await c.get(
+                "/api/raven/horizon", params={"site": "malapert-massif", "height_m": 3}
+            )
             assert busy.status_code == 503 and busy.headers["retry-after"] == "2"
             assert (await c.post("/api/raven/evaluate", json=BODY)).status_code == 503
             if timeout:
@@ -535,11 +550,13 @@ async def test_horizon_admission_keeps_worker_lease_after_cancellation_or_timeou
                     await task
             assert service.sem.locked()
             assert (
-                await c.get("/api/raven/horizon", params={"site": "apollo11", "height_m": 4})
+                await c.get("/api/raven/horizon", params={"site": "malapert-massif", "height_m": 4})
             ).status_code == 503
         finally:
             gate.set()
             await asyncio.wait_for(service.sem.acquire(), timeout=3)
             service.sem.release()
-        resumed = await c.get("/api/raven/horizon", params={"site": "apollo11", "height_m": 5})
+        resumed = await c.get(
+            "/api/raven/horizon", params={"site": "malapert-massif", "height_m": 5}
+        )
         assert resumed.status_code == 200

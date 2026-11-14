@@ -62,6 +62,8 @@ for (const english of [false, true]) {
     await expect(page.locator('#rel-apply-power')).toBeChecked();
     await nav().getByRole('button', { name: english ? /Simulation/ : /Simulazione/ }).click();
     await prepare().click();
+    await expect(page.locator('#report-option-reliability')).not.toBeChecked();
+    await page.locator('#report-option-reliability').check();
     await prepare().click();
     const report = page.locator('.report-preview');
     await expect(report.getByTestId('reliability-results')).toBeVisible();
@@ -89,20 +91,15 @@ for (const english of [false, true]) {
     await page.emulateMedia({ media: 'print' });
     await page.pdf({ path: info.outputPath('reliability-report.pdf'), format: 'A4', preferCSSPageSize: true, printBackground: true, displayHeaderFooter: true });
     await expect(report.getByTestId('reliability-results')).toBeVisible();
-    await expect(page.getByTestId('simulated-blockchain-certificate')).toContainText('DEMO-');
+    await expect(page.getByTestId('report-final-seal')).toContainText('DEMO-');
     await page.emulateMedia({ media: 'screen' });
-    // Learn report: no reliability appendix; Expert report: it is a section the user can switch off and on
+    // Reliability is controlled from the Dossier and remains off in both report modes by default.
     await page.getByRole('radio', { name: /Learn/ }).check();
     await expect(report.getByTestId('reliability-results')).toHaveCount(0);
     await page.getByRole('radio', { name: /Expert/ }).check();
-    await page.getByTestId('report-customise').evaluate((el) => { (el as HTMLDetailsElement).open = true; });
-    await page.locator('#report-section-reliability').uncheck();
     await expect(report.getByTestId('reliability-results')).toHaveCount(0);
-    await page.locator('#report-section-reliability').check();
-    await expect(report.getByTestId('reliability-results')).toBeVisible();
     await page.reload();
-    await expect(page.locator('#report-section-reliability')).toBeChecked();
-    await expect(report.getByTestId('reliability-results')).toBeVisible();
+    await expect(report.getByTestId('reliability-results')).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath('reliability-mobile.png'), fullPage: true });

@@ -15,11 +15,11 @@ test('home: frecce nella nav, giù fino alla CTA del palco, poi all’interrutto
   expect(await focused(page)).toBe('Mission Planner');
   // dalla barra verso il basso: la CTA, prima di tutto il resto (mai il pulsante fluttuante "Spiega")
   await page.keyboard.press('ArrowDown');
-  expect(await focused(page)).toBe('Prova tu');
+  expect(await focused(page)).toBe('Prova il simulatore');
   await page.keyboard.press('ArrowRight');
   expect(await focused(page)).toBe('Come funziona');
   await page.keyboard.press('ArrowLeft');
-  expect(await focused(page)).toBe('Prova tu');
+  expect(await focused(page)).toBe('Prova il simulatore');
   // l'interruttore Learning | Avanzato sta sotto le CTA: raggiungibile con le frecce, Invio sceglie
   await page.keyboard.press('ArrowDown');
   expect(await focused(page)).toBe('Demo guidata');
@@ -29,7 +29,7 @@ test('home: frecce nella nav, giù fino alla CTA del palco, poi all’interrutto
   expect(await focused(page)).toBe('Avanzato');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: 'Avanzato' })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('link', { name: 'Prova tu' }).focus();
+  await page.getByRole('link', { name: 'Prova il simulatore' }).focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/simula/);
 });

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { MessageKey } from '../../i18n/i18n.svelte';
-import type { JourneyDraft } from './journey';
+import type { JourneyDraft, MissionShiftBaseline } from './journey';
 import type { RavenEvaluation } from '../../shell/ravenApi';
 import { tEn as t } from '../../i18n/i18n.svelte';
 /** The report is English only, whatever the site language: the document, its JSON and the assistant request. */
@@ -95,7 +95,7 @@ export interface ReportIdentity { model_version: string; registry_sha256: string
 export function missionLifecycleReport(draft: JourneyDraft, liabilityNotice: string, identity: ReportIdentity,
   evaluations: readonly RavenEvaluation[] = [], budget: BudgetEstimate | null = null,
   carbon: CarbonEstimate | null = null, certificate: SimulatedCertificate | null = null,
-  reliability: ReliabilityResult | null = null) {
+  reliability: ReliabilityResult | null = null, shiftBaseline: readonly MissionShiftBaseline[] = []) {
   const completion = reportCompletion(draft, evaluations, budget);
   const p = completion.plan;
   const sections = p.sections ?? newReportSections();
@@ -177,6 +177,34 @@ export function missionLifecycleReport(draft: JourneyDraft, liabilityNotice: str
       flight_design_qualified: false,
       launch_or_orbit_simulated: false,
       ground_station_scheduling_confirmed: false,
+    },
+    mission_time_shift: {
+      status: evaluations.length ? 'engine_evaluated' : 'not_assessed',
+      selected_offset_days: evaluations[0]?.mission_shift_days ?? 0,
+      basis: 'Calendar days added to each configured UTC start; window duration and sampling interval are unchanged.',
+      scenarios: evaluations.map((e) => {
+        const baselineStart = e.base_start_utc ?? e.window.start_utc;
+        const baseline = shiftBaseline.find((item) => item.site_id === e.site.id && item.start_utc === baselineStart);
+        return {
+          site_id: e.site.id,
+          site_name: e.site.name,
+          offset_days: e.mission_shift_days ?? 0,
+          baseline_start_utc: baseline?.start_utc ?? baselineStart,
+          evaluated_start_utc: e.window.start_utc,
+          baseline_metrics: baseline ? {
+            useful_hours: baseline.useful_hours,
+            unknown_hours: baseline.unknown_hours,
+            harvested_wh: baseline.harvested_wh,
+            min_soc: baseline.min_soc,
+          } : null,
+          evaluated_metrics: {
+            useful_hours: e.metrics.useful_hours,
+            unknown_hours: e.metrics.unknown_hours,
+            harvested_wh: e.metrics.harvested_wh,
+            min_soc: e.metrics.min_soc,
+          },
+        };
+      }),
     },
     reliability: {
       enabled: p.reliability?.enabled ?? false,

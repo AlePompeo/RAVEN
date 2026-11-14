@@ -45,6 +45,7 @@ export interface RavenScenarioIn {
   start_utc: string;
   days: number;
   step_min: number;
+  mission_shift_days?: 0 | 3 | 7 | 28;
   panel_height_m?: number;
   antenna_height_m?: number;
   rate_bps?: number;
@@ -130,6 +131,8 @@ export interface RavenEvaluation {
   registry_sha256: string;
   label: string;
   site: RavenSite;
+  base_start_utc?: string;
+  mission_shift_days?: number;
   window: { start_utc: string; step_min: number; n_steps: number };
   implemented_stages: string[];
   metrics: RavenMetrics;

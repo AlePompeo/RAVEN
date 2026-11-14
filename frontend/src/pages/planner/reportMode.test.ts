@@ -13,12 +13,15 @@ describe('report modes', () => {
     p.reportMode = 'learn';
     expect(effectiveReportMode(p, 'avanzato')).toBe('learn');
   });
-  it('Learn is parts 1-4 without any appendix; Expert includes every appendix', () => {
+  it('keeps methodology, reliability and parameter details optional in both modes', () => {
     const learn = REPORT_SECTION_IDS.filter((id) => learnReportSections()[id]);
     expect(learn.length).toBeLessThan(REPORT_SECTION_IDS.length);
     expect(learn).toEqual(['summary']); // no appendix key
     expect(REPORT_APPENDICES.flatMap((a) => a.keys).filter((k) => learnReportSections()[k])).toEqual([]);
     expect(sectionsForMode('expert')).toEqual(newReportSections());
+    expect(newReportSections()).toMatchObject({
+      methodology: false, reliability: false, configuration: false, provenance: false,
+    });
   });
   it('ignores the legal keys of drafts saved before the legal part was removed', () => {
     const old = JSON.parse(JSON.stringify(newReportPlanning()));
@@ -30,6 +33,9 @@ describe('report modes', () => {
     expect('jurisdiction' in read!.text).toBe(false);
     const { reliability: _r, ...legacy } = old.sections; // oldest drafts: no reliability key
     expect(readReportPlanning({ ...old, sections: legacy })).not.toBeNull();
+    expect(readReportPlanning({
+      ...old, sections: { ...newReportSections(), seal: false, paper: false },
+    })?.sections).toEqual(newReportSections());
   });
   it('persists the mode and rejects a bad one', () => {
     const p = newReportPlanning();

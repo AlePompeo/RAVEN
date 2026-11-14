@@ -15,6 +15,8 @@ export interface SiteStats {
   earthH: number | null;
   longestEarthH: number | null;
   longestNoEarthH: number | null;
+  dsnVisibleH: number | null;
+  dsnUnknownH: number;
   unknownH: number;
 }
 
@@ -25,6 +27,7 @@ function longestRun(values: readonly (boolean | null)[], want: boolean): number 
   return best;
 }
 const count = (v: readonly (boolean | null)[], want: boolean) => v.filter((x) => x === want).length;
+const countUnknown = (v: readonly (boolean | null)[]) => v.filter((x) => x === null).length;
 
 export function siteStats(e: RavenEvaluation): SiteStats | null {
   const s = e.steps;
@@ -32,7 +35,9 @@ export function siteStats(e: RavenEvaluation): SiteStats | null {
   const h = e.window.step_min / 60;
   const earth = earthVisibility(e);
   const lit = s.lit;
+  const dsn = s.dsn_visible;
   const knownLit = lit.some((x) => x !== null), knownEarth = earth.some((x) => x !== null);
+  const knownDsn = dsn.some((x) => x !== null);
   const litEl = s.sun_el_deg.filter((el, i) => lit[i] === true && typeof el === 'number' && Number.isFinite(el)) as number[];
   return {
     sunMaxElDeg: litEl.length ? Math.max(...litEl) : null,
@@ -43,7 +48,9 @@ export function siteStats(e: RavenEvaluation): SiteStats | null {
     earthH: knownEarth ? count(earth, true) * h : null,
     longestEarthH: knownEarth ? longestRun(earth, true) * h : null,
     longestNoEarthH: knownEarth ? longestRun(earth, false) * h : null,
-    unknownH: Math.max(count(lit, null as unknown as boolean), count(earth, null as unknown as boolean)) * h,
+    dsnVisibleH: knownDsn ? count(dsn, true) * h : null,
+    dsnUnknownH: countUnknown(dsn) * h,
+    unknownH: Math.max(countUnknown(lit), countUnknown(earth)) * h,
   };
 }
 

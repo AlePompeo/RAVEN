@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Part 1 of the report, the verdict page: title, the two sites and the period, ONE sentence that compares them with the
+<!-- Executive summary page: title, the two sites and the period, ONE sentence that compares them with the
      numbers, side-by-side cards A | B and at most three bullets. Known yes, known no and unknown are drawn apart in every bar.
      The report is English only (reportText.ts). Nothing is computed here beyond counting samples. -->
 <script lang="ts">
@@ -12,8 +12,10 @@
   import ReportTotals from './ReportTotals.svelte';
   import type { BudgetEstimate, CarbonEstimate } from './reportPlanning';
   import type { EngineEstimate } from './estimates';
-  let { evaluations, missionName, start, days, created, expert = false, decision = '', budget = null, carbon = null, estimates, missionClass }: {
+  let { evaluations, missionName, start, days, created, expert = false, decision = '', budget = null, carbon = null, estimates, missionClass,
+    showRisks = true, showTotals = true }: {
     budget?: BudgetEstimate | null; carbon?: CarbonEstimate | null; estimates?: readonly EngineEstimate[]; missionClass?: string;
+    showRisks?: boolean; showTotals?: boolean;
     evaluations: readonly RavenEvaluation[]; missionName: string; start: string; days: number | null; created: string; expert?: boolean; decision?: string;
   } = $props();
 
@@ -76,7 +78,7 @@
   </aside>
   <h4 class="rp-means">{rt('means.title')}</h4>
   <ul class="rp-bullets" data-testid="report-means">{#each bullets as b}<li>{b}</li>{/each}</ul>
-  <ReportRisks {evaluations} {expert} />
-  <ReportTotals {budget} {carbon} {estimates} {missionClass} {expert} />
+  {#if showRisks}<ReportRisks {evaluations} {expert} />{/if}
+  {#if showTotals}<ReportTotals {budget} {carbon} {estimates} {missionClass} {expert} />{/if}
   {#if decision.trim()}<p class="rp-decision" data-testid="report-decision"><strong>{rt('decision')}</strong> {decision}</p>{/if}
 </section>

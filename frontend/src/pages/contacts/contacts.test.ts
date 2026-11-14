@@ -14,7 +14,7 @@ afterEach(() => {
 const GOOD: TeamMember = { id: 'ada', firstName: 'Ada', lastName: 'Rossi', role: 'Ruolo', bio: 'Breve.' };
 
 describe('team.json spedito', () => {
-  it('ha due membri segnaposto validi e senza dati personali', () => {
+  it('ha due membri validi con link e foto sicuri', () => {
     expect(Array.isArray(teamJson)).toBe(true);
     expect(teamJson).toHaveLength(2);
     expect(parseTeam(teamJson)).toEqual(teamJson); // nessun campo scartato o troncato
@@ -28,7 +28,10 @@ describe('team.json spedito', () => {
       if (m.linkedin !== undefined) expect(safeLinkedin(m.linkedin)).not.toBeNull();
       if (m.photo !== undefined) expect(safePhoto(m.photo)).not.toBeNull();
     }
-    expect(teamJson.map((m) => m.role)).toEqual(['Elettronica e telecomunicazioni', 'Informatica, robotica e AI']);
+    expect(teamJson.map((m) => m.role)).toEqual([
+      'Electronics, Telecommunications & Power',
+      'Embedded Software Engineer, AI, Satellites, Autonomous Systems',
+    ]);
   });
 });
 
@@ -187,8 +190,8 @@ describe('Contacts', () => {
     render(Contacts);
     expect(screen.getByRole('heading', { level: 1, name: 'Il team' })).toBeTruthy();
     expect(screen.getAllByTestId('member')).toHaveLength(2);
-    expect(screen.getByText('Elettronica e telecomunicazioni')).toBeTruthy();
-    expect(screen.getByText('Informatica, robotica e AI')).toBeTruthy();
+    expect(screen.getByText('Electronics, Telecommunications & Power')).toBeTruthy();
+    expect(screen.getByText('Embedded Software Engineer, AI, Satellites, Autonomous Systems')).toBeTruthy();
     expect(screen.queryByText('Pagina da personalizzare')).toBeNull();
   });
 

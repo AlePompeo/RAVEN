@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Home "Il problema": palco con una domanda e UNA azione ("Prova tu" -> Simula), storia in 4 passi, mini-simulatore
+// Home "Il problema": pitch con una CTA per Simula, storia in 4 passi, mini-simulatore
 // pigro (due cursori -> indicatore e frase, "Apri nel simulatore completo" porta i valori in Simula), Learning e
 // Avanzato, senza WebGL, ordine del focus in TV, nessun overflow a 390 px, axe, CLS < 0.1 e screenshot da guardare
 // (test-results/ui/home-*.png). Ogni test con un browser proprio lo lancia da sé (nessun test.use di launchOptions).
@@ -71,18 +71,19 @@ test.describe('home: Il problema', () => {
     expect((await page.request.get(favicon!)).ok()).toBe(true);
   });
 
-  test('Learning: la domanda, una CTA, testo semplice; "Prova tu" apre Simula', async ({ page }) => {
+  test('Learning: il pitch, una CTA, testo semplice; "Prova il simulatore" apre Simula', async ({ page }) => {
     await page.goto('/?mode=learning');
     await ready(page);
     const hero = page.getByRole('region', { name: 'RAVEN', exact: true });
-    await expect(hero).toContainText('la Terra sta a circa un grado sopra l’orizzonte');
-    await expect(hero.getByRole('link')).toHaveText(['Prova tu', 'Come funziona', 'Inizia il Mission Planner', 'Demo guidata']);
+    await expect(hero).toContainText('Confronta due siti lunari in una finestra di missione');
+    await expect(hero).toContainText('Deep Space Network');
+    await expect(hero.getByRole('link')).toHaveText(['Prova il simulatore', 'Come funziona', 'Inizia il Mission Planner', 'Demo guidata']);
     await expect(page.getByTestId('learn-line')).toBeVisible();
     await expect(page.getByTestId('tech-line')).toHaveCount(0);
     await expect(page.getByTestId('stack')).toHaveCount(0);
     await expect(page.getByTestId('honesty')).toHaveCount(0);
     await expect(page.getByRole('main').getByRole('link', { name: 'Chi siamo' })).toHaveCount(0);
-    await page.getByRole('link', { name: 'Prova tu' }).click();
+    await page.getByRole('link', { name: 'Prova il simulatore' }).click();
     await expect(page).toHaveURL(/\/simula/);
     await expect(page.getByRole('heading', { level: 1, name: 'Simula – Simulatore' })).toBeVisible({ timeout: 20_000 });
   });
@@ -167,7 +168,7 @@ test.describe('home: Il problema', () => {
     }
   });
 
-  test('ordine del focus: dopo la barra la prima tappa è "Prova tu" (Tab e frecce TV)', async ({ page }) => {
+  test('ordine del focus: dopo la barra la prima tappa è "Prova il simulatore" (Tab e frecce TV)', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto('/');
     await ready(page);
@@ -176,7 +177,7 @@ test.describe('home: Il problema', () => {
     await page.keyboard.press('Tab');
     await expect(page.getByTestId('lang-switch').getByRole('button')).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('link', { name: 'Prova tu' })).toBeFocused();
+    await expect(page.getByRole('link', { name: 'Prova il simulatore' })).toBeFocused();
     // TV: freccia giù da una voce della barra arriva alla CTA, non al pulsante fluttuante "RAVEN SI"
     await page.goto('/?tv=1');
     await ready(page);
@@ -184,7 +185,7 @@ test.describe('home: Il problema', () => {
       await page.getByRole('navigation', { name: 'Principale' }).getByRole('link', { name }).focus();
       await page.keyboard.press('ArrowDown');
       const at = await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120));
-      await expect(page.getByRole('link', { name: 'Prova tu' }), `giù da ${name}: ${at}`).toBeFocused();
+      await expect(page.getByRole('link', { name: 'Prova il simulatore' }), `giù da ${name}: ${at}`).toBeFocused();
     }
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('link', { name: 'Come funziona' })).toBeFocused();

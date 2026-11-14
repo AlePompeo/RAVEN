@@ -23,7 +23,7 @@ for (const rate of [4, 6]) {
     const v = await vitals(page);
     const raf = await rafRate(page);
     const t1 = Date.now();
-    await page.getByRole('link', { name: 'Prova tu' }).click();
+    await page.getByRole('link', { name: 'Prova il simulatore' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Simula – Simulatore' })).toBeVisible({ timeout: 30_000 });
     const r = { cpu: rate, h1VisibleWallMs: h1Ms, moonReadyWallMs: moonReadyMs, ...v, rafPerSec: raf, ctaToTelemetryMs: Date.now() - t1 };
     save(`home-cpu${rate}x`, r);

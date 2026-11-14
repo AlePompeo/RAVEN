@@ -13,8 +13,20 @@ import { thermalOverrides } from './reliability';
 
 export const JOURNEY_STEPS = ['mission', 'sites', 'period', 'energy', 'reliability', 'radio', 'compare', 'dossier', 'report'] as const;
 export type JourneyStep = typeof JOURNEY_STEPS[number];
+export const MISSION_SHIFT_DAYS = [0, 3, 7, 28] as const;
+export type MissionShiftDays = typeof MISSION_SHIFT_DAYS[number];
 export const DRAFT_KEY = 'hb.planner-journey.v1';
 export const RUN_KEY = 'hb.planner-journey.run.v1';
+
+export interface MissionShiftBaseline {
+  site_id: string;
+  site_name: string;
+  start_utc: string;
+  useful_hours: number;
+  unknown_hours: number;
+  harvested_wh: number | null;
+  min_soc: number | null;
+}
 
 export interface JourneyDraft {
   name: string;
@@ -32,6 +44,9 @@ export interface JourneyRun {
   config: JourneyDraft;
   requests: EvaluateIn[];
   evaluations: RavenEvaluation[];
+  missionShiftDays?: MissionShiftDays;
+  baseline?: MissionShiftBaseline[];
+  baselineKey?: string;
 }
 
 export function newDraft(rows: readonly ParamRow[], siteIds: readonly string[], site?: string | null, time?: string | null): JourneyDraft | null {
@@ -65,7 +80,8 @@ export function journeyIssue(d: JourneyDraft, step: number, ids: readonly string
   return null;
 }
 
-export function journeyRequests(d: JourneyDraft, rows: readonly ParamRow[], definitions = customSites.get(), range?: EphemerisRange | null): EvaluateIn[] | null {
+export function journeyRequests(d: JourneyDraft, rows: readonly ParamRow[], definitions = customSites.get(), range?: EphemerisRange | null,
+  missionShiftDays: MissionShiftDays = 0): EvaluateIn[] | null {
   const energy = panelOverrides(d.panel, rows);
   const thermal = thermalOverrides(d.planning?.reliability, rows);
   const r = d.radio;
@@ -77,12 +93,43 @@ export function journeyRequests(d: JourneyDraft, rows: readonly ParamRow[], defi
   return requests.map((q) => {
     const custom = definitions.find((s) => s.id === q.site_id);
     return { ...q, rf_overrides: { ...q.rf_overrides, compensator_k: r.k! },
+      ...(missionShiftDays ? { mission_shift_days: missionShiftDays } : {}),
       ...(custom ? { custom_site: toApi(custom) } : {}) };
   });
 }
 
+export function isMissionShiftDays(value: unknown): value is MissionShiftDays {
+  return MISSION_SHIFT_DAYS.some((days) => days === value);
+}
+
+export function shiftedStartUtc(startUtc: string, days: MissionShiftDays): string | null {
+  const timestamp = Date.parse(startUtc);
+  if (!Number.isFinite(timestamp)) return null;
+  return new Date(timestamp + days * 86400000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+export function missionShiftBaseline(evaluations: readonly RavenEvaluation[]): MissionShiftBaseline[] {
+  return evaluations.map((e) => ({
+    site_id: e.site.id,
+    site_name: e.site.name,
+    start_utc: e.base_start_utc ?? e.window.start_utc,
+    useful_hours: e.metrics.useful_hours,
+    unknown_hours: e.metrics.unknown_hours,
+    harvested_wh: e.metrics.harvested_wh,
+    min_soc: e.metrics.min_soc,
+  }));
+}
+
 export function requestKey(requests: readonly EvaluateIn[]): string {
   return JSON.stringify(requests);
+}
+
+export function missionBaseKey(requests: readonly EvaluateIn[]): string {
+  return JSON.stringify(requests.map((request) => {
+    const base = { ...request };
+    delete base.mission_shift_days;
+    return base;
+  }));
 }
 
 /** Unknown samples are not failures and never disappear into the denominator. */
@@ -131,10 +178,16 @@ export function validEvaluations(values: unknown, requests: readonly EvaluateIn[
     'earth_horizon_deg', 'margin_db', 'gen_w', 'soc'] as const;
   const flags = ['lit', 'rf_closes', 'dsn_visible', 'link_usable', 'useful'] as const;
   return values.every((e: RavenEvaluation, i) => {
+    if (!e) return false;
     const req = requests[i]!;
     const n = ravenSteps(req.days, req.step_min);
+    const shiftDays = req.mission_shift_days ?? 0;
+    const expectedStart = shiftedStartUtc(req.start_utc, shiftDays);
+    if (!expectedStart || (shiftDays > 0 && (e.mission_shift_days !== shiftDays || e.base_start_utc !== req.start_utc))) return false;
     if (!e || !e.site || e.site.id !== req.site_id || !e.window || e.window.n_steps !== n ||
-        e.window.start_utc !== req.start_utc || e.window.step_min !== req.step_min ||
+        e.window.start_utc !== expectedStart || e.window.step_min !== req.step_min ||
+        (e.mission_shift_days !== undefined && e.mission_shift_days !== shiftDays) ||
+        (e.base_start_utc !== undefined && e.base_start_utc !== req.start_utc) ||
         typeof e.site.name !== 'string' || !Number.isFinite(e.site.lat_deg) || !Number.isFinite(e.site.lon_deg_east) ||
         typeof e.model_version !== 'string' || typeof e.registry_sha256 !== 'string' || !e.metrics ||
         !e.inputs_state || typeof e.inputs_state.terrain_mask !== 'string' ||
@@ -159,7 +212,7 @@ export function validEvaluations(values: unknown, requests: readonly EvaluateIn[
     if (s.chosen_rate_bps !== undefined && (!Array.isArray(s.chosen_rate_bps) || s.chosen_rate_bps.length !== n ||
         !s.chosen_rate_bps.every((v) => v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0)))) return false;
     return Array.isArray(s.time_unix) && s.time_unix.length === n &&
-      s.time_unix.every((t, j) => t === Date.parse(req.start_utc) / 1000 + j * req.step_min * 60) &&
+      s.time_unix.every((t, j) => t === Date.parse(expectedStart) / 1000 + j * req.step_min * 60) &&
       numeric.every((k) => Array.isArray(s[k]) && s[k].length === n && s[k].every((v) => v === null || (typeof v === 'number' && Number.isFinite(v)))) &&
       flags.every((k) => Array.isArray(s[k]) && s[k].length === n && s[k].every((v) => v === null || typeof v === 'boolean')) &&
       s.soc.every((v) => v === null || (v >= 0 && v <= 1)) &&
@@ -198,12 +251,24 @@ export function readRun(raw: string | null, rows: readonly ParamRow[], ids: read
     if (!run || typeof run !== 'object') return null;
     const definitions = runCustomSites(run.requests);
     if (!definitions) return null;
+    const missionShiftDays = run.requests.length ? run.requests[0]!.mission_shift_days ?? 0 : 0;
+    if (!isMissionShiftDays(missionShiftDays) ||
+        !run.requests.every((q) => (q.mission_shift_days ?? 0) === missionShiftDays) ||
+        (run.missionShiftDays !== undefined &&
+          (!isMissionShiftDays(run.missionShiftDays) || run.missionShiftDays !== missionShiftDays)) ||
+        (missionShiftDays > 0 && run.missionShiftDays !== missionShiftDays)) return null;
     const config = readDraft(JSON.stringify(run.config), rows, [...ids, ...definitions.map((s) => s.id)], definitions);
     if (!config || typeof run.createdAt !== 'string' || !Number.isFinite(Date.parse(run.createdAt))) return null;
-    const requests = journeyRequests(config, rows, definitions);
+    const requests = journeyRequests(config, rows, definitions, undefined, missionShiftDays);
     if (!requests || run.key !== requestKey(requests) || requestKey(run.requests) !== run.key || !validEvaluations(run.evaluations, requests) ||
         run.evaluations.some((e) => e.registry_sha256 !== registry || (modelVersion && e.model_version !== modelVersion)) ||
         new Set(run.evaluations.map((e) => e.model_version)).size !== 1) return null;
+    const baselineKey = run.baselineKey ?? (missionShiftDays === 0 ? missionBaseKey(requests) : undefined);
+    if (run.baseline !== undefined && baselineKey !== missionBaseKey(requests)) return null;
+    if (run.baseline !== undefined && (!Array.isArray(run.baseline) || !run.baseline.every((b) =>
+      b && typeof b.site_id === 'string' && typeof b.site_name === 'string' && typeof b.start_utc === 'string' &&
+      Number.isFinite(Date.parse(b.start_utc)) && Number.isFinite(b.useful_hours) && Number.isFinite(b.unknown_hours) &&
+      (b.harvested_wh === null || Number.isFinite(b.harvested_wh)) && (b.min_soc === null || Number.isFinite(b.min_soc))))) return null;
     return { ...run, config, requests };
   } catch {
     return null;

@@ -13,8 +13,12 @@
   } = $props();
   const columns = $derived(columnsOf(estimate));
   const range = $derived(rangeText(estimate, t));
-  /** Assumptions for the report: the declared inputs, never the internal field paths of the engine result. */
-  const assumptions = $derived(estimate.inputs_used.filter((i) => !i.name.startsWith('evaluations[')).map((i) => `${i.name} = ${i.value === null ? t('report.notAssessed') : String(i.value)}${i.tag ? ` (${t('est.tag', { tag: i.tag })})` : ''}`));
+  const compactSummary = $derived(({
+    'est.cost': 'raven.class_cost_band.v1 · NASA awards (nominal $, 2019–23; secondary sources); class scenario, not provider cost or quote.',
+    'est.devtime': 'raven.class_dev_time.v1 · Few small-lander references; observed extremes only, not a statistical range, schedule or quote.',
+    'est.mass.A': 'raven.mass_density_defaults.v1 · I/editable: array 1.5/3/6 kg/m²; battery 100/150/200 Wh/kg; radio 3/5/8%; structure 15/20/30%. Not a full mass budget.',
+    'est.mass.B': 'raven.mass_density_defaults.v1 · I/editable: array 1.5/3/6 kg/m²; battery 100/150/200 Wh/kg; radio 3/5/8%; structure 15/20/30%. Not a full mass budget.',
+  } as Record<string, string>)[estimate.id] ?? '');
 </script>
 
 <section class="estimate" data-testid={`estimate-${estimate.id}`} data-status={estimate.status} data-field={estimate.field}>
@@ -35,7 +39,7 @@
     <tbody>{#each estimate.items as item}<tr><th scope="row">{item.id}</th>{#each columns as c}<td>{cellText(item.cells[c], t)}</td>{/each}</tr>{/each}</tbody>
   </table></div>
   {#if compact}
-    <p class="est-meta"><strong>{t('est.methodId')}</strong> {estimate.method_id}. <strong>{t('est.source')}</strong> {estimate.source}. <strong>{t('est.assumptions')}</strong> {assumptions.join('; ')}. <strong>{t('est.limits')}</strong> {estimate.validity_limits.map((l) => t(l as MessageKey)).join(' ')}</p>
+    {#if compactSummary}<p class="est-meta" data-testid="estimate-method-summary">{compactSummary}</p>{/if}
   {:else}
   <details>
     <summary>{t('est.method')}</summary>
@@ -70,7 +74,7 @@
   table { border-collapse: collapse; width: 100%; font-size: .85rem; }
   th, td { border: 1px solid #9aa0a8; padding: .25rem .4rem; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .est-meta { font-size: .8rem; line-height: 1.35; margin: .4rem 0 0; overflow-wrap: anywhere; }
+  .est-meta { font-size: .6rem; line-height: 1.25; margin: .4rem 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .est-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
   dl div { margin: .2rem 0; } dt { font-weight: 700; } dd { margin: 0; }
 </style>

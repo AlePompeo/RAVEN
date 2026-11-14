@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Last part of the report: which of the two sites is the better choice. The ENGINE decides (lexicographic by the mission priority, a tolerance
+<!-- Executive trade-off decision: which of the two sites is the better choice. The ENGINE decides (lexicographic by the mission priority, a tolerance
      below which two values are a tie, an unknown value never decides, no single score); a model, if one is available, only writes the explanation and
      its text is kept only if it names the same winner and uses no number that was not supplied. Table layout (the PDF engine has no CSS grid). -->
 <script lang="ts">

@@ -315,6 +315,7 @@ def test_store_memory_and_disk_cache(tmp_path: Path) -> None:
     cfg = hz.MaskConfig(n_azimuths=360)
     a = store.get(lat, lon, 2.0, cfg)
     assert a.from_cache == "computed" and store.computed == 1
+    assert a.complete.all()
     assert store.get(lat, lon, 2.0, cfg).from_cache == "memory"
     fresh = hz.MaskStore(tmp_path)
     b = fresh.get(lat, lon, 2.0, cfg)
@@ -326,6 +327,18 @@ def test_store_memory_and_disk_cache(tmp_path: Path) -> None:
         p.write_text("{", encoding="utf-8")
     again = hz.MaskStore(tmp_path)
     assert again.get(lat, lon, 2.0, cfg).from_cache == "computed"
+
+
+def test_incomplete_mask_is_not_cached(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    mask = dataclasses.replace(
+        _mask([(_flat, np.arange(20.0, 200.0, 20.0))]), complete=np.zeros(360, dtype=bool)
+    )
+    monkeypatch.setattr(hz, "compute_mask", lambda *a, **kw: mask)
+    store = hz.MaskStore(tmp_path)
+    assert store.get(LAT0, LON0).from_cache == "computed"
+    assert store.get(LAT0, LON0).from_cache == "computed"
+    assert store.computed == 2
+    assert not list(tmp_path.glob("*.json"))
 
 
 def test_disk_cache_evicts_entries_independently_of_memory(

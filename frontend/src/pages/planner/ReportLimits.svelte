@@ -32,5 +32,4 @@
   <div class="rp-limit-box" data-testid="report-checklist"><strong>{rt('check.title', { n: NO_SOURCE_CHECKLIST.length })}</strong> {rt('check.intro')}
     <ul>{#each NO_SOURCE_CHECKLIST as item}<li>{item}</li>{/each}</ul></div>
   <p class="rp-disclaimer">{rt('disclaimer')}</p>
-  <p class="rp-model">{rt('limits.model')} {first?.model_version} · SHA-256 {first?.registry_sha256}</p>
 </section>

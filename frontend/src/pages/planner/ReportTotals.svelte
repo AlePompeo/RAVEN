@@ -1,14 +1,15 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Totals on TWO lines: what the user declared, and the total including the RAVEN estimates as a range. The estimate is a class
-     scenario (mission-class slider), never a quote; a quantity without a source is not shown (it is in the checklist of part 4). -->
+     scenario (mission-class slider), never a quote; a quantity without a source is not shown. -->
 <script lang="ts">
   import { nf, rt } from './reportText';
   import { costTotals, co2Totals, type Band, type TotalLines } from './estimates/totals';
   import { DEFAULT_MISSION_CLASS } from './estimates/missionClass';
   import { activeEstimates, type EngineEstimate } from './estimates';
   import type { BudgetEstimate, CarbonEstimate } from './reportPlanning';
-  let { budget = null, carbon = null, estimates, missionClass, expert = true }: {
+  let { budget = null, carbon = null, estimates, missionClass, expert = true, show = ['cost', 'co2'] }: {
     expert?: boolean;
+    show?: readonly ('cost' | 'co2')[];
     budget?: BudgetEstimate | null; carbon?: CarbonEstimate | null; estimates: readonly EngineEstimate[] | undefined; missionClass?: string;
   } = $props();
   const cost = $derived(costTotals(budget, estimates));
@@ -31,8 +32,8 @@
   }
   const fmt = one;
   const rows = $derived([
-    { id: 'cost', label: rt('tot.cost'), t: cost as TotalLines, show: cost.declared !== null || cost.including !== null },
-    { id: 'co2', label: rt('tot.co2'), t: co2 as TotalLines, show: co2.declared !== null || co2.including !== null },
+    { id: 'cost', label: rt('tot.cost'), t: cost as TotalLines, show: show.includes('cost') && (cost.declared !== null || cost.including !== null) },
+    { id: 'co2', label: rt('tot.co2'), t: co2 as TotalLines, show: show.includes('co2') && (co2.declared !== null || co2.including !== null) },
   ] as const);
 </script>
 

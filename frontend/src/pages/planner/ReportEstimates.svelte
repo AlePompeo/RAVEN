@@ -8,19 +8,24 @@
   import { raven, type RavenFresnelEstimate, type RavenLandingEstimate } from '../../shell/ravenApi';
   import RangeChart from './RangeChart.svelte';
   import type { RangeRow } from './rangeRow';
-  let { expert = true }: { expert?: boolean } = $props();
+  let { expert = true, showFresnel = true, showLanding = true, showIntro = true, showTitle = true }:
+    { expert?: boolean; showFresnel?: boolean; showLanding?: boolean; showIntro?: boolean; showTitle?: boolean } = $props();
 
   let fresnel = $state.raw<RavenFresnelEstimate | null>(null);
   let landing = $state.raw<RavenLandingEstimate | null>(null);
   let failed = $state(false);
   onMount(() => {
     const ctl = new AbortController();
-    void Promise.all([raven.fresnelEstimate({ signal: ctl.signal }), raven.landingEstimate({ signal: ctl.signal })]).then(([f, l]) => {
+    const requests: Promise<void>[] = [];
+    if (showFresnel) requests.push(raven.fresnelEstimate({ signal: ctl.signal }).then((r) => {
       if (ctl.signal.aborted) return;
-      if (f.ok) fresnel = f.data;
-      if (l.ok) landing = l.data;
-      failed = !f.ok || !l.ok;
-    });
+      if (r.ok) fresnel = r.data; else failed = true;
+    }));
+    if (showLanding) requests.push(raven.landingEstimate({ signal: ctl.signal }).then((r) => {
+      if (ctl.signal.aborted) return;
+      if (r.ok) landing = r.data; else failed = true;
+    }));
+    void Promise.all(requests);
     return () => ctl.abort();
   });
 
@@ -36,14 +41,14 @@
 </script>
 
 <div class="rp-est" data-testid="report-estimates">
-  <h4 class="rp-means">{rt('est.title')}</h4>
-  <p class="rp-how">{rt(expert ? 'est.intro' : 'est.intro.short')}</p>
-  {#if failed}<p role="status" class="rp-how">{rt('est.failed')}</p>{/if}
-  {#if fresnel}
+  {#if showTitle}<h4 class="rp-means">{rt('est.title')}</h4>{/if}
+  {#if showIntro}<p class="rp-how">{rt(expert ? 'est.intro' : 'est.intro.short')}</p>{/if}
+  {#if failed && ((showFresnel && !fresnel) || (showLanding && !landing))}<p role="status" class="rp-how">{rt('est.failed')}</p>{/if}
+    {#if showFresnel && fresnel}
     <RangeChart title={rt('est.q.fresnel')} unit={rt('est.unit.eps')} description={rt('est.d.fresnel')} rows={epsRows} digits={2} compact={!expert} />
     <p class="rp-how">{rt('est.rough')} {#if expert}{fresnel.eps_real.source} {fresnel.limits}{/if}</p>
   {/if}
-  {#if landing}
+  {#if showLanding && landing}
     <RangeChart title={rt('est.q.landing')} unit="%" description={rt('est.d.landing')} rows={landRows} compact={!expert} />
     <p class="rp-how">{rt('est.landing.n', { n: nf(landing.attempts), ok: nf(landing.successes), amb: nf(landing.ambiguous) })} {rt('est.parts')}</p>
     {#if expert}<p class="rp-how">{landing.interval}. {landing.source}. {landing.limits}</p>{/if}

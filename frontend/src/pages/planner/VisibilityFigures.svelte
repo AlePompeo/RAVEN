@@ -22,6 +22,7 @@
     ['vis.earthH', (s: NonNullable<typeof stats[number]>) => val(s.earthH, 'h')],
     ['vis.longestEarth', (s: NonNullable<typeof stats[number]>) => val(s.longestEarthH, 'h')],
     ['vis.longestNoEarth', (s: NonNullable<typeof stats[number]>) => val(s.longestNoEarthH, 'h')],
+    ['phase.dsnVisible', (s: NonNullable<typeof stats[number]>) => val(s.dsnVisibleH, 'h')],
   ] as const);
   const when = (c: Countdown | undefined, body: 'sun' | 'earth') => {
     if (!c || c.visible === null) return tr('vis.unknown');
@@ -41,6 +42,9 @@
         {/each}
         {#if stats.some((s) => s && s.unknownH > 0)}
           <tr><th scope="row">{tr('vis.unknownH')}</th>{#each stats as s}<td>{s ? fmt(s.unknownH, 1) + ' h' : tr('vis.unknown')}</td>{/each}</tr>
+        {/if}
+        {#if stats.some((s) => s && s.dsnUnknownH > 0)}
+          <tr><th scope="row">{tr('phase.dsnUnknown')}</th>{#each stats as s}<td>{s ? fmt(s.dsnUnknownH, 1) + ' h' : tr('vis.unknown')}</td>{/each}</tr>
         {/if}
         {#if countdown}
           <tr><th scope="row">{tr('vis.start')}: {tr('vis.sun')}</th>{#each counts as c}<td>{when(c?.sun, 'sun')}</td>{/each}</tr>

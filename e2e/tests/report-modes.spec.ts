@@ -36,6 +36,9 @@ test('report modes: Learn asks few questions and reports with one click; Expert 
   const dossier = page.getByTestId('report-dossier');
   await expect(dossier).toHaveAttribute('data-mode', 'learn');
   await expect(page.getByRole('radio', { name: /Learn/ })).toBeChecked();
+  for (const id of ['methodology', 'reliability', 'parameters']) {
+    await expect(page.locator(`#report-option-${id}`)).not.toBeChecked();
+  }
   const questions = page.getByTestId('dossier-essential').locator('input:visible, select:visible, textarea:visible');
   expect(await questions.count()).toBeGreaterThan(0);
   expect(await questions.count()).toBeLessThanOrEqual(6);
@@ -59,11 +62,11 @@ test('report modes: Learn asks few questions and reports with one click; Expert 
   await expect(page.getByTestId('report-customise')).toHaveCount(0);
   await expect(page.locator('#journey-decision')).toHaveCount(0);
   await expect(page.getByText('The report is generated in English.')).toBeVisible();
-  // Learn = parts 1-4 only: verdict sentence, four charts, formulas, limits; no contents, no appendix
+  // Learn = concise verdict, charts and limits; methodology details and appendices are optional.
   await expect(page.getByRole('heading', { name: '1. Verdict', exact: true })).toBeVisible();
   await expect(page.getByTestId('report-verdict')).toContainText('sampled hours');
   await expect(page.locator('figure.rp-chart')).toHaveCount(5);
-  await expect(page.getByRole('heading', { name: '4. How it was computed', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '4. How it was computed', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '5. Limits and validation status', exact: true })).toBeVisible();
   await expect(page.locator('.rp-appendix')).toHaveCount(0);
   await expect(page.getByTestId('report-toc')).toHaveCount(0);
@@ -74,14 +77,14 @@ test('report modes: Learn asks few questions and reports with one click; Expert 
   // switch to Expert in the Report step: the site mode is untouched
   await page.getByRole('radio', { name: 'Expert' }).check();
   await expect(page.getByTestId('report-mode')).toHaveAttribute('data-mode', 'expert');
-  await expect(page.getByTestId('report-toc')).toBeVisible();
+  await expect(page.getByTestId('report-toc')).toHaveCount(0);
   await expect(page.locator('.rp-appendix').first()).toBeVisible();
   await page.getByTestId('report-customise').locator('summary').click();
   await expect(page.getByTestId('report-section-picker').locator('input[type="checkbox"]:not(:checked)')).toHaveCount(0);
   expect((await page.locator('.report-preview').innerText()).length).toBeGreaterThan(learnLength);
   if (learnPdf) {
     const expertPdf = await pdfText(page, testInfo.outputPath('expert.pdf'));
-    expect(expertPdf.toc).toBeGreaterThan(learnPdf.toc);
+    expect(expertPdf.toc).toBe(0);
     expect(expertPdf.pages).toBeGreaterThan(learnPdf.pages);
     expect(expertPdf.text.length).toBeGreaterThan(learnPdf.text.length);
     expect(learnPdf.pages).toBeLessThanOrEqual(8);

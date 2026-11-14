@@ -676,8 +676,8 @@ class MaskStore:
                     needed=needed,
                 )
                 self.computed += 1
-                if any(p["tiles_missing"] for p in mask.products):
-                    return mask  # never cache a mask built on missing tiles (they may arrive)
+                if not mask.complete.all():
+                    return mask  # missing tiles used by a ray may arrive; unused window corners do not matter
                 self._save(k, mask)
             with self._lock:
                 self._mem[mk] = mask

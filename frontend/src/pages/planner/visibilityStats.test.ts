@@ -17,7 +17,13 @@ describe('site figures', () => {
   });
   it('is unknown, not zero, when nothing is known', () => {
     const e = make([null, null], [null, null], [null, null], [null, null], [null, null]);
-    expect(siteStats(e)).toMatchObject({ sunMaxElDeg: null, litH: null, longestLitH: null, earthH: null });
+    e.steps!.dsn_visible = [null, null];
+    expect(siteStats(e)).toMatchObject({ sunMaxElDeg: null, litH: null, longestLitH: null, earthH: null, dsnVisibleH: null, dsnUnknownH: 2 });
+  });
+  it('reports DSN-visible time separately from unknown DSN steps', () => {
+    const e = make([true, true, true], [10, 10, 10], [5, 5, 5], [0, 0, 0], [true, true, true]);
+    e.steps!.dsn_visible = [true, false, null];
+    expect(siteStats(e)).toMatchObject({ dsnVisibleH: 1, dsnUnknownH: 1 });
   });
 });
 

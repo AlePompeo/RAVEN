@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Part 3: sustainability and cost, computed by the RAVEN core (GET /api/raven/report/estimate) and by the engine results.
-     Three charts, each titled with the question it answers. A bound with no source is "unknown", never zero. -->
+<!-- Cost and sustainability estimates from RAVEN Core and engine results. A bound with no source is "unknown", never zero. -->
 <script lang="ts">
   import { nf, rt } from './reportText';
   import type { RavenEconomics, RavenEvaluation } from '../../shell/ravenApi';
   import RangeChart from './RangeChart.svelte';
   import type { RangeRow } from './rangeRow';
   import ComparisonBars from './ComparisonBars.svelte';
-  let { evaluations, economics, expert = true }: { evaluations: readonly RavenEvaluation[]; economics: RavenEconomics | null; expert?: boolean } = $props();
+  let { evaluations, economics, expert = true, showCosts = true, showCarbon = true, showEnergy = true, showLaunch = true, showIntro = false }:
+    { evaluations: readonly RavenEvaluation[]; economics: RavenEconomics | null; expert?: boolean; showCosts?: boolean; showCarbon?: boolean; showEnergy?: boolean; showLaunch?: boolean; showIntro?: boolean } = $props();
 
   const co2 = $derived(economics?.co2e ?? null);
   const co2Rows = $derived<RangeRow[]>(co2 ? [
@@ -29,13 +29,15 @@
 </script>
 
 <div class="rp-sust" data-testid="report-sustainability">
-  <p class="rp-how">{rt(expert ? 'sus.intro' : 'sus.intro.short')}</p>
-  {#if !economics}
+  {#if showIntro}<p class="rp-how">{rt(expert ? 'sus.intro' : 'sus.intro.short')}</p>{/if}
+  {#if !economics && (showCosts || showCarbon)}
     <p role="status" class="rp-how">{rt('sus.pending')}</p>
   {:else}
-    <RangeChart title={rt('sus.q.co2')} unit={economics.co2e.unit} description={rt('sus.d.co2')} rows={co2Rows} compact={!expert} />
+    {#if showCarbon && economics}
+      <RangeChart title={rt('sus.q.co2')} unit={economics.co2e.unit} description={rt('sus.d.co2')} rows={co2Rows} compact={!expert} />
+    {/if}
 
-    {#if expert && evaluations.length}
+    {#if showEnergy && expert && evaluations.length}
       <h4 class="rp-means">{rt('sus.q.site')}</h4>
       <ComparisonBars label={rt('sus.series.harvest')} unit={rt('sus.unit.kwh')} description={rt('sus.d.harvest')} series={names}
         rows={[{ label: ' ', values: harvested }]} />
@@ -43,14 +45,18 @@
         rows={[{ label: ' ', values: perHour }]} />
     {/if}
 
-    <RangeChart title={rt('sus.q.cost')} unit={economics.cost.unit} description={rt('sus.d.cost')} rows={costRows} compact={!expert} />
-    {#if expert}
+    {#if showCosts && economics}
+      <RangeChart title={rt('sus.q.cost')} unit={economics.cost.unit} description={rt('sus.d.cost')} rows={costRows} compact={!expert} />
+    {/if}
+    {#if expert && economics && showLaunch}
     <table class="rp-risktable">
       <tbody>
         <tr><th scope="row">{rt('sus.devtime')}</th><td>{band(economics.development_years, economics.development_years.unit)}</td></tr>
         <tr><th scope="row">{rt('sus.vehicle')}</th><td>{band(economics.launch_mass, economics.launch_mass.unit)}; {economics.launch_class}</td></tr>
       </tbody>
     </table>
+    {/if}
+    {#if expert && economics && showCosts}
       <table class="rp-risktable" data-testid="sustainability-sources">
         <thead><tr><th scope="col"></th><th scope="col">{rt('sus.tag')}</th><th scope="col">{rt('sus.source')}</th></tr></thead>
         <tbody>

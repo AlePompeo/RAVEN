@@ -18,8 +18,9 @@
   import { readLibrary, restoreMission, writeLibrary, LIBRARY_LIMIT, type LibraryEntry } from './library';
   import { archiveRun } from './history';
   import { RADIO_PRESETS, identifyRadioPreset, type RadioPresetId } from './setup';
-  import { DRAFT_KEY, RUN_KEY, JOURNEY_STEPS, earthVisibility, fraction, journeyIssue, journeyRequests,
-    newDraft, radioValid, readDraft, readRun, requestKey, validEvaluations, type JourneyDraft, type JourneyRun } from './journey';
+  import { DRAFT_KEY, RUN_KEY, JOURNEY_STEPS, MISSION_SHIFT_DAYS, earthVisibility, fraction, journeyIssue, journeyRequests,
+    missionBaseKey, missionShiftBaseline, newDraft, radioValid, readDraft, readRun, requestKey, validEvaluations,
+    type JourneyDraft, type JourneyRun, type MissionShiftDays } from './journey';
   import ParameterControl from './ParameterControl.svelte';
   import CustomSiteControl from '../../shell/CustomSiteControl.svelte';
   import { fetchHorizon, type HorizonResult } from './horizon';
@@ -33,7 +34,6 @@
   import LifecycleReport from './LifecycleReport.svelte';
   import { rt } from './reportText';
   import './reportPrint.css';
-  import { reportToc, type TocEntry } from './reportToc';
   import { missionLifecycleReport } from './report';
   import ReportDossier from './ReportDossier.svelte';
   import { budgetInput, budgetReady, isBudgetEstimate, isSiNarrative, newReportPlanning, planningContext,
@@ -47,6 +47,7 @@
   import { newReportSections, sectionsForMode, type ReportMode } from './reportSections';
   import { modeNow } from '../../shell/modeState.svelte';
   import ReportModeSwitch from './ReportModeSwitch.svelte';
+  import MissionShiftSummary from './MissionShiftSummary.svelte';
   import { dossierProgress, effectiveReportMode } from './reportMode';
   import ReliabilityInputs from './ReliabilityInputs.svelte';
   import ReliabilityResults from './ReliabilityResults.svelte';
@@ -77,7 +78,9 @@
   let storageError = $state(false);
   let restoreWarning = $state(false);
   let running = $state(false);
+  let shiftRecalculating = $state(false);
   let run = $state.raw<JourneyRun | null>(null);
+  let missionShiftDays = $state<MissionShiftDays>(0);
   let scenario = $state(0);
   let index = $state(0);
   let playing = $state(false);
@@ -116,7 +119,6 @@
   let budget = $state.raw<BudgetEstimate | null>(null);
   let budgetKey = $state('');
   let budgetBusy = $state(false);
-  let tocEntries = $state<TocEntry[]>([]);
   let reportEl = $state<HTMLElement | null>(null);
   let pdfBusy = $state(false);
   let pdfNote = $state<'pdfUnavailable' | 'pdfFailed' | null>(null);
@@ -203,11 +205,12 @@
   const ids = $derived(allSites.map((s) => s.id));
   const requests = $derived.by(() => {
     void customs;
-    return draft ? journeyRequests(draft, parameters, customs, ephemerisRange) : null;
+    return draft ? journeyRequests(draft, parameters, customs, ephemerisRange, missionShiftDays) : null;
   });
   const dateBounds = $derived(plannerDateBounds(ephemerisRange, draft?.input.days ?? null));
   const signature = $derived(requests ? requestKey(requests) : '');
   const stale = $derived(!!run && signature !== run.key);
+  const shiftBaseline = $derived(run?.baseline ?? (run && (run.missionShiftDays ?? 0) === 0 ? missionShiftBaseline(run.evaluations) : []));
   const active = $derived(run?.evaluations[scenario] ?? null);
   const activeId = $derived((step === 6 || step === 7) && active ? active.site.id : draft ? (selectFor === 'B' && draft.input.mode === 'sites' ? draft.input.siteB : draft.input.siteA) : '');
   const activeSite = $derived(allSites.find((s) => s.id === activeId));
@@ -298,7 +301,7 @@
   // Sites found by the automatic search become A and/or B in place: a catalogue site is used as it is, any other becomes a custom site; the
   // period of the search replaces the planner's period when it is inside the ephemeris range.
   let finderMounted = $state(false);
-  let overlaysDone = $state(true); // the map overlays of part 2 are drawn (the PDF carries them as images)
+  let overlaysDone = $state(true); // the map overlays of phase 0 are drawn (the PDF carries them as images)
   let verdictDone = $state(true); // the comparison of the two sites at the end of the report is written (a local model may need up to a minute)
   function useFound(picks: { p: Proposal; target: 'A' | 'B' }[], b: Partial<Brief>) {
     if (!draft) return;
@@ -325,6 +328,40 @@
   }
   function applyPreset(id: RadioPresetId) {
     if (draft) draft.radio = { ...RADIO_PRESETS[id] };
+  }
+  function shiftInRange(days: MissionShiftDays): boolean {
+    if (!draft || !ephemerisRange || draft.input.days === null) return true;
+    const durationDays = draft.input.days;
+    const starts = draft.input.mode === 'dates' ? [draft.input.start, draft.input.startB] : [draft.input.start];
+    return starts.every((value) => {
+      const start = Date.parse(toStartUtc(value) ?? '');
+      const shifted = start + days * 86400000;
+      return Number.isFinite(start) && shifted >= Date.parse(ephemerisRange!.start_utc) &&
+        shifted + durationDays * 86400000 <= Date.parse(ephemerisRange!.end_utc);
+    });
+  }
+  async function selectMissionShift(days: MissionShiftDays) {
+    if (running || firstIssue < 6 || !requests || days === missionShiftDays || !shiftInRange(days)) return;
+    shiftRecalculating = true;
+    try {
+      const baselineRequests = draft ? journeyRequests(draft, parameters, customs, ephemerisRange, 0) : null;
+      const baselineKey = baselineRequests ? missionBaseKey(baselineRequests) : '';
+      const hasBaseline = !!baselineKey && (run?.baselineKey === baselineKey ||
+        (!!run && (run.missionShiftDays ?? 0) === 0 && missionBaseKey(run.requests) === baselineKey));
+      if (days > 0 && !hasBaseline) {
+        missionShiftDays = 0;
+        await tick();
+        await calculate();
+        if (!run || stale || run.missionShiftDays !== 0 || run.baselineKey !== baselineKey) return;
+      }
+      missionShiftDays = days;
+      playing = false;
+      index = 0;
+      await tick();
+      await calculate();
+    } finally {
+      shiftRecalculating = false;
+    }
   }
   function example() {
     if (!draft) return;
@@ -416,6 +453,7 @@
         }
         const savedRun = sessionStorage.getItem(RUN_KEY);
         run = readRun(savedRun, parameters, availableIds, registry, modelVersion);
+        missionShiftDays = run?.missionShiftDays ?? 0;
         if (savedRun && !run) restoreWarning = true;
       } catch {
         storageError = true;
@@ -506,14 +544,15 @@
     pages = { compact: null, reference: null };
   });
   $effect(() => {
+    void sectionKey;
     certificate = null; certificateError = false;
-    if (!draft || !run || stale || step !== 8 || !shownBudget || !shownCarbon || !reportSections.seal || reliabilityBlocked) return;
+    if (!draft || !run || stale || step !== 8 || !shownBudget || !shownCarbon || reliabilityBlocked) return;
     const payload = {
       format: 'raven-report-evidence-v1', calculation_created_at: run.createdAt,
       config: $state.snapshot(draft), requests: run.requests, evaluations: run.evaluations,
       lifecycle: missionLifecycleReport($state.snapshot(draft), rt('disclaimer'), {
         model_version: run.evaluations[0]!.model_version, registry_sha256: run.evaluations[0]!.registry_sha256,
-      }, run.evaluations, shownBudget, shownCarbon, null, shownReliability),
+      }, run.evaluations, shownBudget, shownCarbon, null, shownReliability, shiftBaseline),
     };
     let cancelled = false;
     const timer = setTimeout(() => {
@@ -612,7 +651,13 @@
     if (!validEvaluations(results, submittedRequests) || results.some((e) => e.registry_sha256 !== registry || e.model_version !== modelVersion)) {
       error = 'planner.errorResponse'; return;
     }
-    run = { key, config: submitted, requests: submittedRequests, evaluations: results, createdAt: new Date().toISOString() };
+    const baselineKey = missionBaseKey(submittedRequests);
+    const previousBaseline = run?.baselineKey === baselineKey ? run.baseline :
+      run && (run.missionShiftDays ?? 0) === 0 && missionBaseKey(run.requests) === baselineKey
+        ? missionShiftBaseline(run.evaluations) : undefined;
+    const baseline = missionShiftDays === 0 ? missionShiftBaseline(results) : previousBaseline;
+    run = { key, config: submitted, requests: submittedRequests, evaluations: results, createdAt: new Date().toISOString(),
+      missionShiftDays, ...(baseline ? { baseline, baselineKey } : {}) };
     scenario = 0; index = 0;
     try { sessionStorage.setItem(RUN_KEY, JSON.stringify(run)); }
     catch { storageError = true; }
@@ -662,12 +707,12 @@
     preview = values; previewKey = key;
   }
   function exportReport() {
-    if (!run || stale || !draft || budgetBusy || dossierIssue || budgetError || reliabilityBlocked || (reportSections.seal && !certificate) || !pages.compact) return;
+    if (!run || stale || !draft || budgetBusy || dossierIssue || budgetError || reliabilityBlocked || !pages.compact || (!certificate && !certificateError)) return;
     downloadText('raven-mission-report.json', 'application/json', JSON.stringify({
-      schema_version: 4, generated_at: new Date().toISOString(), calculation_created_at: run.createdAt,
+      schema_version: 5, generated_at: new Date().toISOString(), calculation_created_at: run.createdAt,
       lifecycle: missionLifecycleReport($state.snapshot(draft), rt('disclaimer'), {
         model_version: run.evaluations[0]!.model_version, registry_sha256: run.evaluations[0]!.registry_sha256,
-      }, run.evaluations, shownBudget, shownCarbon, certificate, shownReliability),
+      }, run.evaluations, shownBudget, shownCarbon, certificate, shownReliability, shiftBaseline),
       config: $state.snapshot(draft), requests: run.requests, evaluations: run.evaluations,
       parameter_registry: { registry_sha256: registry, parameters: $state.snapshot(parameters), source_parameters: $state.snapshot(parameterRegistry) },
       objectives: run.evaluations.map((e) => ({
@@ -678,7 +723,7 @@
     }, null, 2));
   }
   async function downloadPdf() {
-    if (!reportEl || !run || pdfBusy) return;
+    if (!reportEl || !run || pdfBusy || (!certificate && !certificateError)) return;
     pdfBusy = true; pdfNote = null;
     try {
       const { fetchReportPdf, saveBlob, PdfUnavailable } = await import('./reportPdf');
@@ -888,6 +933,18 @@
             {#if waveOpen}{#await import('../wave/Wave.svelte') then m}<m.default embedded />{:catch}<p role="alert">{t('journey.visualFailed')}</p>{/await}{/if}
           </details>
         {:else if step === 6}
+          <div class="mission-shift-controls" role="group" aria-label={t('journey.shift.group')}>
+            {#each MISSION_SHIFT_DAYS as days (days)}
+              <button type="button" aria-pressed={missionShiftDays === days} disabled={running || firstIssue < 6 || !shiftInRange(days)}
+                onclick={() => selectMissionShift(days)}>
+                {t(days === 0 ? 'journey.shift.baselineOption' : 'journey.shift.option', days === 0 ? undefined : { days })}
+              </button>
+            {/each}
+          </div>
+          {#if shiftRecalculating}<p role="status">{t('journey.shift.recompute')}</p>{/if}
+          {#if ephemerisRange && MISSION_SHIFT_DAYS.some((days) => !shiftInRange(days))}
+            <p class="note">{t('journey.shift.outOfRange')}</p>
+          {/if}
           <button class="primary" type="button" disabled={running || firstIssue < 6} onclick={calculate}>{t(running ? 'planner.calculating' : 'journey.simulate')}</button>
           {#if running}<p role="status">{t('journey.computing')}</p><progress max={calcTotal} value={calcDone} aria-label={t('journey.calcProgress', { done: calcDone, total: calcTotal })}></progress> <span class="note">{t('journey.calcProgress', { done: calcDone, total: calcTotal })}</span><button type="button" onclick={() => { controller?.abort(); running = false; error = 'journey.cancelled'; }}>{t('journey.cancel')}</button>{/if}
           {#if run}
@@ -909,6 +966,11 @@
             <div class:previous={stale}>
               <JourneyResults {run} objectives={stale ? run.config.objectives : draft.objectives} bind:scenario bind:index />
             </div>
+            {#if !stale}
+              <MissionShiftSummary evaluations={run.evaluations} baseline={shiftBaseline} shiftDays={missionShiftDays}
+                tr={(key, params) => t(`journey.shift.${key}` as MessageKey, params)}
+                fmt={(value, digits = 1) => formatNumber(value, { minimumFractionDigits: digits, maximumFractionDigits: digits })} />
+            {/if}
             {#if !stale && plan?.reliability?.enabled}<p class="note pointer">{t('journey.reliabilityPointer')} <button type="button" onclick={() => go(4)}>{t('journey.openReliability')}</button></p>{/if}
           {/if}
         {:else if step === 7 && run && !stale && draft.planning}
@@ -927,10 +989,10 @@
           {@const reportDraft = draft}
           <div class="report-bar" data-testid="report-bar">
             <ReportModeSwitch compact mode={reportMode} onchange={setReportMode} name="report-mode-report" />
-            <button class="primary" type="button" data-testid="download-pdf" disabled={!verdictDone || !overlaysDone || pdfBusy || budgetBusy || !!dossierIssue || !!budgetError || reliabilityBlocked || (reportSections.seal && !certificate) || !pages.compact} onclick={downloadPdf}>{t(pdfBusy ? 'journey.pdfBusy' : 'journey.downloadPdf')}</button>
+            <button class="primary" type="button" data-testid="download-pdf" disabled={!verdictDone || !overlaysDone || pdfBusy || budgetBusy || !!dossierIssue || !!budgetError || reliabilityBlocked || !pages.compact || (!certificate && !certificateError)} onclick={downloadPdf}>{t(pdfBusy ? 'journey.pdfBusy' : 'journey.downloadPdf')}</button>
             <details class="more-menu" data-testid="report-more"><summary>{t('report.more')}</summary>
-              <div class="more-items"><button type="button" disabled={budgetBusy || !!dossierIssue || !!budgetError || reliabilityBlocked || (reportSections.seal && !certificate) || !pages.compact} onclick={() => window.print()}>{t('journey.printPdf')}</button>
-                <button type="button" disabled={budgetBusy || !!dossierIssue || !!budgetError || reliabilityBlocked || (reportSections.seal && !certificate) || !pages.compact} onclick={exportReport}>{t('journey.downloadJson')}</button>
+              <div class="more-items"><button type="button" disabled={budgetBusy || !!dossierIssue || !!budgetError || reliabilityBlocked || !pages.compact} onclick={() => window.print()}>{t('journey.printPdf')}</button>
+                <button type="button" disabled={budgetBusy || !!dossierIssue || !!budgetError || reliabilityBlocked || !pages.compact || (!certificate && !certificateError)} onclick={exportReport}>{t('journey.downloadJson')}</button>
                 <button type="button" onclick={() => go(7)}>{t('dossier.edit')}</button></div>
             </details>
           </div>
@@ -939,9 +1001,9 @@
           {#if !verdictDone || !overlaysDone}<p role="status" class="note" data-testid="pdf-wait">{t('journey.pdfWaitVerdict')}</p>{/if}
           {#if pdfNote}<p role="status" data-testid="pdf-note">{t(pdfNote === 'pdfUnavailable' ? 'journey.pdfUnavailable' : 'journey.pdfFailed')}</p>{/if}
           {#if dossierIssue || budgetError}<p role="alert">{t(dossierIssue ?? budgetError!)}</p>{/if}
-          <article class="report-preview compact-report" bind:this={reportEl} use:reportToc={(e) => tocEntries = e} use:reportLayout={{ ready: (!reportSections.seal || !!certificate) && !!shownCarbon && !reliabilityBlocked, onpages: updatePages }}>
-            <LifecycleReport onverdict={(d) => { verdictDone = d; }} onoverlays={(d) => { overlaysDone = d; }} draft={reportDraft} {economics} evaluations={reportRun.evaluations} budget={shownBudget} carbon={shownCarbon} reliability={shownReliability} {certificate} {certificateError}
-              {validation} registry={parameterRegistry} expert={reportMode === 'expert'} created={reportRun.createdAt} toc={tocEntries}
+          <article class="report-preview compact-report" bind:this={reportEl} use:reportLayout={{ ready: !!shownCarbon && !reliabilityBlocked, onpages: updatePages }}>
+            <LifecycleReport onverdict={(d) => { verdictDone = d; }} onoverlays={(d) => { overlaysDone = d; }} draft={reportDraft} {economics} evaluations={reportRun.evaluations} missionShiftBaseline={shiftBaseline} missionShiftDays={missionShiftDays} budget={shownBudget} carbon={shownCarbon} reliability={shownReliability}
+              {validation} registry={parameterRegistry} expert={reportMode === 'expert'} created={reportRun.createdAt} {certificate} {certificateError}
               identity={{ model_version: reportRun.evaluations[0]!.model_version, registry_sha256: reportRun.evaluations[0]!.registry_sha256 }} />
           </article>
         {:else if step >= 7}
@@ -1001,6 +1063,7 @@
   .more-menu summary { min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; padding-inline: .5rem; } .more-items { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .5rem; }
   .decision-field { margin-block: 1rem; display: grid; gap: .4rem; } .report-options { margin-block: .5rem; }
   .report-bar, .replay { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-block: 1rem; } .replay select { width: auto; }
+  .mission-shift-controls { display: flex; flex-wrap: wrap; gap: .65rem; margin-block: 1rem; }
   .report-preview { --c-muted: #526170; margin-top: 2rem; padding: clamp(1rem, 3vw, 2rem); color: #172a3a; background: #fff; color-scheme: light; border: 1px solid #dce4ea; border-radius: .25rem; box-shadow: 0 12px 40px #00000020; overflow-wrap: anywhere; } .previous { opacity: .7; }
   .visual-stage { border: 1px solid #7499b64d; border-radius: 1rem; padding: 1rem; margin-bottom: 2rem; background: #071524; min-width: 0; }
   .library-entry { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-block: .75rem; }
@@ -1042,15 +1105,6 @@
   .compact-report :global(tbody th), .compact-report :global(tbody td) { border-bottom: 1px solid #e1e7eb; }
   .compact-report :global(tbody tr:nth-child(even)) { background: #f5f8fa; }
   .compact-report :global(td) { font-variant-numeric: tabular-nums; }
-  .compact-report :global(.signature) { display: grid; grid-template-columns: 32mm minmax(0, 1fr); column-gap: 4mm; margin-block-start: 3mm; padding-block-start: 2mm; border-color: #b6c8d1; }
-  .compact-report :global(.signature > h3), .compact-report :global(.blockchain) { grid-column: 1 / -1; }
-  .compact-report :global(.signature > .seal) { grid-column: 1; grid-row: 2 / span 3; align-self: center; }
-  .compact-report :global(.signature > p) { grid-column: 2; }
-  .compact-report :global(.blockchain) { border-top: 1px solid #e1e7eb; margin-top: 2mm; }
-  .compact-report :global(.seal) { width: 30mm; min-height: 30mm; gap: 1mm; border-width: 2px; }
-  .compact-report :global(.seal img) { width: 20mm; height: auto; }
-  .compact-report :global(.seal strong) { font-size: 10pt; }
-  .compact-report :global(.seal span) { font-size: 6.5pt; max-width: 25mm; }
   .compact-report :global(.registry) { font: 7.5pt/1.3 ui-monospace, monospace; color: #526170; }
   .compact-report :global(.evidence) { font-size: 7.5pt; color: #526170; }
   .compact-report :global(.si-proposal) { padding: 2mm; }

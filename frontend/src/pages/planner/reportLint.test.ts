@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Anti-slop lint of the generated report: English only, short plain sentences, nothing said twice, no empty section.
+// Lint of the generated report: English only, readable narrative, no repeated prose, and no empty ECSS phase.
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/svelte';
 import { useCatalog } from '../../i18n/i18n.svelte';
@@ -36,14 +36,14 @@ const WORDS = (s: string) => s.split(/\s+/).filter(Boolean).length;
 
 function mount(expert: boolean) {
   const { container } = render(LifecycleReport, {
-    draft: draftWith(expert), identity, evaluations: [siteA, unknownRf()], economics: economicsFixture as RavenEconomics, expert, created: '2027-04-10T08:00:00Z', toc: [{ id: 'a', text: '1. Verdict', level: 1 }],
+    draft: draftWith(expert), identity, evaluations: [siteA, unknownRf()], economics: economicsFixture as RavenEconomics, expert, created: '2027-04-10T08:00:00Z',
   });
   return container as HTMLElement;
 }
 /** Prose of the report: tables, formulas, charts' SVG, the contents, appendices and engine sentences are left out. */
 function prose(root: HTMLElement): HTMLElement {
   const copy = root.cloneNode(true) as HTMLElement;
-  copy.querySelectorAll('table, .rp-flines, svg, .report-toc, .rp-legend-line, .rp-kicker, .rp-meta, .rp-appendix, .rp-limit-box, .rp-decision, h3, h4, h5, figcaption').forEach((n) => n.remove());
+  copy.querySelectorAll('table, .rp-flines, .est-meta, svg, .report-toc, .rp-legend-line, .rp-kicker, .rp-meta, .rp-appendix, .rp-limit-box, .rp-decision, h3, h4, h5, figcaption').forEach((n) => n.remove());
   return copy;
 }
 const paragraphs = (root: HTMLElement) => Array.from(root.querySelectorAll('p, li')).map((n) => (n.textContent ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean);
@@ -91,10 +91,10 @@ describe.each(['en', 'it'] as const)('report lint (site language %s)', (siteLang
       it('keeps the word budget and leaves no section empty', () => {
         const el = root();
         const words = WORDS(prose(el).textContent ?? '');
-        expect(words).toBeLessThanOrEqual(expert ? 1600 : 900);
+        expect(words).toBeLessThanOrEqual(expert ? 2200 : 1600);
         el.querySelectorAll('section').forEach((s) => expect((s.textContent ?? '').trim().length, s.className).toBeGreaterThan(12));
-        const parts = Array.from(el.querySelectorAll('section.rp-part, section.rp-verdict-page'));
-        expect(parts).toHaveLength(6);
+        const parts = Array.from(el.querySelectorAll('section.rp-part'));
+        expect(parts.map((part) => part.getAttribute('data-part'))).toEqual(['executive', '0', 'A', 'B', 'C', 'D', 'E', 'F']);
         expect(el.querySelectorAll('.rp-appendix').length > 0).toBe(false === expert ? false : el.querySelectorAll('.rp-appendix').length > 0);
         if (!expert) expect(el.querySelectorAll('.rp-appendix')).toHaveLength(0);
       });
@@ -116,13 +116,13 @@ describe.each(['en', 'it'] as const)('report lint (site language %s)', (siteLang
         expect(root().querySelector('[data-testid="report-thermal-load"]')).toBeNull(); // no reliability profile in the fixture
       });
 
-      it('shows the verdict, at most 3 bullets, 5 charts and a formula for every indicator', () => {
+      it('shows the verdict, at most 3 bullets and 5 charts; optional formula details are off by default', () => {
         const el = root();
         expect(el.querySelector('[data-testid="report-verdict"]')?.textContent).toMatch(/A: 24 of 24 sampled hours confirmed useful \(100%\)/);
         expect(el.querySelectorAll('[data-testid="report-means"] li').length).toBeLessThanOrEqual(3);
         expect(el.querySelectorAll('figure.rp-chart')).toHaveLength(5);
-        expect(el.querySelectorAll(".rp-formula-block").length).toBeGreaterThanOrEqual(expert ? 10 : 6);
-        expect(el.querySelector('[data-testid="report-toc"]') !== null).toBe(expert);
+        expect(el.querySelectorAll('.rp-formula-block')).toHaveLength(0);
+        expect(el.querySelector('[data-testid="report-toc"]')).toBeNull();
       });
     });
   }

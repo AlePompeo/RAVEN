@@ -90,7 +90,6 @@
     }
   }
   $effect(() => { void data; void canvases; void sites; void polar; for (const id of IDS) paint(id); });
-  const sources = $derived(Array.from(new Set(SINGLES.map((l) => data[l]).filter((o): o is RavenOverlay => !!o).map((o) => `${o.source} (tag ${o.tag})`))));
 </script>
 
 {#if sites.length && !failed}
@@ -114,8 +113,6 @@
         {/each}
       </tbody>
     </table>
-    <p class="rp-how">{polar ? rt('ov.polar') : rt('ov.global')} {rt('ov.nodata')}</p>
-    {#if sources.length}<p class="rp-how">{rt('ov.sources')}</p><ul class="rp-legend-line">{#each sources as src}<li>{src}</li>{/each}</ul>{/if}
   </figure>
 {:else if failed}
   <p role="status" class="rp-how" data-testid="report-overlays-failed">{rt('ov.failed')}</p>
@@ -128,5 +125,4 @@
   canvas { display: block; width: 100%; height: auto; margin-inline: auto; }
   .cap { display: block; font-size: .8rem; font-weight: 600; }
   .classes { display: block; font-size: .7rem; text-align: left; } .classes > span { display: block; }
-  ul { list-style: none; padding: 0; margin: .25rem 0 0; font-size: .75rem; }
 </style>

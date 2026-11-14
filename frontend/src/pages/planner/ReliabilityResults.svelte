@@ -5,7 +5,8 @@
   import { componentFields, COMPONENT_FIELDS, profileFields, PROFILE_FIELDS, type ReliabilityResult } from './reliability';
   import ReliabilityCharts from './ReliabilityCharts.svelte';
   import { mergeIdenticalScenarios } from './reliability';
-  let { result, showInputs = false, charts = true }: { result: ReliabilityResult; showInputs?: boolean; charts?: boolean } = $props();
+  let { result, showInputs = false, charts = true, report = false }:
+    { result: ReliabilityResult; showInputs?: boolean; charts?: boolean; report?: boolean } = $props();
   const merged = $derived(mergeIdenticalScenarios(result.scenarios));
   const number = (v: number | null, unit = '') => v === null ? t('report.notAssessed') :
     `${formatNumber(v, { maximumSignificantDigits: 4 })}${unit ? ' ' + unit : ''}`;
@@ -14,10 +15,12 @@
 
 <section class="reliability-results" data-testid="reliability-results">
   <h3>{t('rel.title')}</h3>
-  <p class="scope">{t('rel.scope')}</p>
-  <p>{t('rel.conditions')}</p>
-  <p class="registry">{result.model} · {t('rel.basis')}: {result.assumptions.basis}</p>
-  <p>{t('rel.formula')}</p>
+  {#if !report}
+    <p class="scope">{t('rel.scope')}</p>
+    <p>{t('rel.conditions')}</p>
+    <p class="registry">{result.model} · {t('rel.basis')}: {result.assumptions.basis}</p>
+    <p>{t('rel.formula')}</p>
+  {/if}
   {#if merged.identical}<p class="scope" data-testid="reliability-identical">{t('rel.identical')}</p>{/if}
   {#if charts}<ReliabilityCharts {result} />{/if}
   {#each merged.shown as scenario}
@@ -71,7 +74,7 @@
         {#each componentFields as field}<tr><th>{t(`rel.field.${field}`)} ({COMPONENT_FIELDS[field][2]})</th>{#each result.assumptions.components as c}<td>{number(c[field])}</td>{/each}</tr>{/each}
       </tbody>
     </table></div>
-    <p>{t('rel.thermalHelp')}</p><p>{t('rel.radiationHelp')}</p>
+    {#if !report}<p>{t('rel.thermalHelp')}</p><p>{t('rel.radiationHelp')}</p>{/if}
   {/if}
 </section>
 

@@ -8,7 +8,7 @@ import { customSites } from '../../shell/customSites';
 import { useCatalog } from '../../i18n/i18n.svelte';
 import enPages from '../../i18n/en.pages.json';
 import itCatalog from '../../i18n/it.json';
-import { JOURNEY_STEPS, earthVisibility, firstChange, fraction, journeyIssue, journeyRequests, newDraft, readDraft, readRun, requestKey, validEvaluations } from './journey';
+import { JOURNEY_STEPS, earthVisibility, firstChange, fraction, journeyIssue, journeyRequests, missionBaseKey, missionShiftBaseline, newDraft, readDraft, readRun, requestKey, shiftedStartUtc, validEvaluations } from './journey';
 import ParameterControl from './ParameterControl.svelte';
 import { illustrativeReliability } from './reliability';
 
@@ -72,6 +72,41 @@ describe('planner journey', () => {
     const previous = requestKey(reqs);
     customSites.set([{ id: 'c-ridge', name: 'Ridge', lat_deg: -87, lon_deg_east: 42 }]);
     expect(requestKey(journeyRequests(d, rows)!)).not.toBe(previous);
+  });
+
+  it('sends a selected mission offset and validates results against the shifted engine window', () => {
+    const d = makeDraft();
+    const requests = journeyRequests(d, rows, undefined, undefined, 28)!;
+    const baselineRequests = journeyRequests(d, rows)!;
+    expect(missionBaseKey(requests)).toBe(missionBaseKey(baselineRequests));
+    expect(requests[0]).toMatchObject({ start_utc: '2027-01-01T00:00:00Z', mission_shift_days: 28 });
+    const start = shiftedStartUtc(requests[0]!.start_utc, 28)!;
+    const shifted = structuredClone(ev);
+    shifted.base_start_utc = requests[0]!.start_utc;
+    shifted.mission_shift_days = 28;
+    shifted.window.start_utc = start;
+    shifted.steps!.time_unix = shifted.steps!.time_unix.map((_, i) => Date.parse(start) / 1000 + i * shifted.window.step_min * 60);
+    const shiftedSecond = structuredClone(shifted);
+    shiftedSecond.site.id = requests[1]!.site_id;
+    expect(validEvaluations([shifted, shiftedSecond], requests)).toBe(true);
+    shifted.mission_shift_days = 7;
+    expect(validEvaluations([shifted, shiftedSecond], requests)).toBe(false);
+    expect(missionShiftBaseline([ev])[0]).toMatchObject({ site_id: ev.site.id, start_utc: ev.window.start_utc });
+
+    const shiftedResults = requests.map((request) => {
+      const result = structuredClone(ev);
+      const start = shiftedStartUtc(request.start_utc, 28)!;
+      result.site.id = request.site_id;
+      result.base_start_utc = request.start_utc;
+      result.mission_shift_days = 28;
+      result.window.start_utc = start;
+      result.steps!.time_unix = result.steps!.time_unix.map((_, i) => Date.parse(start) / 1000 + i * result.window.step_min * 60);
+      return result;
+    });
+    const baselineResults = baselineRequests.map((request) => ({ ...structuredClone(ev), site: { ...ev.site, id: request.site_id } }));
+    const run = { key: requestKey(requests), createdAt: '2026-11-06T00:00:00Z', config: d, requests, evaluations: shiftedResults,
+      missionShiftDays: 28 as const, baseline: missionShiftBaseline(baselineResults), baselineKey: missionBaseKey(baselineRequests) };
+    expect(readRun(JSON.stringify(run), rows, ids, ev.registry_sha256)?.baseline).toEqual(run.baseline);
   });
 
   it('uses one site and two UTC windows for date comparison; rejects invalid and oversized inputs', () => {

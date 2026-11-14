@@ -5,7 +5,7 @@ import { t, useCatalog } from '../../i18n/i18n.svelte';
 import { siteA } from './reportFixtures';
 import en from '../../i18n/en.pages.json';
 import itCatalog from '../../i18n/it.json';
-import type { JourneyDraft } from './journey';
+import type { JourneyDraft, MissionShiftBaseline } from './journey';
 import { RADIO_PRESETS } from './setup';
 import { missionLifecycleReport } from './report';
 import LifecycleReport from './LifecycleReport.svelte';
@@ -14,7 +14,8 @@ import type { RavenEvaluation } from '../../shell/ravenApi';
 import { budgetInput, budgetReady, COST_ITEMS, isBudgetEstimate, isSiNarrative, newReportPlanning, planningContext, readReportPlanning, type BudgetEstimate, type CarbonEstimate } from './reportPlanning';
 import { missionContext, reportScenarioKey } from './reportCompletion';
 import { newReportSections, readReportSections } from './reportSections';
-import { illustrativeReliability } from './reliability';
+import { illustrativeReliability, type ReliabilityResult } from './reliability';
+import type { SimulatedCertificate } from './reportPresentation';
 import { utcMinute } from './reportFormat';
 
 const draft: JourneyDraft = {
@@ -24,11 +25,126 @@ const draft: JourneyDraft = {
   input: { mode: 'sites', siteA: 'malapert-massif', siteB: 'haworth', start: '2027-04-16T00:00', startB: '2027-05-16T00:00', days: 3, stepMin: 60 },
 };
 const identity = { model_version: 'raven-core-1.4', registry_sha256: 'test-registry' };
+const paperCarbon: CarbonEstimate = {
+  mission: {
+    unit: 'kg CO2e', known_phases: 0, missing_phases: ['0', 'A', 'B', 'C', 'D', 'E', 'F'],
+    known_subtotal_kg_co2e: null, total_kg_co2e: null,
+    phase_emissions_kg_co2e: { '0': null, A: null, B: null, C: null, D: null, E: null, F: null },
+    basis: '', boundary: '', source: 'user_estimates', independently_verified: false,
+  },
+  document: {
+    compact_pages: 33, reference_pages: 58, paper_production_kg_co2e_per_sheet: .0067,
+    compaction_avoided_kg_co2e: .1675, not_printing_avoided_kg_co2e: .2215,
+    paper_factor_source: 'Fixture', paper_factor_id: 'Fixture',
+  },
+};
+const demoCertificate: SimulatedCertificate = {
+  status: 'simulation_only_not_broadcast', network: null, broadcast: false, issuer: 'RAVEN',
+  hash_algorithm: 'SHA-256', payload_format: 'raven-json-sorted-keys-v1',
+  payload_sha256: 'a'.repeat(64), simulated_transaction_id: `DEMO-${'b'.repeat(64)}`, cryptographic_signature: null,
+};
 
 beforeEach(() => useCatalog('en', en, en));
 afterEach(() => { cleanup(); useCatalog('it', itCatalog, en); });
 
 describe('ECSS-aligned mission report', () => {
+  it('orders the final report as an executive decision followed by ECSS phases 0 and A-F', () => {
+    render(LifecycleReport, {
+      draft, identity, evaluations: [siteA, siteA], expert: true, created: '2027-01-01T00:00:00Z',
+    });
+    const root = screen.getByTestId('mission-lifecycle-report');
+    const sections = Array.from(root.children)
+      .filter((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-part'))
+      .map((node) => node.getAttribute('data-part'));
+    expect(sections).toEqual(['executive', '0', 'A', 'B', 'C', 'D', 'E', 'F']);
+    expect(root.querySelector('[data-testid="report-site-verdict"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="report-moon"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="report-traceability"]')).toBeNull();
+    expect(root.querySelector('[data-testid="report-end-of-life"]')).toBeNull();
+    expect(root.querySelector('[data-testid="report-toc"]')).toBeNull();
+    expect(root.querySelector('[data-appendix="parameters"]')).toBeNull();
+    expect(root.querySelector('.rp-formula-block')).toBeNull();
+    expect(root.querySelector('[data-testid="reliability-results"]')).toBeNull();
+    expect(root.textContent).not.toContain('SHA-256 report payload');
+    expect(root.textContent).not.toContain('DEMO-');
+    expect(root.textContent).not.toContain('Layout estimate:');
+    expect(root.textContent).not.toContain('Prepare and independently review:');
+    expect(root.textContent).not.toContain('battery passivation');
+    expect(root.querySelector('[data-testid="report-digital-savings"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="report-final-seal"]')).not.toBeNull();
+    expect(root.lastElementChild?.getAttribute('data-testid')).toBe('report-final-seal');
+    expect(root.textContent).toContain('Digital signature');
+    expect(root.textContent).toContain('Not issued: no trusted signing key is configured.');
+    expect(root.querySelector('[data-testid="report-phase-E"]')?.textContent).toContain('DSN geometric visibility');
+    expect(root.querySelector('[data-testid="report-phase-E"]')?.textContent).toContain('station scheduling');
+  });
+
+  it('shows the paper estimate, payload fingerprint and clearly unissued signature/blockchain fields at the report end', () => {
+    render(LifecycleReport, {
+      draft, identity, evaluations: [siteA], carbon: paperCarbon, certificate: demoCertificate,
+      expert: true, created: '2027-01-01T00:00:00Z',
+    });
+    const root = screen.getByTestId('mission-lifecycle-report');
+    const savings = screen.getByTestId('report-digital-savings');
+    const seal = screen.getByTestId('report-final-seal');
+    expect(savings.textContent).toContain('33-page report');
+    expect(savings.textContent).toContain('221.5 g CO₂e');
+    expect(savings.querySelector('.leaf')).not.toBeNull();
+    expect(seal.textContent).toContain('a'.repeat(64));
+    expect(seal.textContent).toContain(`DEMO-${'b'.repeat(64)}`);
+    expect(seal.textContent).toContain('not a transaction');
+    expect(seal.querySelector('.raven-seal-mark img')).not.toBeNull();
+    expect(root.lastElementChild).toBe(seal);
+  });
+
+  it('includes methodology, reliability and parameter details only when selected in the dossier', () => {
+    const planning = newReportPlanning();
+    planning.sections = newReportSections();
+    const d = { ...draft, planning };
+    const profile = illustrativeReliability('Illustrative assumptions.');
+    const reliability: ReliabilityResult = {
+      model: 'raven-reliability-1', source: 'declared_assumptions', qualification: 'not_validated',
+      assumptions: profile, scenarios: [], method: 'test fixture', limits: [],
+    };
+    render(LifecycleReport, { draft: d, identity, evaluations: [siteA], expert: true, created: '2027-01-01T00:00:00Z' });
+    const root = screen.getByTestId('mission-lifecycle-report');
+    expect(root.querySelector('.rp-formula-block')).toBeNull();
+    expect(root.querySelector('[data-appendix="parameters"]')).toBeNull();
+    expect(root.querySelector('[data-testid="reliability-results"]')).toBeNull();
+
+    cleanup();
+    planning.sections.methodology = true;
+    planning.sections.configuration = true;
+    planning.sections.provenance = true;
+    planning.sections.reliability = true;
+    planning.reliability = profile;
+    render(LifecycleReport, {
+      draft: d, identity, evaluations: [siteA], reliability, expert: true, created: '2027-01-01T00:00:00Z',
+    });
+    const enabled = screen.getByTestId('mission-lifecycle-report');
+    expect(enabled.querySelector('.rp-formula-block')).not.toBeNull();
+    expect(enabled.querySelector('[data-appendix="parameters"]')).not.toBeNull();
+    expect(enabled.querySelector('[data-testid="reliability-results"]')).not.toBeNull();
+  });
+
+  it('pairs shifted report scenarios with the matching baseline UTC window', () => {
+    const evaluations = [structuredClone(siteA), structuredClone(siteA)] as RavenEvaluation[];
+    const starts = ['2027-01-01T00:00:00Z', '2027-02-01T00:00:00Z'];
+    const baseline: MissionShiftBaseline[] = starts.map((start, i) => ({
+      site_id: siteA.site.id, site_name: siteA.site.name, start_utc: start,
+      useful_hours: i + 1, unknown_hours: 0, harvested_wh: null, min_soc: null,
+    }));
+    evaluations.forEach((evaluation, i) => {
+      evaluation.base_start_utc = starts[i]!;
+      evaluation.mission_shift_days = 28;
+      evaluation.window.start_utc = new Date(Date.parse(starts[i]!) + 28 * 86400000).toISOString().replace('.000Z', 'Z');
+      evaluation.metrics.useful_hours = 10 + i;
+    });
+
+    const report = missionLifecycleReport(draft, '', identity, evaluations, null, null, null, null, baseline);
+    expect(report.mission_time_shift.scenarios.map((scenario) => scenario.baseline_metrics?.useful_hours)).toEqual([1, 2]);
+  });
+
   it('restores full sections for old drafts and rejects malformed persisted selections', () => {
     const planning = newReportPlanning();
     const { sections: _sections, ...old } = planning;

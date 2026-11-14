@@ -17,18 +17,17 @@ function trackRequests(page: Page): string[] {
   return off;
 }
 
-test('due membri segnaposto, nessuna richiesta fuori dall\'origine', async ({ page }) => {
+test('due profili del team, nessuna richiesta fuori dall\'origine', async ({ page }) => {
   const off = trackRequests(page);
   await page.goto('/contacts');
   await expect(page).toHaveTitle('Contatti | RAVEN');
   await expect(page.getByRole('heading', { level: 1, name: 'Il team' })).toBeVisible();
   const cards = page.getByTestId('member');
   await expect(cards).toHaveCount(2);
-  await expect(cards.nth(0)).toContainText('Elettronica e telecomunicazioni');
-  await expect(cards.nth(1)).toContainText('Informatica, robotica e AI');
-  await expect(page.getByTestId('todo')).toHaveCount(2);
-  await expect(page.getByTestId('avatar')).toHaveCount(2);
-  await expect(page.locator('main a[target="_blank"]')).toHaveCount(0);
+  await expect(cards.nth(0)).toContainText('Electronics, Telecommunications & Power');
+  await expect(cards.nth(1)).toContainText('Embedded Software Engineer, AI, Satellites, Autonomous Systems');
+  await expect(page.getByTestId('todo')).toHaveCount(0);
+  await expect(page.locator('main a[target="_blank"]')).toHaveCount(2);
   await page.waitForLoadState('networkidle');
   expect(off).toEqual([]);
 });
@@ -121,17 +120,17 @@ test('Contatti è raggiungibile anche dal menu mobile', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('ordine da tastiera: footer raggiungibile, nessun link di assistenza o scheda segnaposto focalizzabile', async ({ page }) => {
+test('ordine da tastiera: profili e footer sono raggiungibili', async ({ page }) => {
   await page.goto('/contacts');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   const where: string[] = [];
-  for (let i = 0; i < 14 && !where.includes('footer'); i++) {
+  for (let i = 0; i < 24 && !where.includes('footer'); i++) {
     await page.keyboard.press('Tab');
     where.push(await page.evaluate(() => (document.activeElement?.closest('[data-testid="member"]') ? 'member' : document.activeElement?.closest('footer') ? 'footer' : document.activeElement?.closest('main') ? 'main' : 'altro')));
   }
   expect(where).toContain('footer');
-  expect(where).not.toContain('main');
-  expect(where).not.toContain('member');
+  expect(where).toContain('member');
+  expect(where.indexOf('member')).toBeLessThan(where.indexOf('footer'));
 });
 
 test('TV: D-pad dal link LinkedIn al piè di pagina, anello di focus visibile e target grandi', async ({ page }) => {

@@ -77,6 +77,7 @@ class _Common(BaseModel):
     start_utc: Annotated[str, Field(min_length=20, max_length=32)]
     days: Annotated[Num, Field(gt=0, le=366, allow_inf_nan=False)] = 7
     step_min: Annotated[Num, Field(ge=1, le=1440, allow_inf_nan=False)] = 60
+    mission_shift_days: Literal[0, 3, 7, 28] = 0
     panel_height_m: Annotated[Num, Field(ge=0.1, le=100, allow_inf_nan=False)] = 2.0
     antenna_height_m: Annotated[Num, Field(ge=0.1, le=100, allow_inf_nan=False)] = 2.0
     rate_bps: Annotated[Num, Field(ge=1e4, le=3e6, allow_inf_nan=False)] = 1e5
@@ -308,7 +309,7 @@ def _counts(rs: list[Reason]) -> dict[str, int]:
     return {r.value: sum(1 for x in rs if x is r) for r in Reason if any(x is r for x in rs)}
 
 
-def summary(ev: "Evaluation") -> dict[str, Any]:
+def summary(ev: "Evaluation", *, base_start_utc: str, mission_shift_days: int) -> dict[str, Any]:
     """Everything except the per-step columns."""
     from backend.domain.raven.custom_terrain import terrain_block
 
@@ -319,6 +320,8 @@ def summary(ev: "Evaluation") -> dict[str, Any]:
         "registry_sha256": ev.registry_sha256,
         "label": "potential under stated assumptions",
         "site": ev.site.to_dict(),
+        "base_start_utc": base_start_utc,
+        "mission_shift_days": mission_shift_days,
         "window": {
             "start_utc": ev.grid.start_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "step_min": ev.grid.step_min,
@@ -470,7 +473,11 @@ def _scenario(req: _Common, site: s0.SiteRecord) -> "Scenario":
         raise ParamError("energy")
     if {"rate_bps", "station"} & set(req.rf_overrides):
         raise ParamError("rf")
-    window = s0.TimeWindow(parse_utc(req.start_utc), float(req.days), float(req.step_min))
+    window = s0.TimeWindow(
+        parse_utc(req.start_utc) + timedelta(days=req.mission_shift_days),
+        float(req.days),
+        float(req.step_min),
+    )
     s0.build_grid(window)  # validates the window and the per-site cap early
     sc: Scenario = pl.Scenario(
         site,
@@ -637,7 +644,9 @@ def build_raven_router() -> APIRouter:
 
         def compute(engine: Any) -> dict[str, Any]:
             ev = _pipeline().evaluate(sc, engine, **kw)
-            out = summary(ev)
+            out = summary(
+                ev, base_start_utc=req.start_utc, mission_shift_days=req.mission_shift_days
+            )
             out["parameters_used"] = parameters_used(sc)
             if req.include_steps:
                 out["steps"] = steps(ev, sc.rf.wavelength_m)
@@ -683,7 +692,10 @@ def build_raven_router() -> APIRouter:
                 "registry_sha256": registry_sha256(),
                 "ranking": ranking,
                 "sites": [
-                    summary(e) | {"parameters_used": parameters_used(sc)}
+                    summary(
+                        e, base_start_utc=req.start_utc, mission_shift_days=req.mission_shift_days
+                    )
+                    | {"parameters_used": parameters_used(sc)}
                     for e, sc in zip(evs, scs, strict=True)
                 ],
             }

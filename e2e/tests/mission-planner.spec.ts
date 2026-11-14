@@ -139,8 +139,8 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   await expect(page.locator('.report-preview .rp-meta')).toContainText('South Pole Study');
   await expect(page.locator('.report-preview .rp-meta')).toContainText('2027-04-16');
   await expect(page.getByTestId('report-decision')).toContainText('terrain constraints');
-  await expect(page.getByTestId('document-carbon')).toContainText('Layout estimate:');
-  await expect(page.getByTestId('simulated-blockchain-certificate')).toContainText('DEMO-');
+  await expect(page.getByTestId('report-digital-savings')).toContainText('estimated');
+  await expect(page.getByTestId('report-final-seal')).toContainText('DEMO-');
   const downloadPromise = page.waitForEvent('download');
   await page.getByTestId('report-more').evaluate((el) => { (el as HTMLDetailsElement).open = true; });
   await page.getByRole('button', { name: 'Scarica report strutturato (JSON)' }).click();
@@ -160,7 +160,7 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   expect(report.config.decision).toContain('terrain constraints');
   expect(report.evaluations[0].parameters_used.rf.compensator_k).toBe(1.7);
   expect(report.evaluations[0].steps.gen_w.some((v: number | null) => v !== null && v > 0)).toBe(true);
-  expect(report.schema_version).toBe(4);
+  expect(report.schema_version).toBe(5);
   expect(report.lifecycle.phases.map((phase: { id: string }) => phase.id)).toEqual(['0', 'A', 'B', 'C', 'D', 'E', 'F']);
   expect(report.lifecycle.completion_audit).toMatchObject({ total_fields: 35, verified_deliverables: 0 });
   expect(report.lifecycle.completion_audit.proposed_or_missing).toContain('qualification_tests');
@@ -175,9 +175,8 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   const lifecycle = page.getByTestId('mission-lifecycle-report');
   await expect(lifecycle.locator('section.phase')).toHaveCount(7);
   await expect(lifecycle.locator('.rp-verdict-page .rp-kpi')).toHaveCount(1);
-  await expect(lifecycle.locator('> section:last-child')).toHaveAttribute('data-testid', 'report-appendix');
-  await expect(lifecycle.locator('> section:last-child [data-testid="document-carbon"]')).toHaveCount(1);
-  await expect(lifecycle.locator('> section:last-child [data-testid="simulated-blockchain-certificate"]')).toHaveCount(1);
+  await expect(lifecycle.locator('> section:last-child')).toHaveAttribute('data-testid', 'report-final-seal');
+  await expect(lifecycle.locator('> section:nth-last-child(2)')).toHaveAttribute('data-testid', 'report-digital-savings');
   await expect(page.getByTestId('mission-liability')).toContainText(report.evaluations[0].registry_sha256);
   expect(report.lifecycle.raven_seal.cryptographic_signature).toBeNull();
   const certificate = report.lifecycle.raven_seal.blockchain_simulation;
@@ -194,12 +193,12 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   expect(certificate.payload_sha256).toBe(createHash('sha256').update(canonical).digest('hex'));
   await page.getByTestId('report-more').evaluate((el) => { (el as HTMLDetailsElement).open = true; });
   await expect(page.getByRole('button', { name: 'Stampa / salva PDF', exact: true })).toBeEnabled();
-  const certificateBeforePrint = await page.getByTestId('simulated-blockchain-certificate').innerText();
-  const paperBeforePrint = await page.getByTestId('document-carbon').innerText();
+  const certificateBeforePrint = await page.getByTestId('report-final-seal').innerText();
+  const paperBeforePrint = await page.getByTestId('report-digital-savings').innerText();
   await page.emulateMedia({ media: 'print' });
   await expect(lifecycle.getByRole('heading', { name: '5. Limits and validation status', exact: true })).toBeVisible();
   await expect(page.getByTestId('mission-liability')).toBeVisible();
-  await expect(lifecycle.locator('.seal img')).toBeVisible();
+  await expect(lifecycle.locator('.raven-seal-mark img')).toBeVisible();
   await expect(page.locator('.report-options')).toBeHidden();
   await expect(page.locator('.report-bar')).toBeHidden();
   const pdf = await page.pdf({ path: testInfo.outputPath('mission-report.pdf'), format: 'A4', preferCSSPageSize: true, printBackground: true, displayHeaderFooter: true });
@@ -210,8 +209,8 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   expect(pdfText).not.toContain('127.0.0.1');
   expect(pdfText).not.toContain('http://');
   expect(pdfText).not.toContain('Mission Planner | RAVEN');
-  await expect(page.getByTestId('simulated-blockchain-certificate')).toHaveText(certificateBeforePrint, { useInnerText: true });
-  await expect(page.getByTestId('document-carbon')).toHaveText(paperBeforePrint, { useInnerText: true });
+  await expect(page.getByTestId('report-final-seal')).toHaveText(certificateBeforePrint, { useInnerText: true });
+  await expect(page.getByTestId('report-digital-savings')).toHaveText(paperBeforePrint, { useInnerText: true });
   await page.emulateMedia({ media: 'screen' });
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -260,8 +259,8 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   await expect(page.getByRole('heading', { name: 'Mission dossier', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Prepare report', exact: true }).click();
   await expect(page.getByRole('heading', { name: '1. Verdict', exact: true })).toBeVisible();
-  await expect(page.getByTestId('document-carbon')).toContainText('Layout estimate:');
-  await expect(page.getByTestId('simulated-blockchain-certificate')).toContainText('DEMO-');
+  await expect(page.getByTestId('report-digital-savings')).toContainText('estimated');
+  await expect(page.getByTestId('report-final-seal')).toContainText('DEMO-');
   await expect(page.locator('.rp-kicker')).toContainText('Preliminary');
   const appDownloadPromise = page.waitForEvent('download');
   await page.getByTestId('report-more').evaluate((el) => { (el as HTMLDetailsElement).open = true; });
@@ -273,15 +272,15 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   expect(appReport.lifecycle.sustainability.carbon_indicator.total_kg_co2e).toBeNull();
   expect(appReport.lifecycle.liability_disclaimer.notice).toContain('Preliminary study produced by software');
   await expect(page.getByRole('button', { name: 'Print / save PDF', exact: true })).toBeEnabled();
-  const appCertificateBeforePrint = await page.getByTestId('simulated-blockchain-certificate').innerText();
-  const appPaperBeforePrint = await page.getByTestId('document-carbon').innerText();
+  const appCertificateBeforePrint = await page.getByTestId('report-final-seal').innerText();
+  const appPaperBeforePrint = await page.getByTestId('report-digital-savings').innerText();
   await page.emulateMedia({ media: 'print' });
   const appPdf = await page.pdf({ path: testInfo.outputPath('mission-report-app.pdf'), format: 'A4', preferCSSPageSize: true, printBackground: true, displayHeaderFooter: true });
   const appPdfPages = appPdf.toString('latin1').match(/\/Type\s*\/Page\b/g)?.length ?? 0;
   expect(appPdfPages).toBeGreaterThan(0);
   expect(appPdfPages).toBeLessThanOrEqual(20);
-  await expect(page.getByTestId('simulated-blockchain-certificate')).toHaveText(appCertificateBeforePrint, { useInnerText: true });
-  await expect(page.getByTestId('document-carbon')).toHaveText(appPaperBeforePrint, { useInnerText: true });
+  await expect(page.getByTestId('report-final-seal')).toHaveText(appCertificateBeforePrint, { useInnerText: true });
+  await expect(page.getByTestId('report-digital-savings')).toHaveText(appPaperBeforePrint, { useInnerText: true });
   await page.emulateMedia({ media: 'screen' });
   await page.getByRole('radio', { name: 'Learn' }).check();
   await expect(page.locator('.report-preview .rp-appendix')).toHaveCount(0);
@@ -730,7 +729,7 @@ test('dashboard history: corruption is explicit and clearing requires consent', 
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
-test('planner: Download PDF is rendered by the server with a table of contents, page numbers and no local address', async ({ page, request }, testInfo) => {
+test('planner: Download PDF is rendered by the server with page numbers and no local address', async ({ page, request }, testInfo) => {
   test.setTimeout(120_000);
   const probe = await request.post('/api/raven/report/pdf', { data: { html: '<p>x</p>', title: 'probe', lang: 'en' } });
   test.skip(probe.status() === 503, 'server PDF engine not installed (extra pdf / Pango missing)');
@@ -741,8 +740,7 @@ test('planner: Download PDF is rendered by the server with a table of contents, 
   await expect(page.getByRole('button', { name: 'Prepare report', exact: true })).toBeEnabled({ timeout: 60_000 });
   await page.getByRole('button', { name: 'Prepare report', exact: true }).click();
   await page.getByRole('button', { name: 'Prepare report', exact: true }).click();
-  await expect(page.getByTestId('report-toc')).toBeVisible();
-  await expect(page.getByTestId('report-toc').getByRole('link')).not.toHaveCount(0);
+  await expect(page.getByTestId('report-toc')).toHaveCount(0);
   const download = page.waitForEvent('download', { timeout: 90_000 });
   await page.getByTestId('download-pdf').click();
   const file = testInfo.outputPath('server-report.pdf');

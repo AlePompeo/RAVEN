@@ -322,6 +322,7 @@ class TrainerRunner:
         self, proc: asyncio.subprocess.Process, spec: bytes
     ) -> tuple[bytes, bytes]:
         assert proc.stdin and proc.stdout and proc.stderr
+        output_too_large = asyncio.Event()
 
         async def feed() -> None:
             try:
@@ -336,9 +337,13 @@ class TrainerRunner:
         async def read_out() -> bytes:
             buf = bytearray()
             while chunk := await proc.stdout.read(8192):  # type: ignore[union-attr]
+                if output_too_large.is_set():
+                    continue
                 buf += chunk
                 if len(buf) > self._max_stdout:
-                    raise _OutputTooLarge
+                    output_too_large.set()
+                    self._killpg(proc)
+                    buf.clear()
             return bytes(buf)
 
         async def read_err() -> bytes:
@@ -349,12 +354,15 @@ class TrainerRunner:
             return bytes(buf)
 
         async def leader_exit() -> None:
-            await proc.wait()
+            while proc.returncode is None:
+                await asyncio.sleep(0.01)
             self._killpg(proc)  # un nipote puo' tenere aperte le pipe: via tutto il gruppo
 
         tasks = [asyncio.ensure_future(c) for c in (feed(), read_out(), read_err(), leader_exit())]
         try:
             results = await asyncio.gather(*tasks)
+            if output_too_large.is_set():
+                raise _OutputTooLarge
         finally:
             for t in tasks:
                 t.cancel()

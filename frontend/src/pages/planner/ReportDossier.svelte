@@ -7,6 +7,7 @@
   import { defaultMassDefaults } from './estimates';
   import type { ReportPlanning, BudgetEstimate, CarbonEstimate } from './reportPlanning';
   import ReportModeSwitch from './ReportModeSwitch.svelte';
+  import ReportOptionalSections from './ReportOptionalSections.svelte';
   import DossierEssential from './DossierEssential.svelte';
   import MissionClassSlider from './MissionClassSlider.svelte';
   import type { MissionObjectives } from './objectives';
@@ -65,6 +66,7 @@
       {#if planning.si}<p role="status">{t('dossier.siSaved', { model: planning.si.result.model })}</p>{/if}
     </section>
   {/if}
+  {#if planning.sections}<ReportOptionalSections bind:selection={planning.sections} />{/if}
   <!-- {SCENARIO_SLOT}: extension point for the scenario slider (illustrative mission-class scenarios), a later job. -->
   {#if scenarioSlot}<div data-slot={SCENARIO_SLOT}>{@render scenarioSlot()}</div>{/if}
 </div>

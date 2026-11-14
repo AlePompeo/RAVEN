@@ -23,27 +23,29 @@ function mount() {
 }
 
 describe('Home (Il problema)', () => {
-  it('palco: un h1, la domanda, UNA azione principale "Prova tu" verso /simula e l’ancora "Come funziona"', () => {
+  it('palco: un h1, il pitch, una CTA principale verso /simula e l’ancora "Come funziona"', () => {
     const { container } = mount();
     expect(screen.getAllByRole('heading', { level: 1 }).map((h) => h.textContent)).toEqual(['RAVEN']);
     const hero = screen.getByRole('region', { name: 'RAVEN' });
     expect(hero.querySelector('h1 img')?.getAttribute('src')).toContain('raven-logo');
     expect(hero.querySelector('h1 img')?.getAttribute('alt')).toBe('');
-    expect(hero.textContent).toMatch(/polo Sud della Luna la Terra sta a circa un grado/);
+    expect(hero.textContent).toContain('Confronta due siti lunari in una finestra di missione');
+    expect(hero.textContent).toContain('Deep Space Network');
+    expect(hero.textContent).toContain('carica della batteria');
     const links = [...hero.querySelectorAll('a')];
-    expect(links.map((a) => a.textContent?.trim())).toEqual(['Prova tu', 'Come funziona', 'Inizia il Mission Planner', 'Demo guidata']);
+    expect(links.map((a) => a.textContent?.trim())).toEqual(['Prova il simulatore', 'Come funziona', 'Inizia il Mission Planner', 'Demo guidata']);
     expect(links.map((a) => a.getAttribute('href'))).toEqual(['/simula', '#come-funziona', '/mission-planner', '/demo']);
     expect(container.querySelectorAll('.hero .btn--primary')).toHaveLength(1);
     // la CTA viene prima dell'interruttore di modalità nell'ordine del focus
     const order = [...hero.querySelectorAll('a, button')].map((e) => e.textContent?.trim());
-    expect(order.indexOf('Prova tu')).toBe(0);
+    expect(order.indexOf('Prova il simulatore')).toBe(0);
     expect(container.querySelector('#come-funziona')).not.toBeNull();
     expect(container.querySelector('[data-testid="moon-stage"]')?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('la storia in quattro passi e la foto con alt e credito, senza il blocco finale rimosso', () => {
     const { container } = mount();
-    for (const name of ['La Terra resta quasi sull’orizzonte', 'Perché un crinale conta', 'Cosa calcola RAVEN', 'Cosa significa per una missione']) {
+    for (const name of ['La Terra resta quasi sull’orizzonte', 'Perché un crinale conta', 'Cosa calcola RAVEN', 'Confronta i siti per ore utili']) {
       expect(screen.getByRole('region', { name })).toBeTruthy();
     }
     expect(screen.getByRole('img', { name: /La Terra, illuminata a metà/ })).toBeTruthy();
@@ -90,7 +92,7 @@ describe('Home (Il problema)', () => {
       await screen.findByTestId('mini-sim', {}, { timeout: 15_000 }); // a lazy chunk: slow under the load of the full suite
       for (const name of [
         'The Earth stays close to the horizon', 'Why a ridge matters',
-        'What RAVEN calculates', 'What this means for a mission', 'The research stack',
+        'What RAVEN calculates', 'Compare sites by useful hours', 'The research stack',
       ]) expect(screen.getByRole('heading', { name })).toBeTruthy();
       expect(screen.getByRole('img', { name: /The half-lit Earth/ })).toBeTruthy();
       expect(screen.getByTestId('strip-summary').textContent).toMatch(/28 days.*hours of contact/);

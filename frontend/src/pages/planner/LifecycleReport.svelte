@@ -1,18 +1,15 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- The report document. Built around ONE purpose: compare two sites. Parts 1-4 are the Learn report (verdict, charts, how it was
-     computed, limits); Expert adds appendices that exist only when there is something to say. English only, whatever the site language. -->
+<!-- The report document follows the requested ECSS-style waterfall order. User declarations, engine results, estimates and unknowns stay
+     distinct; the phase-gate structure is an outline, not an ECSS compliance claim. English only, whatever the site language. -->
 <script lang="ts">
   import { tEn as t, formatNumberEn as formatNumber, type MessageKey } from '../../i18n/i18n.svelte';
   import { enterReportEnglish } from '../../i18n/reportScope';
   import { rt, nf } from './reportText';
-  import type { JourneyDraft } from './journey';
+  import type { JourneyDraft, MissionShiftBaseline, MissionShiftDays } from './journey';
   import { missionLifecycleReport, REPORT_PHASES, type ReportField, type ReportIdentity } from './report';
-  import ravenMark from '../../assets/media/raven-mark.webp?no-inline';
   import type { RavenEconomics, RavenEvaluation, RavenParameter, RavenValidation } from '../../shell/ravenApi';
   import type { BudgetEstimate, CarbonEstimate } from './reportPlanning';
-  import type { SimulatedCertificate } from './reportPresentation';
   import { newReportSections } from './reportSections';
-  import type { TocEntry } from './reportToc';
   import type { ReliabilityResult } from './reliability';
   import ReliabilityResults from './ReliabilityResults.svelte';
   import PlanningStatistics from './PlanningStatistics.svelte';
@@ -23,34 +20,41 @@
   import ReportSustainability from './ReportSustainability.svelte';
   import ReportEstimates from './ReportEstimates.svelte';
   import ReportVerdict from './ReportVerdict.svelte';
+  import ReportRisks from './ReportRisks.svelte';
+  import ReportTotals from './ReportTotals.svelte';
   import ReportLink from './ReportLink.svelte';
   import ReportMoonSites from './ReportMoonSites.svelte';
   import ReportOverlays from './ReportOverlays.svelte';
   import ReportSky from './ReportSky.svelte';
   import ReportSection from './ReportSection.svelte';
+  import ReportPhaseFields from './ReportPhaseFields.svelte';
   import VisibilityFigures from './VisibilityFigures.svelte';
   import LunarDays from './LunarDays.svelte';
   import ReportFormulas from './ReportFormulas.svelte';
   import ReportLimits from './ReportLimits.svelte';
   import ReportParameters from './ReportParameters.svelte';
-  import ReportToc from './ReportToc.svelte';
+  import ReportFinalSections from './ReportFinalSections.svelte';
+  import type { SimulatedCertificate } from './reportPresentation';
   import StatusChip from './StatusChip.svelte';
+  import MissionShiftSummary from './MissionShiftSummary.svelte';
 
   let { draft, identity, evaluations, budget = null, carbon = null, reliability = null, certificate = null, certificateError = false,
-    validation = null, registry = [], economics = null, expert, created, toc = [], onverdict, onoverlays }: {
+    validation = null, registry = [], economics = null, missionShiftBaseline = [], missionShiftDays = 0, expert, created, onverdict, onoverlays }: {
     onverdict?: (done: boolean) => void; onoverlays?: (done: boolean) => void;
     draft: JourneyDraft; identity: ReportIdentity; evaluations: readonly RavenEvaluation[]; budget?: BudgetEstimate | null;
-    carbon?: CarbonEstimate | null; certificate?: SimulatedCertificate | null; certificateError?: boolean; reliability?: ReliabilityResult | null;
-    validation?: RavenValidation | null; registry?: readonly RavenParameter[]; economics?: RavenEconomics | null; expert: boolean; created: string; toc?: TocEntry[];
+    missionShiftBaseline?: readonly MissionShiftBaseline[]; missionShiftDays?: MissionShiftDays;
+    carbon?: CarbonEstimate | null; reliability?: ReliabilityResult | null; certificate?: SimulatedCertificate | null; certificateError?: boolean;
+    validation?: RavenValidation | null; registry?: readonly RavenParameter[]; economics?: RavenEconomics | null; expert: boolean; created: string;
   } = $props();
   enterReportEnglish();
 
-  const document = $derived(missionLifecycleReport(draft, rt('disclaimer'), identity, evaluations, budget, carbon, certificate, reliability));
+  const document = $derived(missionLifecycleReport(draft, rt('disclaimer'), identity, evaluations, budget, carbon, certificate, reliability, missionShiftBaseline));
   const selection = $derived(draft.planning?.sections ?? newReportSections());
   const accepted = $derived(evaluations.length ? acceptedEstimates(draft.planning?.estimates) : []);
   const phases = $derived(REPORT_PHASES.filter((p) => selection[`phase${p.id}`]));
   const fieldLabel = (id: ReportField) => t(`report.field.${id}` as MessageKey);
-  const reliabilityOn = $derived(selection.reliability && !!draft.planning?.reliability?.enabled);
+  const reliabilityEnabled = $derived(!!draft.planning?.reliability?.enabled);
+  const reliabilityOn = $derived(selection.reliability && reliabilityEnabled);
   const costsProvided = $derived(!!budget && (budget.known_cost_items > 0 || budget.funding_gap !== null));
   const carbonProvided = $derived(!!carbon && carbon.mission.known_phases > 0);
   // estimates the report shows (cost, development time, vehicle, launch CO2, statistics, mass and power); the others stay in the Dossier and the JSON
@@ -59,36 +63,90 @@
   const rangeKey = (e: { range: unknown } | undefined) => JSON.stringify(e?.range ?? null);
   const massSame = $derived(rangeKey(accepted.find((e) => e.id === 'est.mass.A')) === rangeKey(accepted.find((e) => e.id === 'est.mass.B')) && accepted.some((e) => e.id === 'est.mass.B'));
   const shownEstimates = $derived(accepted.filter((e) => SHOWN.includes(e.id) && !(massSame && e.id === 'est.mass.B')));
+  const estimatesFor = (ids: readonly string[]) => shownEstimates.filter((e) => ids.includes(e.id));
   const showD = $derived(selection.economics || selection.sustainability || (selection.deliverables && shownEstimates.length > 0));
   const thermalLoad = $derived(draft.planning?.reliability?.enabled && draft.planning.reliability.apply_thermal_load ? draft.planning.reliability.thermal_load_w ?? null : null);
   const labels = ['A', 'B', 'C', 'D', 'E'];
-  // appendix letters follow the sections that are really present
-  const present = $derived([reliabilityOn, selection.provenance, phases.length > 0, showD, selection.seal || selection.paper]);
-  const letter = (index: number) => labels[present.slice(0, index).filter(Boolean).length];
-  const grams = (kg: number | null | undefined) => kg == null ? t('report.notAssessed') : formatNumber(kg * 1000, { maximumFractionDigits: 1 });
+  const phase = (id: string) => document.phases.find((p) => p.id === id)!;
+  const letter = (index: number) => labels[index]!;
 </script>
 
 <div class="lifecycle-report" data-testid="mission-lifecycle-report" lang="en">
-  <ReportSummary {evaluations} missionName={draft.name || t('planner.libraryUnnamed')} start={draft.input.start} days={draft.input.days} {created} {expert} decision={draft.decision} {budget} {carbon} estimates={draft.planning?.estimates} missionClass={draft.planning?.missionClass} />
-  {#if expert}<ReportToc entries={toc} />{/if}
+  <section class="rp-part rp-executive" data-part="executive" data-testid="report-executive-summary">
+    <ReportSummary {evaluations} missionName={draft.name || t('planner.libraryUnnamed')} start={draft.input.start} days={draft.input.days} {created} {expert} decision={draft.decision}
+      {budget} {carbon} estimates={draft.planning?.estimates} missionClass={draft.planning?.missionClass} showRisks={false} showTotals={false} />
+    <h4>{rt('part.verdict')}</h4>
+    <ReportVerdict {evaluations} priority={draft.objectives?.priority ?? null} onready={onverdict} />
+    <ReportMoonSites {evaluations} />
+  </section>
 
-  <section class="rp-part" data-part="2"><h3>{rt('part2')}</h3><ReportMoonSites {evaluations} /><ReportOverlays {evaluations} onready={onoverlays} /><ReportCharts {evaluations} /><ReportSky {evaluations} /><ReportLink {evaluations} {expert} /><VisibilityFigures {evaluations} tr={rt} fmt={(v: number, d = 1) => nf(v, { minimumFractionDigits: d, maximumFractionDigits: d })} countdown /><LunarDays {evaluations} tr={rt} fmt={(v: number, d = 1) => nf(v, { minimumFractionDigits: d, maximumFractionDigits: d })} />{#if expert}<ReportSection {evaluations} radio={draft.radio} />{/if}</section>
-  <section class="rp-part" data-part="sustainability"><h3>{rt('part.sust')}</h3><ReportSustainability {evaluations} {economics} {expert} /><ReportEstimates {expert} /></section>
-  <section class="rp-part" data-part="3"><h3>{rt('part3')}</h3><p class="rp-how">{rt('part3.how')}</p>{#if !expert}<p class="rp-how">{rt('part3.learn')}</p>{/if}<ReportFormulas {evaluations} {validation} {registry} learn={!expert} /></section>
-  <section class="rp-part" data-part="4"><h3>{rt('part4')}</h3><ReportLimits {evaluations} {validation} extraLoadW={thermalLoad} /></section>
-
-  <section class="rp-part" data-part="verdict"><h3>{rt('part.verdict')}</h3><ReportVerdict {evaluations} priority={draft.objectives?.priority ?? null} onready={onverdict} /></section>
+  <section class="rp-part rp-ecss-phase rp-ecss-phase--0" data-part="0" data-testid="report-phase-0">
+    <h3>{rt('phase.title.0')}</h3>
+    <h4>{rt('phase.goal')}</h4>
+    <ReportPhaseFields phase={phase('0')} fields={['scientific_objectives', 'technology_objectives', 'other_objectives', 'success_criteria', 'stakeholders']} />
+    <ReportOverlays {evaluations} onready={onoverlays} />
+  </section>
+  <section class="rp-part rp-ecss-phase rp-ecss-phase--A" data-part="A" data-testid="report-phase-A">
+    <h3>{rt('phase.title.A')}</h3>
+    <ReportPhaseFields phase={phase('A')} fields={['high_level_requirements', 'technical_feasibility', 'economic_feasibility', 'schedule']} />
+    <ReportCharts {evaluations} ids={['cum', 'sun', 'earth']} />
+    <ReportRisks {evaluations} expert />
+    <ReportSustainability {evaluations} {economics} {expert} showCarbon={false} showEnergy={false} showLaunch={false} />
+    <ReportTotals {budget} {carbon} estimates={draft.planning?.estimates} missionClass={draft.planning?.missionClass} {expert} show={['cost']} />
+    {#each estimatesFor(['est.cost', 'est.devtime']) as estimate (estimate.id)}<EstimateView {estimate} compact />{/each}
+  </section>
+  <section class="rp-part rp-ecss-phase rp-ecss-phase--B" data-part="B" data-testid="report-phase-B">
+    <h3>{rt('phase.title.B')}</h3>
+    <ReportPhaseFields phase={phase('B')} fields={['system_architecture', 'space_and_ground_segments', 'interfaces', 'mass_and_power_budgets', 'verification_plan']} />
+    <ReportCharts {evaluations} ids={['battery']} />
+    <h4>{rt('phase.massBudget')}</h4>
+    {#each estimatesFor(['est.mass.A', 'est.mass.B']) as estimate (estimate.id)}<EstimateView {estimate} compact />{/each}
+    {#if !estimatesFor(['est.mass.A', 'est.mass.B']).length}<p class="rp-note">{rt('phase.massUnknown')}</p>{/if}
+  </section>
+  <section class="rp-part rp-ecss-phase rp-ecss-phase--C" data-part="C" data-testid="report-phase-C">
+    <h3>{rt('phase.title.C')}</h3>
+    <ReportPhaseFields phase={phase('C')} fields={['detailed_design', 'hardware_selection', 'design_verification', 'ait_plan']} />
+    <ReportSky {evaluations} />
+    <ReportEstimates {expert} showLanding={false} />
+    <ReportCharts {evaluations} ids={['rf']} />
+    <ReportLink {evaluations} expert />
+    <ReportSection {evaluations} radio={draft.radio} />
+    {#if selection.methodology}
+      <h4>{rt('part3')}</h4><p class="rp-how">{rt('part3.how')}</p>
+      <ReportFormulas {evaluations} {validation} {registry} />
+    {/if}
+    <h4>{rt('part4')}</h4><ReportLimits {evaluations} {validation} extraLoadW={thermalLoad} />
+  </section>
+  <section class="rp-part rp-ecss-phase rp-ecss-phase--D" data-part="D" data-testid="report-phase-D">
+    <h3>{rt('phase.title.D')}</h3>
+    <ReportPhaseFields phase={phase('D')} fields={['development_and_production', 'integration', 'qualification_tests', 'acceptance_tests', 'nonconformances']} includeProposal />
+    {#if reliabilityOn && reliability}
+      <ReliabilityResults result={reliability} showInputs charts report />
+      <ReportFormulas {evaluations} {validation} {registry} appendix />
+    {/if}
+    <ReportEstimates {expert} showFresnel={false} showIntro={false} showTitle={false} />
+    {#each estimatesFor(['est.stats']) as estimate (estimate.id)}<EstimateView {estimate} compact />{/each}
+  </section>
+  <section class="rp-part rp-ecss-phase rp-ecss-phase--E" data-part="E" data-testid="report-phase-E">
+    <h3>{rt('phase.title.E')}</h3>
+    <MissionShiftSummary {evaluations} baseline={missionShiftBaseline} shiftDays={missionShiftDays}
+      tr={(key, params) => rt(`shift.${key}`, params)} fmt={(v, d = 1) => nf(v, { minimumFractionDigits: d, maximumFractionDigits: d })} />
+    <ReportSustainability {evaluations} {economics} {expert} showCosts={false} showCarbon={false} showEnergy={false} showIntro={false} />
+    {#each estimatesFor(['est.vehicle']) as estimate (estimate.id)}<EstimateView {estimate} compact />{/each}
+    <VisibilityFigures {evaluations} tr={rt} fmt={(v: number, d = 1) => nf(v, { minimumFractionDigits: d, maximumFractionDigits: d })} countdown />
+    <p class="rp-how">{rt('phase.dsnScope')}</p>
+    <LunarDays {evaluations} tr={rt} fmt={(v: number, d = 1) => nf(v, { minimumFractionDigits: d, maximumFractionDigits: d })} />
+    <p class="rp-how">{rt('phase.lunarDaysScope')}</p>
+  </section>
+  <section class="rp-part rp-ecss-phase rp-ecss-phase--F" data-part="F" data-testid="report-phase-F">
+    <h3>{rt('phase.title.F')}</h3>
+    <ReportSustainability {evaluations} {economics} {expert} showCosts={false} showIntro={false} />
+    <ReportTotals {budget} {carbon} estimates={draft.planning?.estimates} missionClass={draft.planning?.missionClass} expert={false} show={['co2']} />
+    {#each estimatesFor(['est.launch_co2']) as estimate (estimate.id)}<EstimateView {estimate} compact />{/each}
+  </section>
 
   {#if expert}
-    {#if reliabilityOn}
-      <section class="rp-appendix" data-appendix="reliability">
-        <h3>{rt('appendix', { letter: letter(0) ?? 'A' })} — {rt('app.reliability')}</h3>
-        {#if reliability}<div data-toc-skip><ReliabilityResults result={reliability} showInputs charts /></div>
-          <ReportFormulas {evaluations} {validation} {registry} appendix />
-        {:else}<p class="rp-note">{rt('app.reliabilityIncomplete')}</p>{/if}
-      </section>
-    {/if}
-    {#if selection.provenance}
+    {#if selection.configuration && selection.provenance}
       <section class="rp-appendix" data-appendix="parameters">
         <h3>{rt('appendix', { letter: letter(1) ?? 'B' })} — {rt('app.parameters')}</h3>
         <ReportParameters {evaluations} {registry} />
@@ -99,7 +157,7 @@
         <h3>{rt('appendix', { letter: letter(2) ?? 'C' })} — {rt('app.dossier')}</h3>
         {#each phases as phase}
           {@const content = document.phases.find((p) => p.id === phase.id)!}
-          {@const done = content.deliverables.filter((i) => i.status !== 'draft_proposal')}
+          {@const done = content.deliverables.filter((i) => i.status !== 'draft_proposal' && i.id !== 'drawings_and_software_baselines')}
           <section class="phase" data-phase={phase.id}>
             <h4>{t(phase.title as MessageKey)}</h4>
             {#if done.length}
@@ -150,21 +208,6 @@
         {/if}
       </section>
     {/if}
-    {#if selection.seal || selection.paper}
-      <section class="rp-appendix appendix" data-appendix="stamp" data-testid="report-appendix">
-        <h3>{rt('appendix', { letter: letter(4) ?? 'E' })} — {rt('app.stamp')}</h3>
-        {#if selection.seal}
-          <div class="seal" aria-label={t('report.sealLabel')} data-testid="mission-signature"><img src={ravenMark} alt="" width="88" height="44" /><strong>RAVEN</strong></div>
-          <div data-testid="simulated-blockchain-certificate">
-            {#if certificate}<p class="registry">SHA-256 {certificate.payload_sha256}</p><p class="registry">{t('certificate.transaction')}: {certificate.simulated_transaction_id}</p>
-            {:else}<p role={certificateError ? 'alert' : 'status'}>{t(certificateError ? 'certificate.error' : 'certificate.pending')}</p>{/if}
-          </div>
-        {/if}
-        {#if selection.paper && carbon?.document.compact_pages && carbon.document.reference_pages}
-          <p data-testid="document-carbon">{t('carbon.pageEstimate', { compact: carbon.document.compact_pages, reference: carbon.document.reference_pages })}
-            {t('carbon.digitalReminder', { grams: grams(carbon.document.not_printing_avoided_kg_co2e) })}</p>
-        {/if}
-      </section>
-    {/if}
   {/if}
+  <ReportFinalSections {carbon} {certificate} {certificateError} />
 </div>
