@@ -330,3 +330,7 @@ cd frontend && npm run build
 <div align="center">
   <sub>Built for the NASA Space Apps Challenge 2026. Distributed under the Apache-2.0 License.</sub>
 </div>
+
+---
+
+*Keywords: lunar landing site, NASA Space Apps Challenge, mission planning, radio visibility, energy analysis, communications networks, Moon, space, Python.*
