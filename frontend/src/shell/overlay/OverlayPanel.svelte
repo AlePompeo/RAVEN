@@ -8,21 +8,36 @@
   import type { OverlayController, Layer } from './overlayController.svelte';
 
   let { ctl, usefulMax = null, name = 'overlay-layer' }: { ctl: OverlayController; usefulMax?: number | null; name?: string } = $props();
-  const LAYERS: { id: Layer; label: MessageKey }[] = [
-    { id: 'none', label: 'dash.layer.none' }, { id: 'elevation', label: 'dash.layer.elevation' }, { id: 'slope', label: 'dash.layer.slope' },
-    { id: 'coverage', label: 'dash.layer.coverage' }, { id: 'sun', label: 'dash.layer.sun' }, { id: 'earth', label: 'dash.layer.earth' },
-    { id: 'suitability', label: 'finder.layer' }, { id: 'both', label: 'dash.layer.both' }, { id: 'sun_gap', label: 'dash.layer.sunGap' }, { id: 'earth_gap', label: 'dash.layer.earthGap' },
-    { id: 'composite', label: 'dash.layer.composite' }, { id: 'useful', label: 'dash.layer.useful' },
+  const GROUPS: { label: MessageKey; layers: { id: Layer; label: MessageKey }[] }[] = [
+    { label: 'dash.groupTerrain', layers: [
+      { id: 'elevation', label: 'dash.layer.elevation' }, { id: 'slope', label: 'dash.layer.slope' }, { id: 'coverage', label: 'dash.layer.coverage' },
+    ] },
+    { label: 'dash.groupLight', layers: [
+      { id: 'sun', label: 'dash.layer.sun' }, { id: 'sun_gap', label: 'dash.layer.sunGap' },
+    ] },
+    { label: 'dash.groupComms', layers: [
+      { id: 'earth', label: 'dash.layer.earth' }, { id: 'earth_gap', label: 'dash.layer.earthGap' },
+    ] },
+    { label: 'dash.groupCombined', layers: [
+      { id: 'suitability', label: 'finder.layer' }, { id: 'both', label: 'dash.layer.both' },
+      { id: 'composite', label: 'dash.layer.composite' }, { id: 'useful', label: 'dash.layer.useful' },
+    ] },
   ];
-  const shown = $derived(LAYERS.filter((l) => (l.id !== 'useful' || usefulMax !== null) && (l.id !== 'suitability' || ctl.suitability !== null)));
+  const shown = $derived(GROUPS.map((g) => ({ ...g, layers: g.layers.filter((l) => (l.id !== 'useful' || usefulMax !== null) && (l.id !== 'suitability' || ctl.suitability !== null)) })).filter((g) => g.layers.length));
   const legendLabel = (o: RavenOverlay) => (o.unit === 'class' ? '' : `${new Intl.NumberFormat().format(Math.round(o.min * 10) / 10)} – ${new Intl.NumberFormat().format(Math.round(o.max * 10) / 10)} ${o.unit}`);
 </script>
 
 <fieldset class="overlays">
   <legend>{t('dash.overlay')}</legend>
   <div class="choices" role="radiogroup" aria-label={t('dash.overlay')}>
-    {#each shown as l}
-      <label class="choice"><input type="radio" {name} value={l.id} checked={ctl.layer === l.id} onchange={() => { ctl.layer = l.id; }} />{t(l.label)}</label>
+    <label class="choice"><input type="radio" {name} value="none" checked={ctl.layer === 'none'} onchange={() => { ctl.layer = 'none'; }} />{t('dash.layer.none')}</label>
+    {#each shown as group}
+      <div class="group" role="group" aria-label={t(group.label)}>
+        <strong>{t(group.label)}</strong>
+        {#each group.layers as l}
+          <label class="choice"><input type="radio" {name} value={l.id} checked={ctl.layer === l.id} onchange={() => { ctl.layer = l.id; }} />{t(l.label)}</label>
+        {/each}
+      </div>
     {/each}
   </div>
   {#if ctl.layer !== 'none'}
@@ -61,7 +76,9 @@
 <style>
   .overlays { border: 1px solid #9bdfff33; border-radius: .6rem; padding: .6rem .9rem; min-width: 0; }
   legend { padding-inline: .4rem; color: #a4dfff; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
-  .choices { display: flex; flex-wrap: wrap; gap: .25rem 1rem; }
+  .choices { display: grid; gap: .25rem; }
+  .group { display: flex; flex-wrap: wrap; gap: 0 1rem; border-top: 1px solid #9bdfff33; padding-top: .35rem; }
+  .group strong { flex-basis: 100%; color: #c9efff; font-size: .8rem; }
   .choice { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; }
   .opacity { display: block; margin-top: .4rem; font-size: .85rem; } input[type='range'] { width: min(20rem, 100%); min-height: 44px; }
   .legend { margin-top: .5rem; font-size: .85rem; } .legend .bar { height: .7rem; border-radius: .2rem; margin-bottom: .25rem; }

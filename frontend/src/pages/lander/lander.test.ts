@@ -275,6 +275,10 @@ describe('camera', () => {
     expect(l.target[1]).toBeLessThan(scene().antenna.mastM);
     const top = presetCamera('top', scene());
     expect(viewDir(top)[1]).toBeLessThan(-0.99);
+    const terrain = presetCamera('terrain', scene());
+    expect(terrain.dist).toBeCloseTo(scene().terrain.patch!.sizeM * 1.05);
+    expect(viewDir(terrain)[1]).toBeLessThan(0);
+    expect(eyeOf(terrain)[1]).toBeGreaterThan(terrain.target[1]);
   });
 });
 

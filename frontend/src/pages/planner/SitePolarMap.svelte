@@ -6,11 +6,12 @@
   import { t } from '../../i18n/i18n.svelte';
   import { ASSETS } from '../../viewports/bodies/assets';
   import { pixelFromPolar, polarFromPixel, renderPolarTexture } from './moonMap';
-  let { sites, assigned = {}, picked = null, onmarker, onpick, limit = -60, overlay = null, markerColors = {}, help }: {
+  let { sites, assigned = {}, picked = null, pickedState, onmarker, onpick, limit = -60, overlay = null, markerColors = {}, help }: {
     sites: readonly { id: string; name: string; lat: number; lon: number }[];
     /** Site ids currently used as scenario A / B (drawn with their letter). */
     assigned?: { A?: string; B?: string };
     picked?: { lat: number; lon: number } | null;
+    pickedState?: boolean | null;
     /** Latitude at the rim of the disc (the overlays are drawn for -75). */
     limit?: number;
     /** A canvas covering the whole disc, drawn over the Moon texture (remote-sensing overlay). */
@@ -62,11 +63,11 @@
     }
     if (picked) {
       const p = pixelFromPolar(picked.lat, picked.lon, PX, PX, LIMIT);
-      if (p) { ctx.strokeStyle = '#ffd24a'; ctx.lineWidth = 3 * DPR; ctx.beginPath(); ctx.arc(p.x, p.y, 9 * DPR, 0, 7); ctx.stroke(); }
+      if (p) { ctx.strokeStyle = pickedState === true ? '#6ee7a8' : pickedState === false ? '#ffae70' : pickedState === null ? '#c8c8c8' : '#ffd24a'; ctx.lineWidth = 3 * DPR; ctx.beginPath(); ctx.arc(p.x, p.y, 9 * DPR, 0, 7); ctx.stroke(); }
     }
   }
   onMount(() => { const i = new Image(); i.onload = () => { img = i; }; i.src = ASSETS.moonColor2k.url; });
-  $effect(() => { void sites; void assigned.A; void assigned.B; void picked; void LIMIT; void overlay; void markerColors; if (canvas && img) draw(); });
+  $effect(() => { void sites; void assigned.A; void assigned.B; void picked; void pickedState; void LIMIT; void overlay; void markerColors; if (canvas && img) draw(); });
 
   function click(e: MouseEvent): void {
     const c = canvas; if (!c) return;

@@ -13,7 +13,7 @@
   import { archiveRun, readHistory, writeHistory, HISTORY_LIMIT, type HistoryEntry } from '../planner/history';
   import JourneyResults from '../planner/JourneyResults.svelte';
   import DashboardNavigator from './DashboardNavigator.svelte';
-  import { countdownAt, siteStats, type Countdown } from '../planner/visibilityStats';
+  import { comparisonHours } from './comparison';
 
   let ready = $state(false);
   let currentRun = $state.raw<JourneyRun | null>(null);
@@ -62,11 +62,10 @@
     return () => clearInterval(id);
   });
 
-  const hours = (v: number | null | undefined) => (v == null ? t('journey.unknown') : `${formatNumber(v, { maximumFractionDigits: 0 })} h`);
-  const pct = (v: number | null | undefined) => (v == null ? t('journey.unknown') : `${formatNumber(v * 100, { maximumFractionDigits: 1 })} %`);
-  const countText = (c: Countdown | undefined, body: 'sun' | 'earth') =>
-    !c || c.visible === null ? t('journey.unknown') : c.status === 'unknown' ? t('journey.changeUnknown') : c.hours === null ? t('journey.noChange')
-      : t(body === 'sun' ? (c.visible ? 'journey.nextSunset' : 'journey.nextSunrise') : (c.visible ? 'journey.nextEarthset' : 'journey.nextEarthrise'), { hours: formatNumber(c.hours, { maximumFractionDigits: 1 }) });
+  const hours = (v: number | null | undefined) => (v == null ? t('journey.unknown') : `${formatNumber(v, { maximumFractionDigits: 1 })} h`);
+  const comparison = $derived(evals.map(comparisonHours));
+  const delta = (a: number | null | undefined, b: number | null | undefined) =>
+    a == null || b == null ? t('journey.unknown') : `${b - a > 0 ? '+' : ''}${formatNumber(b - a, { maximumFractionDigits: 1 })} h`;
 
   onMount(() => {
     let alive = true;
@@ -134,14 +133,14 @@
     {#if error}<p role="alert">{t(error)}</p>{/if}
     <div class="mc">
       <div class="panel center">
-        <DashboardNavigator sites={siteList} {run} {scenario} {index} onsite={openSite} onscenario={(i) => { scenario = i; }} />
+        <DashboardNavigator sites={siteList} {run} {scenario} {index} {playing} onsite={openSite}
+          onscenario={(i) => { scenario = i; }} onindex={(i) => { index = i; playing = false; }} onplay={() => { playing = !playing; }} />
       </div>
       <section class="panel kpi" aria-labelledby="kpi-title" data-testid="dashboard-kpi">
         <div class="kpi-head">
           <h2 id="kpi-title">{t('dash.kpi')}</h2>
           {#if run}
             <p class="name"><strong>{run.config.name || t('planner.libraryUnnamed')}</strong> · {run.createdAt.replace('T', ' ')}</p>
-            <button type="button" onclick={() => { playing = !playing; }} aria-pressed={playing}>{t(playing ? 'planner.replayPause' : 'planner.replayPlay')}</button>
           {/if}
         </div>
         {#if run}
@@ -149,22 +148,28 @@
           {#if selected && evals[0] && evals[0].model_version !== version}<p class="warning">{t('history.oldModel', { saved: evals[0].model_version, current: version })}</p>{/if}
           <div class="tiles">
             {#each evals as e, i (e.site.id + i)}
-              {@const s = siteStats(e)}
-              {@const c = countdownAt(e, index)}
               <article class="tile" data-scenario={i === 0 ? 'A' : 'B'}>
                 <h3><span class="tag">{i === 0 ? 'A' : 'B'}</span> {e.site.name}</h3>
+                <p class="note">{e.window.start_utc.replace('T', ' ').replace('Z', ' UTC')}</p>
                 <dl>
                   <div><dt>{t('planner.abUseful')}</dt><dd>{hours(e.metrics.useful_hours)}</dd></div>
-                  <div><dt>{t('vis.sunMax')}</dt><dd>{s?.sunMaxElDeg == null ? t('journey.unknown') : `${formatNumber(s.sunMaxElDeg, { maximumFractionDigits: 1 })}°`}</dd></div>
-                  <div><dt>{t('vis.litH')}</dt><dd>{hours(s?.litH)}</dd></div>
-                  <div><dt>{t('vis.earthH')}</dt><dd>{hours(s?.earthH)}</dd></div>
-                  <div><dt>{t('planner.socChart')}</dt><dd>{pct(e.metrics.min_soc)}</dd></div>
-                  <div><dt>{t('planner.sun')}</dt><dd>{countText(c?.sun, 'sun')}</dd></div>
-                  <div><dt>{t('planner.earth')}</dt><dd>{countText(c?.earth, 'earth')}</dd></div>
+                  <div><dt>{t('vis.litH')}</dt><dd>{hours(comparison[i]?.sun)}</dd></div>
+                  <div><dt>{t('dash.contactHours')}</dt><dd>{hours(comparison[i]?.contact)}</dd></div>
+                  <div><dt>{t('journey.unknownHours')}</dt><dd>{hours(e.metrics.unknown_hours)}</dd></div>
                 </dl>
+                <button type="button" aria-pressed={scenario === i} onclick={() => { scenario = i; }}>{t('dash.selectScenario', { scenario: i === 0 ? 'A' : 'B' })}</button>
               </article>
             {/each}
           </div>
+          {#if comparison.length >= 2}
+            <div class="deltas" data-testid="dashboard-deltas">
+              <strong>{t('dash.difference')}</strong>
+              <span>{t('vis.litH')}: {delta(comparison[0]?.sun, comparison[1]?.sun)}</span>
+              <span>{t('dash.contactHours')}: {delta(comparison[0]?.contact, comparison[1]?.contact)}</span>
+              <span>{t('planner.abUseful')}: {delta(comparison[0]?.useful, comparison[1]?.useful)}</span>
+            </div>
+          {/if}
+          <p class="note">{t('dash.comparisonNote')}</p>
         {:else if selected}
           <p role="alert">{t('history.incompatible')}</p>
         {:else}
@@ -234,6 +239,8 @@
   .tile { border: 1px solid #9bdfff30; border-radius: .5rem; padding: .6rem .8rem; margin-top: .75rem; background: #08162700; }
   .tile h3 { margin: 0 0 .4rem; font-size: .95rem; } .tag { display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #0b5cad; color: #fff; font-size: .8rem; }
   .tile[data-scenario='B'] .tag { background: #a15c00; }
+  .tile button { margin-top: .5rem; } .tile button[aria-pressed='true'] { border-color: #9bdfff; background: #9bdfff22; }
+  .deltas { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .75rem; padding: .65rem; border-inline-start: 3px solid #a4dfff; background: #102941; font-variant-numeric: tabular-nums; }
   dl { margin: 0; } dl div { display: flex; justify-content: space-between; gap: .75rem; padding-block: .2rem; border-bottom: 1px solid #9bdfff1a; }
   dt { color: var(--c-muted); font-size: .8rem; } dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
   .name { margin: 0 0 .4rem; font-size: .85rem; overflow-wrap: anywhere; }

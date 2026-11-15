@@ -56,12 +56,13 @@
     type Snapshot,
   } from './snapshot';
 
-  let { embedded = false, onBodyChange, overlay = null, tall = false, below }: {
+  let { embedded = false, onBodyChange, overlay = null, tall = false, controlledTime = false, below }: {
     embedded?: boolean; onBodyChange?: (body: BodyId) => void;
     /** Sovramappa del polo sud (RGBA) sulla Luna; la scelta e la legenda stanno nella pagina che la passa. */
     overlay?: OverlayRaster | null;
     /** Occupa gran parte dello schermo (dashboard). */
     tall?: boolean;
+    controlledTime?: boolean;
     /** Contenuto della pagina ospite subito sotto la scena (es. la scelta delle sovramappe). */
     below?: Snippet;
   } = $props();
@@ -772,7 +773,9 @@
     </div>
   </div>
   <div class="hud-bar">
-    <SkyTime belowScene bind:this={skyTime} body={skyBody} onlight={(l) => (skyLight = l)} {initialMs} externalMs={embedded ? tToMs(sc.t) : null} ontime={onTime} />
+    <div hidden={controlledTime}>
+      <SkyTime belowScene bind:this={skyTime} body={skyBody} onlight={(l) => (skyLight = l)} {initialMs} externalMs={embedded ? tToMs(sc.t) : null} ontime={onTime} />
+    </div>
     {#if def.telemetry}
       <div class="live">
         <p class="live-pill" role="status" data-state={live ? 'ok' : telemetry.status?.kind === 'reconnecting' ? 'warn' : 'idle'}>

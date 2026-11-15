@@ -12,10 +12,13 @@
   import OverlayPanel from '../../shell/overlay/OverlayPanel.svelte';
   import { OverlayController } from '../../shell/overlay/overlayController.svelte';
   import { sequentialColor } from './overlayColors';
+  import { countdownAt, type Countdown } from '../planner/visibilityStats';
+  import DashboardTimeline from './DashboardTimeline.svelte';
 
-  let { sites, run, scenario = 0, index = 0, onsite, onscenario }: {
+  let { sites, run, scenario = 0, index = 0, playing = false, onsite, onscenario, onindex, onplay }: {
     sites: readonly { id: string; name: string; lat: number; lon: number }[];
-    run: JourneyRun | null; scenario?: number; index?: number; onsite?: (id: string) => void; onscenario?: (index: number) => void;
+    run: JourneyRun | null; scenario?: number; index?: number; playing?: boolean;
+    onsite?: (id: string) => void; onscenario?: (index: number) => void; onindex: (index: number) => void; onplay: () => void;
   } = $props();
 
   type View = 'polar' | 'globe' | 'rover';
@@ -36,6 +39,14 @@
   });
   const active = $derived(evals[scenario] ?? evals[0] ?? null);
   const selectedSite = $derived(sites.find((s) => s.id === selectedId) ?? null);
+  const selectedEvaluation = $derived(active?.site.id === selectedId ? active : null);
+  const pickedState = $derived(selectedEvaluation?.steps ? selectedEvaluation.steps.useful[index] ?? null : undefined);
+  const countdown = $derived(selectedEvaluation ? countdownAt(selectedEvaluation, index) : null);
+  const measurement = (v: number | null | undefined, unit: string, scale = 1) =>
+    v == null || !Number.isFinite(v) ? t('journey.unknown') : `${formatNumber(v * scale, { maximumFractionDigits: 1 })} ${unit}`;
+  const countText = (c: Countdown | undefined, body: 'sun' | 'earth') =>
+    !c || c.visible === null ? t('journey.unknown') : c.status === 'unknown' ? t('journey.changeUnknown') : c.hours === null ? t('journey.noChange')
+      : t(body === 'sun' ? (c.visible ? 'journey.nextSunset' : 'journey.nextSunrise') : (c.visible ? 'journey.nextEarthset' : 'journey.nextEarthrise'), { hours: formatNumber(c.hours, { maximumFractionDigits: 1 }) });
   $effect(() => { selectedId = active?.site.id ?? ''; });
 
   function selectSite(id: string) {
@@ -83,14 +94,17 @@
       </div>
       {#if view !== 'rover'}<OverlayPanel {ctl} usefulMax={run ? maxUseful : null} />{/if}
     </aside>
+    <div class="scene-column">
     <div class="stage">
       {#if view === 'polar'}
-        <div class="polar"><SitePolarMap {sites} {assigned} picked={selectedSite ? { lat: selectedSite.lat, lon: selectedSite.lon } : null}
+        <div class="polar"><SitePolarMap {sites} {assigned} {pickedState} picked={selectedSite ? { lat: selectedSite.lat, lon: selectedSite.lon } : null}
           limit={-75} overlay={ctl.canvas} {markerColors} help={t('dash.mapInspect')}
-          onmarker={selectSite} onpick={() => {}} /></div>
+          onmarker={selectSite} onpick={() => {}} />
+          {#if pickedState !== undefined}<p class="note" data-testid="dashboard-map-state">{t('dash.mapSample')}: {t(pickedState === null ? 'journey.unknown' : pickedState ? 'dash.timelineYes' : 'dash.timelineNo')}</p>{/if}
+        </div>
       {:else if view === 'globe'}
         {#await import('../viewer/Viewer.svelte') then m}
-          <m.default embedded tall overlay={ctl.raster} />
+          <m.default embedded tall controlledTime={!!active?.steps} overlay={ctl.raster} />
         {:catch}<p role="alert">{t('custom.globeFailed')}</p>{/await}
       {:else if active && radio && radio.gain !== null && radio.rate !== null && radio.mast !== null && Number.isFinite(roverMs)}
         {#await import('../lander/Lander.svelte') then m}
@@ -99,6 +113,10 @@
         {:catch}<p role="alert">{t('journey.visualFailed')}</p>{/await}
         <p class="note">{t('dash.roverScenario', { site: active.site.name })}</p>
       {:else}<p class="note">{t('dash.noRun')}</p>{/if}
+    </div>
+    {#if active?.steps?.time_unix.length}
+      <DashboardTimeline {active} {scenario} {index} {playing} {onindex} {onplay} />
+    {:else}<p class="note">{t('dash.timelineEmpty')}</p>{/if}
     </div>
     <aside class="site-detail" aria-labelledby="dashboard-site-title" data-testid="dashboard-site-detail">
       <h3 id="dashboard-site-title">{t('dash.selectedSite')}</h3>
@@ -113,6 +131,21 @@
           <div><dt>{t('dash.latitude')}</dt><dd>{formatNumber(selectedSite.lat, { maximumFractionDigits: 4 })}°</dd></div>
           <div><dt>{t('dash.longitude')}</dt><dd>{formatNumber(selectedSite.lon, { maximumFractionDigits: 4 })}°</dd></div>
         </dl>
+        {#if selectedEvaluation?.steps}
+          <h4>{t('dash.instantData')}</h4>
+          <p class="note">{new Date(selectedEvaluation.steps.time_unix[index]! * 1000).toISOString().replace('.000Z', ' UTC').replace('T', ' ')}</p>
+          <dl data-testid="dashboard-instant">
+            <div><dt>{t('dash.sunElevation')}</dt><dd>{measurement(selectedEvaluation.steps.sun_el_deg[index], '°')}</dd></div>
+            <div><dt>{t('dash.earthElevation')}</dt><dd>{measurement(selectedEvaluation.steps.earth_el_deg[index], '°')}</dd></div>
+            <div><dt>{t('dash.rfMargin')}</dt><dd>{measurement(selectedEvaluation.steps.margin_db[index], 'dB')}</dd></div>
+            <div><dt>{t('planner.socChart')}</dt><dd>{measurement(selectedEvaluation.steps.soc[index], '%', 100)}</dd></div>
+          </dl>
+          <p class="note">{t('dash.batteryEndStep')}</p>
+          <p class="note">{countText(countdown?.sun, 'sun')}</p>
+          <p class="note">{countText(countdown?.earth, 'earth')}</p>
+        {:else}
+          <p class="note">{t('dash.instantUnavailable')}</p>
+        {/if}
         {#if view === 'polar' && selectedSite.lat > -75}<p class="note">{t('dash.outsidePolar')}</p>{/if}
         <button type="button" onclick={() => onsite?.(selectedSite.id)}>{t('demo.openPlanner')}</button>
       {:else}
@@ -129,6 +162,7 @@
   .switch { display: grid; gap: .35rem; margin-bottom: 1rem; } .switch button { min-height: 44px; padding: .4rem .8rem; text-align: left; }
   .switch button[aria-pressed='true'] { background: #9bdfff22; border-color: #9bdfff; color: #c9efff; }
   .work { display: grid; gap: .75rem; grid-template-columns: minmax(13rem, 16rem) minmax(0, 1fr) minmax(13rem, 16rem); align-items: start; }
+  .scene-column { min-width: 0; }
   .stage { min-width: 0; min-height: max(30rem, 74svh); background: #05101c; border: 1px solid #9bdfff40; border-radius: .6rem; padding: .5rem; overflow: hidden; --polar-max: min(100%, 78svh); }
   .polar { display: grid; place-items: center; min-height: max(29rem, 72svh); }
   .controls, .site-detail { min-width: 0; border: 1px solid #9bdfff33; border-radius: .6rem; padding: .75rem; background: #081827; }

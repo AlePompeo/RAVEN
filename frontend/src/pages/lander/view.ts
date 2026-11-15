@@ -9,11 +9,12 @@ export const EARTH_DISTANCE_M = 40_000; // la Terra e' disegnata a una distanza 
 
 /* ------------------------------------------------------ camera ------------------------------------------------------ */
 
-export type Preset = 'lander' | 'side' | 'top';
+export type Preset = 'lander' | 'side' | 'top' | 'terrain';
 export const PRESETS: readonly { id: Preset; label: string }[] = [
   { id: 'lander', label: 'Dal lander' },
   { id: 'side', label: 'Laterale' },
   { id: 'top', label: "Dall'alto" },
+  { id: 'terrain', label: 'Terreno obliquo' },
 ];
 
 export interface Cam {
@@ -35,6 +36,7 @@ export function presetCamera(preset: Preset, s: LanderScene | null, vExag = 1): 
     return { yaw: 0.18, pitch: -0.32, dist: Math.max(9, h * 1.8), target: [-0.8, (h + 0.8) / 2, 0], fovDeg: 62 };
   }
   if (preset === 'side') return { yaw: -90 * DEG, pitch: -8 * DEG, dist: reach * 1.5, target: [reach * 0.4, h + reach * 0.03 * vExag, 0], fovDeg: 45 };
+  if (preset === 'terrain') return { yaw: -50 * DEG, pitch: -38 * DEG, dist: Math.max(100, Math.min(10_000, (s?.terrain.patch?.sizeM ?? reach) * 1.05)), target: [0, h, 0], fovDeg: 50 };
   return { yaw: 0, pitch: -PITCH_LIMIT, dist: reach * 1.4, target: [reach * 0.35, 0, 0], fovDeg: 45 };
 }
 

@@ -404,7 +404,7 @@
   }
   function viewChanged() {
     push();
-    say(`Vista: rotazione ${Math.round((vs.cam.yaw * 180) / Math.PI)}°, inclinazione ${Math.round((vs.cam.pitch * 180) / Math.PI)}°, distanza ${Math.round(vs.cam.dist)} metri.`);
+    say(t('dash.cameraAnnouncement', { yaw: Math.round((vs.cam.yaw * 180) / Math.PI), pitch: Math.round((vs.cam.pitch * 180) / Math.PI), distance: Math.round(vs.cam.dist) }));
   }
   const rotate = (dy: number, dp: number) => (orbit(vs.cam, dy, dp), viewChanged());
   const zoom = (f: number) => (zoomBy(vs.cam, f), viewChanged());
@@ -428,6 +428,7 @@
     else if (k === '1') usePreset('lander');
     else if (k === '2') usePreset('side');
     else if (k === '3') usePreset('top');
+    else if (k === '4') usePreset('terrain');
     else return;
     e.preventDefault();
     e.stopPropagation();
@@ -542,7 +543,7 @@
       case 'outside_model': return t('lander.rfOutsideModel');
     }
   };
-  const presetLabel = (id: Preset) => t(`lander.preset.${id}` as 'lander.preset.lander' | 'lander.preset.side' | 'lander.preset.top');
+  const presetLabel = (id: Preset) => t(`lander.preset.${id}` as 'lander.preset.lander' | 'lander.preset.side' | 'lander.preset.top' | 'lander.preset.terrain');
   const modeLabel = $derived(mode === 'webgl' ? t('lander.mode.webgl') : mode === 'canvas2d' ? t('lander.mode.canvas2d') : mode === 'none' ? t('lander.mode.none') : '');
 </script>
 
@@ -724,6 +725,25 @@
     {/if}
     {#if controlled && !light}<p role="status">{t('lander.lightUpdating')}</p>{/if}
     {#if viewError}<p role="alert">{viewError}</p>{/if}
+    {#if compact && data}
+      <div class="terrain-summary small" data-testid="lander-terrain-summary">
+        <strong>{t('dash.terrainInfo')}</strong>
+        <p>{data.terrain.label}{data.terrain.synthetic ? ` — ${t('lander.syntheticProfile')}` : ''}.
+          {#if data.terrain.patch}
+            {t('dash.terrainResolution', { resolution: f(data.terrain.patch.nativeResolutionM, 1), spacing: f(data.terrain.patch.spacingM, 1) })}
+          {:else}{t('lander.profileOnly')}. {t('dash.terrainResolution', { resolution: data.terrain.nativeResolutionM === null ? t('journey.unknown') : f(data.terrain.nativeResolutionM, 1), spacing: f(data.terrain.profileSpacingM, 1) })}{/if}
+          {sectionMode ? t('dash.sectionScale') : t('dash.terrainScale', { scale: vExag })}
+        </p>
+        {#if !sectionMode}
+          <label for="compact-vex">{t('lander.verticalExaggeration')}</label>
+          <select id="compact-vex" bind:value={vExag}>
+            <option value={1}>×1 ({t('lander.trueScale')})</option>
+            <option value={2}>×2</option>
+            <option value={5}>×5</option>
+          </select>
+        {/if}
+      </div>
+    {/if}
     {#if mode === 'webgl'}
 {#if !compact}      <p class="small muted" data-testid="lander-visual-credit">{t('lander.visualCredit')} {t(data?.sky ? 'lander.skyOriented' : 'lander.skyIllustrative')} {t('lander.terrainVisual')}</p>{/if}
       {#if skyError}<p class="small notice" role="status" data-testid="lander-sky-error">{t('lander.skyUnavailable')}</p>{/if}
