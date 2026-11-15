@@ -138,7 +138,9 @@ test('mission planner: the Sites step finds sites by itself and assigns them to 
   await page.goto('/mission-planner?lang=en&mp_step=sites');
   const panel = page.getByTestId('auto-sites');
   await expect(panel).toBeVisible({ timeout: 30_000 });
-  await panel.getByText('Find sites automatically').click();
+  await expect(panel.getByRole('heading', { name: 'Discover new candidate sites · ML-assisted' })).toBeVisible();
+  await expect(panel).toContainText('RAVEN engine evaluates each proposed site');
+  await panel.getByText('Open site discovery').click();
   const box = page.getByTestId('site-finder');
   await expect(box).toBeVisible();
   await expect(box.getByTestId('finder-brief').getByLabel('Days')).not.toHaveValue(''); // the period of the planner prefills the brief
@@ -148,4 +150,13 @@ test('mission planner: the Sites step finds sites by itself and assigns them to 
   await expect(page).toHaveURL(/mission-planner/); // nothing navigated away
   await expect(page.locator('.site-card').filter({ has: page.getByText('Luna 23', { exact: true }) })).toHaveAttribute('aria-pressed', 'true'); // rank 1 became a custom site and is site A
   await expect(page.locator('.site-card', { hasText: 'Found 2' })).toBeVisible(); // rank 2 has no name: it became a custom site, assigned to B
+});
+
+test('mission planner: site discovery is prominent and explained in Italian', async ({ page }) => {
+  await page.goto('/mission-planner?lang=it&mp_step=sites');
+  const panel = page.getByTestId('auto-sites');
+  await expect(panel.getByRole('heading', { name: 'Scopri nuovi siti candidati · assistito da ML' })).toBeVisible();
+  await expect(panel).toContainText('il motore RAVEN valuta ogni sito proposto');
+  await panel.getByText('Apri la ricerca dei siti').click();
+  await expect(panel.getByTestId('site-finder')).toBeVisible();
 });

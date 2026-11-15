@@ -858,6 +858,14 @@
             {#if libraryMessage}<p role="status">{t(libraryMessage)}</p>{/if}
           </details>
         {:else if step === 1}
+          <section class="auto-sites-card" data-testid="auto-sites" aria-labelledby="auto-sites-heading">
+            <h3 id="auto-sites-heading">{t('planner.autoSites.title')}</h3>
+            <p>{t('planner.autoSites.intro')}</p>
+            <details class="auto-sites" ontoggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) finderMounted = true; }}>
+              <summary>{t('planner.autoSites.open')}</summary>
+              {#if finderMounted}<SiteFinder defaults={{ start: draft.input.start, days: draft.input.days }} onusesites={useFound} canB={draft.input.mode === 'sites'} />{/if}
+            </details>
+          </section>
           <div class="choices" role="group" aria-label={t('journey.assignSite')}>
             <button type="button" aria-pressed={selectFor === 'A'} onclick={() => { selectFor = 'A'; picked = null; }}>{t('planner.siteA')}</button>
             {#if draft.input.mode === 'sites'}<button type="button" aria-pressed={selectFor === 'B'} onclick={() => { selectFor = 'B'; picked = null; }}>{t('planner.siteB')}</button>{/if}
@@ -897,11 +905,6 @@
               </div>
             </div>
           </div>
-          <details class="auto-sites" data-testid="auto-sites" ontoggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) finderMounted = true; }}>
-            <summary>{t('planner.autoSites.title')}</summary>
-            <p class="note">{t('planner.autoSites.intro')}</p>
-            {#if finderMounted}<SiteFinder defaults={{ start: draft.input.start, days: draft.input.days }} onusesites={useFound} canB={draft.input.mode === 'sites'} />{/if}
-          </details>
           <details><summary>{t('journey.customCoordinates')}</summary><CustomSiteControl onadd={changeSite} /></details>
           <SitesLibrary sites={catalog} />
           <p class="note">{t('journey.terrainNote')}</p>
@@ -1093,6 +1096,12 @@
   .field-grid, .control-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; margin-block: 1.5rem; }
   .step-body :global(.parameter) { margin-block: 1.5rem; }
   .example, details { margin-block: 1.5rem; border-top: 1px solid #7499b64d; padding-top: 1rem; }
+  .auto-sites-card { margin-block: 1.5rem; padding: 1.2rem; border: 1px solid #78c4e888; border-inline-start: 4px solid #9bdfff; border-radius: .8rem; background: #102c42; }
+  .auto-sites-card h3 { margin: 0 0 .5rem; color: #bdeaff; }
+  .auto-sites-card p { margin: 0; max-width: 75ch; line-height: 1.55; }
+  .auto-sites-card details { margin: .8rem 0 0; padding: 0; border: 0; }
+  .auto-sites-card summary { display: list-item; min-height: 44px; align-content: center; cursor: pointer; font-weight: 700; color: #d6f1ff; }
+  .auto-sites-card summary:focus-visible { outline: 2px solid #b1e6ff; outline-offset: 3px; }
   .site-workspace { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1fr); gap: 1.3rem; margin-top: 1.5rem; }
   .globe-panel { min-width: 0; } .site-list { max-height: 32rem; overflow-y: auto; display: grid; gap: .6rem; margin-top: .75rem; }
   .site-card { text-align: start; display: grid; gap: .4rem; width: 100%; } .site-card span, .site-card small { color: var(--c-muted); }

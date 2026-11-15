@@ -15,7 +15,9 @@
 
 ## Demo
 
-[Watch the RAVEN demo (MP4)](frontend/public/raven-demo.mp4)
+![RAVEN demo, animated preview](docs/raven-demo.gif)
+
+[Download the original demo video (MP4)](https://raw.githubusercontent.com/AlePompeo/RAVEN/main/frontend/public/raven-demo.mp4)
 
 ---
 
