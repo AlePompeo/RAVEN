@@ -192,6 +192,8 @@
 
   const stepTitles: MessageKey[] = ['journey.mission', 'journey.sites', 'journey.period', 'journey.energy', 'journey.reliability', 'journey.radio', 'journey.compare', 'dossier.title', 'journey.report'];
   const stepDescriptions: MessageKey[] = ['journey.missionIntro', 'journey.sitesIntro', 'journey.periodIntro', 'journey.energyIntro', 'journey.reliabilityIntro', 'journey.radioIntro', 'journey.compareIntro', 'dossier.intro', 'journey.reportIntro'];
+  const demoInstructions: MessageKey[] = ['journey.demoGuideMission', 'journey.demoGuideSites', 'journey.demoGuidePeriod',
+    'journey.demoGuideEnergy', 'journey.demoGuideReliability', 'journey.demoGuideRadio', 'journey.demoGuideSimulation'];
   const priorityLabels: Record<string, MessageKey> = {
     sun: 'planner.objectiveSun', earth: 'planner.objectiveEarth', radio: 'planner.objectiveRadio', balanced: 'planner.objectiveBalanced',
   };
@@ -785,6 +787,13 @@
       <section class="step-body" aria-busy={running} aria-labelledby="journey-step-heading">
         <header class="step-heading"><p class="eyebrow">{t('journey.stepOf', { step: step + 1, total: JOURNEY_STEPS.length })}</p>
           <h2 id="journey-step-heading" tabindex="-1" bind:this={heading}>{t(stepTitles[step]!)}</h2>{#if step !== 7}<p>{t(stepDescriptions[step]!)}</p>{/if}</header>
+        {#if draft.demoGuide && step <= 6}
+          <aside class="demo-guide" data-testid="demo-guide" aria-label={t('journey.demoGuideTitle')}>
+            <h3>{t('journey.demoGuideTitle')} · {t('journey.demoGuideStep', { step: step + 1 })}</h3>
+            <p>{t(demoInstructions[step]!)}</p>
+            <p>{t(step < 6 ? 'journey.demoGuideNext' : run && !stale ? 'journey.demoGuideResults' : 'journey.demoGuideRun')}</p>
+          </aside>
+        {/if}
         {#if step === 2 || step === 3}
           <section class="visual-stage" aria-label={t('journey.graphs')}>
             <h3>{t(step === 2 ? 'journey.periodVisual' : 'journey.energyVisual')}</h3>
@@ -1068,6 +1077,9 @@
   .step-body { min-width: 0; border: 1px solid #7499b64d; border-radius: 1.4rem; padding: clamp(1rem, 3vw, 2rem); background: linear-gradient(140deg, #10243be6, #080f1de6); box-shadow: 0 15px 70px #00000028; }
   .step-heading { margin-bottom: 2rem; } .step-heading p:last-child { color: var(--c-muted); max-width: 60ch; line-height: 1.6; }
   .step-heading h2 { scroll-margin-top: 7rem; }
+  .demo-guide { margin-bottom: 1.5rem; padding: 1rem 1.2rem; border: 1px solid #78c4e888; border-inline-start: 4px solid #9bdfff; border-radius: .8rem; background: #102c42; }
+  .demo-guide h3 { margin: 0 0 .5rem; color: #bdeaff; font-size: 1rem; }
+  .demo-guide p { margin: .45rem 0 0; max-width: 75ch; line-height: 1.55; }
   label { display: block; font-weight: 600; margin-bottom: .5rem; }
   input:not([type='checkbox']):not([type='range']), select { width: 100%; min-width: 0; box-sizing: border-box; min-height: 46px; background: #081426; color: #e4effa; border: 1px solid #7b9cb36e; border-radius: .65rem; padding: .7rem; }
   input[type='checkbox'] { min-width: 1.2rem; min-height: 1.2rem; accent-color: #9bdfff; } .check { display: flex; gap: .6rem; align-items: center; margin-block: 1rem; }

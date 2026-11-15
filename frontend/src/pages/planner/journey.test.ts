@@ -44,12 +44,14 @@ describe('planner journey', () => {
     expect(demo.objectives).toEqual({ priority: 'balanced', minSunPercent: 50, minRfPercent: 50 });
     expect(demo.planning!.reliability).toMatchObject({ enabled: true, basis: 'Illustrative assumptions', apply_thermal_load: false });
     expect(demo.planning!.reliability!.components).toHaveLength(5);
+    expect(demo.demoGuide).toBe(true);
     expect(journeyRequests(demo, rows, [])!.map((r) => r.site_id)).toEqual(demoIds);
     expect(readDraft(JSON.stringify(demo), rows, demoIds, [])).toEqual(demo);
     demo.panel.array_area_m2 = 10;
     expect(demoDraft(rows, demoIds, 'South Pole demo', 'Illustrative assumptions')!.panel.array_area_m2).toBe(1);
     expect(demoDraft(rows, ['malapert-massif'], 'demo', 'assumptions')).toBeNull();
     expect(demoDraft(rows, demoIds, 'demo', '')).toBeNull();
+    expect(readDraft(JSON.stringify({ ...demo, demoGuide: 'yes' }), rows, demoIds, [])).toBeNull();
     const restricted = rows.map((row) => row.key === 'array_area_m2' ? { ...row, min: 2 } : row);
     expect(demoDraft(restricted, demoIds, 'demo', 'assumptions')).toBeNull();
   });

@@ -37,6 +37,7 @@ export interface JourneyDraft {
   decision: string;
   planning?: ReportPlanning;
   demoPending?: boolean;
+  demoGuide?: boolean;
 }
 
 export interface JourneyRun {
@@ -73,6 +74,7 @@ export function demoDraft(rows: readonly ParamRow[], siteIds: readonly string[],
   draft.objectives = { priority: 'balanced', minSunPercent: 50, minRfPercent: 50 };
   draft.planning!.reliability = illustrativeReliability(reliabilityBasis);
   draft.demoPending = true;
+  draft.demoGuide = true;
   if (Array.from({ length: 6 }, (_, i) => journeyIssue(draft, i, siteIds, rows, [], range)).some(Boolean) ||
       !reliabilityReady(draft.planning!.reliability) || !journeyRequests(draft, rows, [], range)) return null;
   return draft;
@@ -184,6 +186,7 @@ export function readDraft(raw: string | null, rows: readonly ParamRow[], ids: re
     const d: JourneyDraft = JSON.parse(raw);
     if (!d || typeof d !== 'object' || typeof d.name !== 'string' || d.name.length > 80 ||
         (d.demoPending !== undefined && typeof d.demoPending !== 'boolean') ||
+        (d.demoGuide !== undefined && typeof d.demoGuide !== 'boolean') ||
         typeof d.decision !== 'string' || d.decision.length > 2000 || !d.input || !d.radio ||
         !readObjectives(d.objectives) || !readPanel(d.panel, rows) || !radioValid(d.radio)) return null;
     if (!['sites', 'dates'].includes(d.input.mode) || !ids.includes(d.input.siteA) ||
