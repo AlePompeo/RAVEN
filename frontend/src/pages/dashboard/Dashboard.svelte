@@ -1,8 +1,6 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Mission control: the file manager of the saved Mission Planner sessions on the left, the Lunar Landing Sites Navigator in the
-     centre (south-polar map with overlays, 3D Moon, rover scene), the key numbers of the two scenarios on the right and every
-     chart in its own panel below. The cursor of the timeline drives the rover scene and the countdowns; the sessions list follows
-     the other tabs (storage event). Same data and rules as the Mission Planner: unknown stays unknown. -->
+<!-- The navigator leads the dashboard; the scenario summaries, saved calculations and charts remain below.
+     The timeline cursor drives the rover scene and countdowns. Unknown data stays unknown. -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { t, formatNumber, type MessageKey } from '../../i18n/i18n.svelte';
@@ -135,6 +133,9 @@
   {:else}
     {#if error}<p role="alert">{t(error)}</p>{/if}
     <div class="mc">
+      <div class="panel center">
+        <DashboardNavigator sites={siteList} {run} {scenario} {index} onsite={openSite} onscenario={(i) => { scenario = i; }} />
+      </div>
       <section class="panel kpi" aria-labelledby="kpi-title" data-testid="dashboard-kpi">
         <div class="kpi-head">
           <h2 id="kpi-title">{t('dash.kpi')}</h2>
@@ -170,10 +171,6 @@
           <h3>{t('dashboard.emptyTitle')}</h3><p>{t('dashboard.empty')}</p><a href={planner('mission')}>Mission Planner</a>
         {/if}
       </section>
-
-      <div class="panel center">
-        <DashboardNavigator sites={siteList} {run} {scenario} {index} onsite={openSite} />
-      </div>
 
       <details class="panel sessions archive" open>
         <summary><h2 id="history-heading">{t('history.title')}</h2></summary>

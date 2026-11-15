@@ -6,7 +6,7 @@
   import { t } from '../../i18n/i18n.svelte';
   import { ASSETS } from '../../viewports/bodies/assets';
   import { pixelFromPolar, polarFromPixel, renderPolarTexture } from './moonMap';
-  let { sites, assigned = {}, picked = null, onmarker, onpick, limit = -60, overlay = null, markerColors = {} }: {
+  let { sites, assigned = {}, picked = null, onmarker, onpick, limit = -60, overlay = null, markerColors = {}, help }: {
     sites: readonly { id: string; name: string; lat: number; lon: number }[];
     /** Site ids currently used as scenario A / B (drawn with their letter). */
     assigned?: { A?: string; B?: string };
@@ -17,6 +17,7 @@
     overlay?: HTMLCanvasElement | null;
     /** Marker fill by site id (a value of the run, never an interpolation). */
     markerColors?: Record<string, string>;
+    help?: string;
     onmarker: (id: string) => void; onpick: (lat: number, lon: number) => void;
   } = $props();
   const CSS = 420, DPR = 2, PX = CSS * DPR;
@@ -86,7 +87,7 @@
 
 <figure class="polar" data-testid="site-polar-map">
   <canvas bind:this={canvas} width={PX} height={PX} aria-label={t('map.polarLabel')} onclick={click}></canvas>
-  <figcaption>{t('map.polarHelp', { limit: Math.abs(limit) })}</figcaption>
+  <figcaption>{help ?? t('map.polarHelp', { limit: Math.abs(limit) })}</figcaption>
 </figure>
 
 <style>

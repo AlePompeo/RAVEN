@@ -3,7 +3,8 @@
      3D Moon, rover scene) and remote-sensing style overlays on the map. Overlays are rasters with a scale, a legend, a source and
      a tag; a cell with no data is hatched ("unknown"), never coloured as a value; nothing is interpolated between sites. -->
 <script lang="ts">
-  import { t, type MessageKey } from '../../i18n/i18n.svelte';
+  import { onMount } from 'svelte';
+  import { t, formatNumber, type MessageKey } from '../../i18n/i18n.svelte';
   import { customSites, toApi } from '../../shell/customSites';
   import { scenarioStore } from '../../shell/scenario';
   import SitePolarMap from '../planner/SitePolarMap.svelte';
@@ -12,14 +13,16 @@
   import { OverlayController } from '../../shell/overlay/overlayController.svelte';
   import { sequentialColor } from './overlayColors';
 
-  let { sites, run, scenario = 0, index = 0, onsite }: {
+  let { sites, run, scenario = 0, index = 0, onsite, onscenario }: {
     sites: readonly { id: string; name: string; lat: number; lon: number }[];
-    run: JourneyRun | null; scenario?: number; index?: number; onsite?: (id: string) => void;
+    run: JourneyRun | null; scenario?: number; index?: number; onsite?: (id: string) => void; onscenario?: (index: number) => void;
   } = $props();
 
   type View = 'polar' | 'globe' | 'rover';
   let view = $state<View>('polar');
+  let selectedId = $state('');
   const ctl = new OverlayController();
+  const store = scenarioStore();
   $effect(() => { ctl.scope = view === 'globe' ? 'global' : 'polar'; });
   $effect(() => ctl.fetchEffect());
   $effect(() => ctl.buildEffect());
@@ -32,11 +35,36 @@
     return Object.fromEntries(evals.map((e) => [e.site.id, `rgb(${sequentialColor(e.metrics.useful_hours / maxUseful).join(',')})`]));
   });
   const active = $derived(evals[scenario] ?? evals[0] ?? null);
-  // the 3D Moon is the one of the Sites page: it follows the scenario of the session (site and instant)
+  const selectedSite = $derived(sites.find((s) => s.id === selectedId) ?? null);
+  $effect(() => { selectedId = active?.site.id ?? ''; });
+
+  function selectSite(id: string) {
+    if (!sites.some((site) => site.id === id)) return;
+    selectedId = id;
+    if (active?.site.id !== id) {
+      const match = evals.findIndex((e) => e.site.id === id);
+      if (match >= 0) onscenario?.(match);
+    }
+    if (view === 'globe') store.set({ site: id });
+  }
+  function changeView(next: View) {
+    view = next;
+    if (next === 'globe' && !selectedId) {
+      const site = store.get().site;
+      if (site) selectSite(site);
+    }
+  }
+  onMount(() => store.subscribe((state) => {
+    if (view === 'globe' && state.site && state.site !== selectedId) selectSite(state.site);
+  }));
+
   $effect(() => {
-    if (view !== 'globe' || !active) return;
-    const ms = active.steps ? active.steps.time_unix[Math.min(index, active.steps.time_unix.length - 1)]! * 1000 : NaN;
-    scenarioStore().set({ site: active.site.id, ...(Number.isFinite(ms) ? { t: new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z') } : {}) });
+    if (view !== 'globe') return;
+    const ms = active?.steps ? active.steps.time_unix[Math.min(index, active.steps.time_unix.length - 1)]! * 1000 : NaN;
+    if (selectedId || Number.isFinite(ms)) store.set({
+      ...(selectedId ? { site: selectedId } : {}),
+      ...(Number.isFinite(ms) ? { t: new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z') } : {}),
+    });
   });
   const roverMs = $derived(active?.steps ? active.steps.time_unix[Math.min(index, active.steps.time_unix.length - 1)]! * 1000 : NaN);
   const roverCustom = $derived(active ? customSites.get().find((c) => c.id === active.site.id) : undefined);
@@ -44,20 +72,22 @@
 </script>
 
 <section class="navigator" aria-labelledby="nav-title" data-testid="dashboard-navigator">
-  <div class="bar">
-    <h2 id="nav-title">{t('dash.navigator')}</h2>
-    <div class="switch" role="group" aria-label={t('dash.view')}>
-      {#each [['polar', 'dash.view.polar'], ['globe', 'dash.view.globe'], ['rover', 'dash.view.rover']] as [id, label]}
-        <button type="button" aria-pressed={view === id} disabled={id === 'rover' && !run} onclick={() => { view = id as View; }}>{t(label as MessageKey)}</button>
-      {/each}
-    </div>
-  </div>
-
-  <div class="work" class:with-side={view !== 'rover'}>
+  <h2 id="nav-title">{t('dash.navigator')}</h2>
+  <div class="work">
+    <aside class="controls" aria-label={t('dash.controls')}>
+      <h3>{t('dash.view')}</h3>
+      <div class="switch" role="group" aria-label={t('dash.view')}>
+        {#each [['polar', 'dash.view.polar'], ['globe', 'dash.view.globe'], ['rover', 'dash.view.rover']] as [id, label]}
+          <button type="button" aria-pressed={view === id} disabled={id === 'rover' && !run} onclick={() => changeView(id as View)}>{t(label as MessageKey)}</button>
+        {/each}
+      </div>
+      {#if view !== 'rover'}<OverlayPanel {ctl} usefulMax={run ? maxUseful : null} />{/if}
+    </aside>
     <div class="stage">
       {#if view === 'polar'}
-        <div class="polar"><SitePolarMap {sites} {assigned} limit={-75} overlay={ctl.canvas} {markerColors}
-          onmarker={(id) => onsite?.(id)} onpick={() => {}} /></div>
+        <div class="polar"><SitePolarMap {sites} {assigned} picked={selectedSite ? { lat: selectedSite.lat, lon: selectedSite.lon } : null}
+          limit={-75} overlay={ctl.canvas} {markerColors} help={t('dash.mapInspect')}
+          onmarker={selectSite} onpick={() => {}} /></div>
       {:else if view === 'globe'}
         {#await import('../viewer/Viewer.svelte') then m}
           <m.default embedded tall overlay={ctl.raster} />
@@ -67,25 +97,51 @@
           <m.default embedded compact plannerSite={active.site.id} plannerMs={roverMs} plannerCustomSite={roverCustom ? toApi(roverCustom) : undefined}
             plannerRadio={{ station: radio.station, gain: radio.gain, rate: radio.rate, mast: radio.mast }} />
         {:catch}<p role="alert">{t('journey.visualFailed')}</p>{/await}
+        <p class="note">{t('dash.roverScenario', { site: active.site.name })}</p>
       {:else}<p class="note">{t('dash.noRun')}</p>{/if}
     </div>
-    {#if view !== 'rover'}
-      <aside class="side"><OverlayPanel {ctl} usefulMax={run ? maxUseful : null} /></aside>
-    {/if}
+    <aside class="site-detail" aria-labelledby="dashboard-site-title" data-testid="dashboard-site-detail">
+      <h3 id="dashboard-site-title">{t('dash.selectedSite')}</h3>
+      <label for="dashboard-site">{t('dash.selectSite')}</label>
+      <select id="dashboard-site" value={selectedId} onchange={(e) => selectSite(e.currentTarget.value)}>
+        <option value="" disabled>{t('dash.chooseSite')}</option>
+        {#each sites as site (site.id)}<option value={site.id}>{site.name}</option>{/each}
+      </select>
+      {#if selectedSite}
+        <h4>{selectedSite.name}</h4>
+        <dl>
+          <div><dt>{t('dash.latitude')}</dt><dd>{formatNumber(selectedSite.lat, { maximumFractionDigits: 4 })}°</dd></div>
+          <div><dt>{t('dash.longitude')}</dt><dd>{formatNumber(selectedSite.lon, { maximumFractionDigits: 4 })}°</dd></div>
+        </dl>
+        {#if view === 'polar' && selectedSite.lat > -75}<p class="note">{t('dash.outsidePolar')}</p>{/if}
+        <button type="button" onclick={() => onsite?.(selectedSite.id)}>{t('demo.openPlanner')}</button>
+      {:else}
+        <p class="note">{t('dash.selectSiteHint')}</p>
+      {/if}
+    </aside>
   </div>
 </section>
 
 <style>
   .navigator { display: grid; gap: .75rem; min-width: 0; }
-  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
   h2 { margin: 0; font-size: 1rem; letter-spacing: .08em; text-transform: uppercase; color: #a4dfff; }
-  .switch { display: flex; gap: .25rem; } .switch button { min-height: 44px; padding: .4rem 1rem; }
+  h3 { margin: 0 0 .6rem; font-size: .9rem; color: #c9efff; }
+  .switch { display: grid; gap: .35rem; margin-bottom: 1rem; } .switch button { min-height: 44px; padding: .4rem .8rem; text-align: left; }
   .switch button[aria-pressed='true'] { background: #9bdfff22; border-color: #9bdfff; color: #c9efff; }
-  .work { display: grid; gap: .75rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
-  .work.with-side { grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); }
-  .stage { min-height: max(30rem, 74svh); display: block; background: #05101c; border: 1px solid #9bdfff40; border-radius: .6rem; padding: .5rem; overflow: hidden; --polar-max: min(100%, 78svh); }
+  .work { display: grid; gap: .75rem; grid-template-columns: minmax(13rem, 16rem) minmax(0, 1fr) minmax(13rem, 16rem); align-items: start; }
+  .stage { min-width: 0; min-height: max(30rem, 74svh); background: #05101c; border: 1px solid #9bdfff40; border-radius: .6rem; padding: .5rem; overflow: hidden; --polar-max: min(100%, 78svh); }
   .polar { display: grid; place-items: center; min-height: max(29rem, 72svh); }
-  .side { min-width: 0; max-height: max(30rem, 74svh); overflow: auto; }
-  .note { color: var(--c-muted); font-size: .8rem; }
-  @media (max-width: 1000px) { .work.with-side { grid-template-columns: minmax(0, 1fr); } .side { max-height: none; } }
+  .controls, .site-detail { min-width: 0; border: 1px solid #9bdfff33; border-radius: .6rem; padding: .75rem; background: #081827; }
+  .controls { max-height: max(30rem, 74svh); overflow: auto; }
+  .site-detail label { display: block; margin-bottom: .35rem; font-size: .85rem; }
+  .site-detail select { width: 100%; min-height: 44px; }
+  .site-detail h4 { margin: 1rem 0 .6rem; overflow-wrap: anywhere; }
+  dl { margin: 0 0 1rem; } dl div { display: flex; justify-content: space-between; gap: .5rem; padding-block: .35rem; border-bottom: 1px solid #9bdfff33; }
+  dt, .note { color: #a7c2d7; font-size: .85rem; } dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .site-detail button { min-height: 44px; }
+  @media (max-width: 1100px) {
+    .work { grid-template-columns: minmax(0, 1fr); }
+    .controls { max-height: none; overflow: visible; }
+    .switch { display: flex; flex-wrap: wrap; }
+  }
 </style>

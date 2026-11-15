@@ -428,7 +428,7 @@
   }
 
   export function revealSite(siteId: string) {
-    const place = BODIES.moon.places.find((p) => p.siteId === siteId);
+    const place = [...BODIES.moon.places, ...customPlaces].find((p) => p.siteId === siteId);
     if (!place) return;
     if (body !== 'moon') selectBody('moon');
     goTo(place);
