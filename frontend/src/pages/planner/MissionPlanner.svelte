@@ -19,7 +19,7 @@
   import { archiveRun } from './history';
   import { RADIO_PRESETS, identifyRadioPreset, type RadioPresetId } from './setup';
   import { DRAFT_KEY, RUN_KEY, JOURNEY_STEPS, MISSION_SHIFT_DAYS, earthVisibility, fraction, journeyIssue, journeyRequests,
-    missionBaseKey, missionShiftBaseline, newDraft, radioValid, readDraft, readRun, requestKey, validEvaluations,
+    demoDraft, missionBaseKey, missionShiftBaseline, newDraft, radioValid, readDraft, readRun, requestKey, validEvaluations,
     type JourneyDraft, type JourneyRun, type MissionShiftDays } from './journey';
   import ParameterControl from './ParameterControl.svelte';
   import CustomSiteControl from '../../shell/CustomSiteControl.svelte';
@@ -102,6 +102,7 @@
   let previewAttemptKey = $state('');
   let library = $state<LibraryEntry[]>([]);
   let libraryMessage = $state<MessageKey | null>(null);
+  let demoLoaded = $state(false);
   let historyMessage = $state<MessageKey | null>(null);
   let search = $state('');
   let selectFor = $state<'A' | 'B'>('A');
@@ -366,14 +367,16 @@
     }
   }
   function example() {
-    if (!draft) return;
-    draft.input.mode = 'sites';
-    draft.input.siteA = ids.includes('malapert-massif') ? 'malapert-massif' : ids[0] ?? '';
-    draft.input.siteB = ids.includes('haworth') ? 'haworth' : ids.find((s) => s !== draft?.input.siteA) ?? '';
-    draft.input.start = '2027-04-16T00:00';
-    draft.input.days = 3;
-    draft.input.stepMin = 60;
-    void go(1);
+    if (!draft || running) return;
+    const example = demoDraft(parameters, catalog.map((site) => site.id), t('journey.demoName'), t('rel.exampleBasis'), ephemerisRange);
+    if (!example) { error = 'journey.demoUnavailable'; return; }
+    draft = example;
+    run = null;
+    missionShiftDays = 0;
+    scenario = 0; index = 0; playing = false;
+    selectFor = 'A'; picked = null; search = ''; autoStepNote = null;
+    error = null; errorStatus = null;
+    demoLoaded = true;
   }
   function saveMission() {
     if (!draft || firstIssue < 6) { libraryMessage = 'journey.calculateFirst'; return; }
@@ -410,6 +413,7 @@
     store.set({ customSites: merged });
     store.flush();
     draft = { name: entry.name, input: restored.planner.input, panel, radio: restored.radio, objectives, decision: restored.planner.decision, planning };
+    demoLoaded = false;
     libraryMessage = null;
   }
 
@@ -454,9 +458,10 @@
           }
         }
         const savedRun = sessionStorage.getItem(RUN_KEY);
-        run = readRun(savedRun, parameters, availableIds, registry, modelVersion);
+        const restoredRun = readRun(savedRun, parameters, availableIds, registry, modelVersion);
+        run = draft?.demoPending ? null : restoredRun;
         missionShiftDays = run?.missionShiftDays ?? 0;
-        if (savedRun && !run) restoreWarning = true;
+        if (savedRun && !restoredRun) restoreWarning = true;
       } catch {
         storageError = true;
       }
@@ -653,6 +658,8 @@
     if (!validEvaluations(results, submittedRequests) || results.some((e) => e.registry_sha256 !== registry || e.model_version !== modelVersion)) {
       error = 'planner.errorResponse'; return;
     }
+    if (draft) delete draft.demoPending;
+    delete submitted.demoPending;
     const baselineKey = missionBaseKey(submittedRequests);
     const previousBaseline = run?.baselineKey === baselineKey ? run.baseline :
       run && (run.missionShiftDays ?? 0) === 0 && missionBaseKey(run.requests) === baselineKey
@@ -825,7 +832,11 @@
             <label class="check"><input type="checkbox" checked={draft.objectives.minRfPercent !== null} onchange={(e) => draft!.objectives.minRfPercent = e.currentTarget.checked ? 50 : null} />{t('planner.minimumRf')}</label>
             {#if draft.objectives.minRfPercent !== null}<ParameterControl id="journey-min-rf" label={t('planner.minimumRf')} bind:value={draft.objectives.minRfPercent} min={0} max={100} unit="%" />{/if}
           </details>
-          <div class="example"><h3>{t('journey.example')}</h3><p>{t('journey.exampleText')}</p><button type="button" onclick={example}>{t('journey.useExample')}</button></div>
+          <div class="example"><h3>{t('journey.example')}</h3><p>{t('journey.exampleText')}</p>
+            <p>{t('journey.demoWarning')}</p>
+            <button type="button" disabled={running} onclick={example}>{t('journey.useExample')}</button>
+            {#if demoLoaded}<p role="status">{t('journey.demoLoaded')}</p>{/if}
+          </div>
           <details><summary>{t('planner.libraryTitle')}</summary>
             <button type="button" onclick={saveMission}>{t('planner.librarySave')}</button>
             {#each library as entry (entry.id)}<div class="library-entry"><span>{entry.name || t('planner.libraryUnnamed')}</span><button type="button" onclick={() => openMission(entry)}>{t('planner.libraryOpen')}</button>

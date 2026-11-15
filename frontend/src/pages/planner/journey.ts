@@ -9,7 +9,7 @@ import { RADIO_PRESETS, type RadioPreset } from './setup';
 import { evaluateRequests } from './ravenAdapter';
 import { plannerRequest, type EphemerisRange, type PlannerInput } from './timeline';
 import { newReportPlanning, readReportPlanning, type ReportPlanning } from './reportPlanning';
-import { thermalOverrides } from './reliability';
+import { illustrativeReliability, reliabilityReady, thermalOverrides } from './reliability';
 
 export const JOURNEY_STEPS = ['mission', 'sites', 'period', 'energy', 'reliability', 'radio', 'compare', 'dossier', 'report'] as const;
 export type JourneyStep = typeof JOURNEY_STEPS[number];
@@ -36,6 +36,7 @@ export interface JourneyDraft {
   objectives: MissionObjectives;
   decision: string;
   planning?: ReportPlanning;
+  demoPending?: boolean;
 }
 
 export interface JourneyRun {
@@ -58,6 +59,23 @@ export function newDraft(rows: readonly ParamRow[], siteIds: readonly string[], 
       start: time?.slice(0, 16) ?? '2027-04-07T00:00', startB: '2027-05-07T00:00', days: 7, stepMin: 60 },
     panel, radio: { ...RADIO_PRESETS.baseline }, objectives: defaultObjectives(), decision: '', planning: newReportPlanning(),
   };
+}
+
+export function demoDraft(rows: readonly ParamRow[], siteIds: readonly string[], name: string, reliabilityBasis: string,
+  range?: EphemerisRange | null): JourneyDraft | null {
+  const draft = newDraft(rows, siteIds);
+  if (!draft || !siteIds.includes('malapert-massif') || !siteIds.includes('haworth')) return null;
+  draft.name = name;
+  draft.input = { mode: 'sites', siteA: 'malapert-massif', siteB: 'haworth',
+    start: '2027-04-16T00:00', startB: '2027-05-07T00:00', days: 3, stepMin: 60 };
+  draft.panel = { array_area_m2: 1, cell_efficiency: .295, orientation: 'horizontal', tilt_deg: 0, tilt_azimuth_deg: 0 };
+  draft.radio = { ...RADIO_PRESETS.baseline };
+  draft.objectives = { priority: 'balanced', minSunPercent: 50, minRfPercent: 50 };
+  draft.planning!.reliability = illustrativeReliability(reliabilityBasis);
+  draft.demoPending = true;
+  if (Array.from({ length: 6 }, (_, i) => journeyIssue(draft, i, siteIds, rows, [], range)).some(Boolean) ||
+      !reliabilityReady(draft.planning!.reliability) || !journeyRequests(draft, rows, [], range)) return null;
+  return draft;
 }
 
 export function radioValid(r: JourneyDraft['radio']): boolean {
@@ -165,6 +183,7 @@ export function readDraft(raw: string | null, rows: readonly ParamRow[], ids: re
   try {
     const d: JourneyDraft = JSON.parse(raw);
     if (!d || typeof d !== 'object' || typeof d.name !== 'string' || d.name.length > 80 ||
+        (d.demoPending !== undefined && typeof d.demoPending !== 'boolean') ||
         typeof d.decision !== 'string' || d.decision.length > 2000 || !d.input || !d.radio ||
         !readObjectives(d.objectives) || !readPanel(d.panel, rows) || !radioValid(d.radio)) return null;
     if (!['sites', 'dates'].includes(d.input.mode) || !ids.includes(d.input.siteA) ||

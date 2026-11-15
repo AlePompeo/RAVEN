@@ -8,14 +8,16 @@ const next = (page: import('@playwright/test').Page) => page.getByRole('button',
 test('report: RAVEN estimates appear after the run, an accepted one is boxed in the report and the PDF, a dismissed one is not', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   await page.goto('/mission-planner?mode=avanzato');
+  await page.getByRole('button', { name: 'Avvia una demo' }).click();
   await page.locator('#journey-name').fill('Estimate Study');
-  await page.getByRole('button', { name: 'Usa questo esempio' }).click();
+  await next(page);
   await next(page);
   await page.locator('#journey-days').fill('0.15');
   await page.locator('#journey-resolution').selectOption('60');
   await next(page);
   await page.getByRole('button', { name: /Inseguimento solare ideale/ }).click();
   await next(page);
+  await page.locator('#rel-enabled').uncheck();
   await next(page);
   await next(page);
   await expect(page.getByTestId('planner-scene-status')).toBeVisible({ timeout: 20_000 });
@@ -77,14 +79,16 @@ test('report: the PDF waits for the written comparison of the two sites (a local
   const gate = new Promise<void>((resolve) => { release = resolve; });
   await page.route('**/api/raven/report/verdict', async (route) => { await gate; await route.continue(); });
   await page.goto('/mission-planner?mode=avanzato');
+  await page.getByRole('button', { name: 'Avvia una demo' }).click();
   await page.locator('#journey-name').fill('Verdict Wait');
-  await page.getByRole('button', { name: 'Usa questo esempio' }).click();
+  await next(page);
   await next(page);
   await page.locator('#journey-days').fill('0.15');
   await page.locator('#journey-resolution').selectOption('60');
   await next(page);
   await page.getByRole('button', { name: /Inseguimento solare ideale/ }).click();
   await next(page);
+  await page.locator('#rel-enabled').uncheck();
   await next(page);
   await next(page);
   await expect(page.getByTestId('planner-scene-status')).toBeVisible({ timeout: 20_000 });

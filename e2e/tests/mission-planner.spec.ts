@@ -88,8 +88,9 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   });
   await page.goto('/mission-planner?mode=avanzato');
   await expect(page.getByRole('heading', { name: 'Missione', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Avvia una demo' }).click();
   await page.locator('#journey-name').fill('South Pole Study');
-  await page.getByRole('button', { name: 'Usa questo esempio' }).click();
+  await next(page);
   await expect(page.getByRole('heading', { name: 'Siti', exact: true })).toBeVisible();
   await next(page);
   await page.locator('#journey-days').fill('0.15');
@@ -100,6 +101,7 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   await page.locator('#journey-area').fill('2');
   await next(page);
   await expect(page.getByRole('heading', { name: 'Affidabilità', exact: true })).toBeVisible();
+  await page.locator('#rel-enabled').uncheck();
   await next(page);
   await page.locator('#journey-gain').fill('22');
   await page.getByText('Impostazioni avanzate del modello', { exact: true }).click();

@@ -8,7 +8,7 @@ import { customSites } from '../../shell/customSites';
 import { useCatalog } from '../../i18n/i18n.svelte';
 import enPages from '../../i18n/en.pages.json';
 import itCatalog from '../../i18n/it.json';
-import { JOURNEY_STEPS, earthVisibility, firstChange, fraction, journeyIssue, journeyRequests, missionBaseKey, missionShiftBaseline, newDraft, readDraft, readRun, requestKey, shiftedStartUtc, validEvaluations } from './journey';
+import { JOURNEY_STEPS, demoDraft, earthVisibility, firstChange, fraction, journeyIssue, journeyRequests, missionBaseKey, missionShiftBaseline, newDraft, readDraft, readRun, requestKey, shiftedStartUtc, validEvaluations } from './journey';
 import ParameterControl from './ParameterControl.svelte';
 import { illustrativeReliability } from './reliability';
 
@@ -36,6 +36,23 @@ const makeDraft = () => {
 afterEach(() => { customSites.set([]); cleanup(); useCatalog('it', itCatalog, enPages); });
 
 describe('planner journey', () => {
+  it('creates a complete repeatable demo, restores it, and rejects unavailable inputs', () => {
+    const demoIds = ['malapert-massif', 'haworth'];
+    const demo = demoDraft(rows, demoIds, 'South Pole demo', 'Illustrative assumptions')!;
+    expect(demo.input).toMatchObject({ mode: 'sites', siteA: demoIds[0], siteB: demoIds[1],
+      start: '2027-04-16T00:00', days: 3, stepMin: 60 });
+    expect(demo.objectives).toEqual({ priority: 'balanced', minSunPercent: 50, minRfPercent: 50 });
+    expect(demo.planning!.reliability).toMatchObject({ enabled: true, basis: 'Illustrative assumptions', apply_thermal_load: false });
+    expect(demo.planning!.reliability!.components).toHaveLength(5);
+    expect(journeyRequests(demo, rows, [])!.map((r) => r.site_id)).toEqual(demoIds);
+    expect(readDraft(JSON.stringify(demo), rows, demoIds, [])).toEqual(demo);
+    demo.panel.array_area_m2 = 10;
+    expect(demoDraft(rows, demoIds, 'South Pole demo', 'Illustrative assumptions')!.panel.array_area_m2).toBe(1);
+    expect(demoDraft(rows, ['malapert-massif'], 'demo', 'assumptions')).toBeNull();
+    expect(demoDraft(rows, demoIds, 'demo', '')).toBeNull();
+    const restricted = rows.map((row) => row.key === 'array_area_m2' ? { ...row, min: 2 } : row);
+    expect(demoDraft(restricted, demoIds, 'demo', 'assumptions')).toBeNull();
+  });
   it('invalidates physical calculations only when additional thermal demand changes, not when fault assumptions change', () => {
     const energyRows: ParamRow[] = [...rows, ...['survival_load_w', 'active_load_w'].map((key, i): ParamRow => ({
       key, value: i ? 50 : 10, group: 'energy', min: 0, max: 1000, unit: 'W', status: 'I', source: 'test', note: '',
