@@ -10,8 +10,8 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 // stringhe della shell per lingua (dai cataloghi frontend/src/i18n/*.json)
 const SHELL = {
-  en: { tag: 'en', native: 'English', lab: 'Lab', try: 'Try the simulator', footer: 'Licenses', title: 'Home | RAVEN', nav: 'Main' },
-  it: { tag: 'it', native: 'Italiano', lab: 'Laboratorio', try: 'Prova il simulatore', footer: 'Licenze', title: 'Home | RAVEN', nav: 'Principale' },
+  en: { tag: 'en', native: 'English', lab: 'Lab', try: 'Try and learn', footer: 'Licenses', title: 'Home | RAVEN', nav: 'Main' },
+  it: { tag: 'it', native: 'Italiano', lab: 'Laboratorio', try: 'Prova e impara', footer: 'Licenze', title: 'Home | RAVEN', nav: 'Principale' },
 } as const;
 type L = keyof typeof SHELL;
 const LANGS = Object.keys(SHELL) as L[];
@@ -61,7 +61,7 @@ test.describe('selettore della lingua', () => {
     await expect(langBtn(page)).toBeFocused();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
-    await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Explore' })).toBeVisible();
+    await expect(page.locator('.site-footer').getByRole('link', { name: 'Explore', exact: true })).toBeVisible();
     await expect(page.locator('#announcer')).toHaveText('Language: English');
     await expect(page).toHaveTitle('Home | RAVEN');
     expect(new URL(page.url()).searchParams.get('mode')).toBe('learning');
@@ -69,7 +69,7 @@ test.describe('selettore della lingua', () => {
     expect(await page.evaluate(() => (window as unknown as { __mark?: number }).__mark)).toBe(1); // nessuna ricarica
     expect(await page.evaluate(() => localStorage.getItem('hb.lang'))).toBe('en');
     // navigazione interna e ricarica: la scelta resta
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Explore' }).click();
+    await page.locator('.site-footer').getByRole('link', { name: 'Explore', exact: true }).click();
     await page.getByRole('main').getByRole('link', { name: 'Analyze the link budget', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await page.goto('/licenses');
@@ -212,7 +212,8 @@ test.describe('smoke della shell per lingua', () => {
       await ready(page);
       await expect(page.locator('html')).toHaveAttribute('lang', s.tag);
       await expect(page).toHaveTitle(s.title);
-      await expect(page.locator('header nav').getByRole('link', { name: 'Explore', exact: true })).toBeVisible();
+      await expect(page.locator('header nav').getByRole('link', { name: 'Explore', exact: true })).toHaveCount(0);
+      await expect(page.locator('.site-footer').getByRole('link', { name: 'Explore', exact: true })).toBeVisible();
       await expect(page.locator('header nav').getByRole('link', { name: 'Learn', exact: true })).toBeVisible();
       await expect(page.locator('.site-footer').getByRole('link', { name: s.footer })).toBeVisible();
       await expect(page.locator('.hero-actions').getByRole('link', { name: s.try })).toBeVisible();
@@ -222,10 +223,10 @@ test.describe('smoke della shell per lingua', () => {
         await noOverflow(page, 'header');
       }
       await page.setViewportSize({ width: 1440, height: 900 });
-      await page.locator('header nav').getByRole('link', { name: 'Explore', exact: true }).click();
+      await page.locator('.site-footer').getByRole('link', { name: 'Explore', exact: true }).click();
       await expect(page.locator('html')).toHaveAttribute('lang', s.tag);
       await expect(page.getByRole('main')).toBeVisible();
-      await expect(page.locator('header nav a[aria-current="page"]')).toHaveText('Explore');
+      await expect(page.locator('.site-footer a[aria-current="page"]')).toHaveText('Explore');
     });
   }
 });

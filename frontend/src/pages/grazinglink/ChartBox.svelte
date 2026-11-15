@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import type { LineChart } from '../../charts/lineChart';
+  import { t } from '../../i18n/i18n.svelte';
 
   export interface Spec {
     label: string;
@@ -83,7 +84,7 @@
 </script>
 
 <div bind:this={el} class="chart" role="img" aria-label={label} data-ready={chart ? '1' : undefined}></div>
-{#if failed}<p role="alert">Impossibile caricare il grafico: usa la tabella qui sotto.</p>{/if}
+{#if failed}<p role="alert">{t('analysis.chartUnavailable')}</p>{/if}
 
 <style>
   .chart {

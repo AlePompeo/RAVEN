@@ -34,6 +34,7 @@
     syntheticRidgeCsv,
     validateForm,
     type AnalysisResult,
+    type ApiFailure,
     type AnalyzeRequest,
     type AntennaReport,
     type Compensation,
@@ -45,12 +46,12 @@
   } from './grazing';
 
   const TABS = [
-    { id: 'time', label: 'Margine nel tempo' },
-    { id: 'windows', label: 'Finestre' },
-    { id: 'diffraction', label: 'Diffrazione' },
-    { id: 'antenna', label: 'Antenna' },
-    { id: 'compensator', label: 'Compensatore' },
-    { id: 'params', label: 'Parametri e limiti' },
+    { id: 'time', label: 'analysis.page.tabTime' },
+    { id: 'windows', label: 'analysis.page.tabWindows' },
+    { id: 'diffraction', label: 'analysis.page.tabDiffraction' },
+    { id: 'antenna', label: 'analysis.page.tabAntenna' },
+    { id: 'compensator', label: 'analysis.page.tabCompensator' },
+    { id: 'params', label: 'analysis.page.tabParams' },
   ] as const;
   type TabId = (typeof TABS)[number]['id'];
 
@@ -59,20 +60,6 @@
    * solo i campi essenziali (sito, inizio, durata, stazione, velocità) e due grafici; gli altri campi
    * restano ai loro valori e le schede tecniche sono raggiungibili passando ad Avanzato.
    */
-  const STR = {
-    learn: 'un sito vero del polo Sud per qualche giorno: il grafico dice quanto è forte il segnale verso la Terra e quando si riesce a parlare.',
-    introSimple:
-      'Dal polo Sud della Luna la Terra è appena sopra l’orizzonte. Scegli un sito e per quanti giorni: RAVEN calcola quando il segnale arriva e con quanto margine.',
-    moreInAdvanced: 'Passo, profilo del terreno, antenna e altri parametri sono in Avanzato e mantengono i valori impostati.',
-    hiddenError: 'Un parametro visibile solo in Avanzato non è valido: passa ad Avanzato per correggerlo.',
-    simple: {
-      link: 'Collegamento',
-      site: 'Dove (sito al polo Sud)',
-      days: 'Per quanti giorni',
-      station: 'Antenna sulla Terra',
-      rate: 'Quanti dati al secondo',
-    },
-  } as const;
   const ADV_FIELDS = [
     ['tx_gain_dbi', 'Guadagno antenna rover (dBi)'],
     ['tx_power_dbw', 'Potenza di trasmissione (dBW)'],
@@ -85,7 +72,7 @@
   const tabs = TABS;
 
   let loading = $state(true);
-  let loadError = $state('');
+  let loadError = $state<ApiFailure | null>(null);
   let status = $state.raw<Status | null>(null);
   let defaults = $state.raw<Defaults | null>(null);
 
@@ -110,21 +97,22 @@
   let errors = $state<FormErrors>({});
   let running = $state(false);
   let error = $state('');
-  let errorKind = $state('');
+  let errorKind = $state<ApiFailure | ''>('');
   let message = $state('');
   let result = $state.raw<AnalysisResult | null>(null);
   let lastReq = $state.raw<AnalyzeRequest | null>(null);
   let usedProfile = $state(false);
   let usedSynthetic = $state(false);
   let comp = $state.raw<Compensation | null>(null);
-  let compError = $state('');
+  let compError = $state<ApiFailure | null>(null);
   let report = $state.raw<AntennaReport | null>(null);
-  let antError = $state('');
+  let antError = $state<ApiFailure | null>(null);
   let tab = $state<TabId>('time');
   const shown = $derived(tab);
   let ctrl: AbortController | null = null;
 
   const rows = $derived(defaults?.parameters ?? []);
+  const translateFailure = (kind: ApiFailure) => t(`analysis.failure.${kind}`);
   const extras = $derived(extraParams(rows));
   const sites = $derived(status?.sites ?? []);
   const covered = $derived(sites.filter((s) => s.dem_covered));
@@ -133,10 +121,10 @@
 
   async function load() {
     loading = true;
-    loadError = '';
+    loadError = null;
     const [s, d] = await Promise.all([fetchStatus(fetch), fetchDefaults(fetch)]);
     if (!s.ok || !d.ok) {
-      loadError = (!s.ok ? s.message : !d.ok ? d.message : '') || 'Impossibile caricare siti e parametri.';
+      loadError = !s.ok ? s.kind : !d.ok ? d.kind : 'server';
       loading = false;
       return;
     }
@@ -269,7 +257,7 @@
     tab = 'time';
     message = `Analisi completata: ${r.data.window.n_steps} istanti.`;
     report = null;
-    antError = '';
+    antError = null;
     void loadExtras(r.data, signal, lists.r as number[], lists.d as number[]);
   }
 
@@ -278,13 +266,13 @@
       const c = await fetchCompensation(fetch);
       if (c.ok) {
         comp = c.data;
-        compError = '';
-      } else compError = c.message;
+        compError = null;
+      } else compError = c.kind;
     }
     const a = await runAntenna(fetch, antennaRequest(res, station, rates, dia), signal);
     if (signal.aborted) return;
     if (a.ok) report = a.data;
-    else antError = a.message;
+    else antError = a.kind;
   }
 
   /* schede ARIA: frecce, Home, Fine; l'attivazione segue il focus */
@@ -299,38 +287,34 @@
   }
 </script>
 
-<SubNav title={t('title.analyze')} learn={STR.learn} />
+<SubNav title={t('title.analyze')} learn={t('analysis.page.learn')} />
 <div class="container container--wide"><AntennaGuide /></div>
 <p class="experiment-scope" role="note">{t('grazing.experimentScope')}</p>
 
 <div class="workspace tile tile--alt">
   <div class="container container--wide">
     {#if loading}
-      <p role="status">Caricamento di siti e parametri...</p>
+      <p role="status">{t('analysis.page.loading')}</p>
     {:else if loadError}
-      <p role="alert">{loadError}</p>
-      <p><button type="button" class="btn--primary" onclick={load}>Riprova</button></p>
+      <p role="alert">{t(`analysis.failure.${loadError}`)}</p>
+      <p><button type="button" class="btn--primary" onclick={load}>{t('analysis.page.retry')}</button></p>
     {:else if defaults && status}
-      <Callout title="Collegamento radio con la Terra a 0,5–1,5° dall’orizzonte" id="intro">
+      <Callout title={t('analysis.page.introTitle')} id="intro">
         {#if adv}
           <p>
-            Dal polo Sud lunare la Terra sta così vicina all’orizzonte che un crinale la nasconde o la sfiora. La geometria dice solo
-            «visibile / bloccato»; qui si aggiungono diffrazione, multipath e antenna per calcolare il margine di link nel tempo.
-            Risultato: <strong>potenziale nelle ipotesi dichiarate</strong>, non una previsione di missione.
+            {t('analysis.page.introAdvanced')}
           </p>
         {:else}
-          <p>{STR.introSimple}</p>
+          <p>{t('analysis.page.introSimple')}</p>
         {/if}
         <p data-testid="illustrative-note">
-          <strong>I parametri radio sono ipotesi illustrative (tag I)</strong>: non c’è alcuna misura radio reale al polo Sud.
-          Il terreno viene da LOLA (PDS) o da un profilo fornito da te; mai inventato.
+          <strong>{t('analysis.page.radioAssumptions')}</strong>: {t('analysis.page.radioAssumptionsDetail')}
         </p>
       </Callout>
 
       {#if !status.dem.available}
         <p role="alert" class="notice" data-testid="dem-missing">
-          Dati LOLA non disponibili sul server. Per scaricarli esegui «make grazing-dem» (tile in build/lola): finché mancano si può
-          analizzare solo con un profilo del terreno caricato da te.
+          {t('analysis.page.demMissing')}
         </p>
       {/if}
 
@@ -338,32 +322,32 @@
         <h2 id="setup-h">Scenario</h2>
         <div class="grid">
           <p class="field">
-            <label for="f-site">{adv ? 'Sito' : STR.simple.site}</label>
+            <label for="f-site">{t(adv ? 'analysis.page.site' : 'analysis.page.simpleSite')}</label>
             <select id="f-site" bind:value={siteId} disabled={sweep} aria-invalid={errors.site ? 'true' : undefined} aria-describedby="f-site-hint{errors.site ? ' f-site-err' : ''}">
               {#each sites as s (s.id)}
                 <option value={s.id} disabled={!s.dem_covered && !profile}>
-                  {short(s.name)} ({s.lat_deg.toFixed(1)}°){s.dem_covered ? '' : ' - fuori copertura DEM'}
+                  {short(s.name)} ({s.lat_deg.toFixed(1)}°){s.dem_covered ? '' : ` - ${t('analysis.page.outsideDem')}`}
                 </option>
               {/each}
             </select>
             <span id="f-site-hint" class="hint">
-              {covered.length} di {sites.length} siti sono coperti dal DEM ({status.dem.product.coverage}); gli altri servono un profilo tuo.
+              {t('analysis.page.coverage', { covered: covered.length, total: sites.length, coverage: status.dem.product.coverage })}
             </span>
             {#if errors.site}<span id="f-site-err" class="field-error">{errors.site}</span>{/if}
           </p>
           <p class="field">
-            <label for="f-start">{adv ? 'Inizio (UTC)' : t('analysis.start')}</label>
+            <label for="f-start">{adv ? t('analysis.page.startUtc') : t('analysis.start')}</label>
             <input id="f-start" type="datetime-local" step="1" bind:value={start} aria-invalid={errors.start ? 'true' : undefined} aria-describedby={errors.start ? 'f-start-err' : undefined} />
             {#if errors.start}<span id="f-start-err" class="field-error">{errors.start}</span>{/if}
           </p>
           <p class="field">
-            <label for="f-days">{adv ? 'Durata (giorni)' : STR.simple.days}</label>
+            <label for="f-days">{t(adv ? 'analysis.page.duration' : 'analysis.page.simpleDays')}</label>
             <input id="f-days" type="number" inputmode="decimal" step="any" bind:value={days} aria-invalid={errors.days ? 'true' : undefined} aria-describedby={errors.days ? 'f-days-err' : undefined} />
             {#if errors.days}<span id="f-days-err" class="field-error">{errors.days}</span>{/if}
           </p>
           {#if adv}
           <p class="field">
-            <label for="f-step">Passo (minuti)</label>
+            <label for="f-step">{t('analysis.page.step')}</label>
             <input id="f-step" type="number" inputmode="decimal" step="any" bind:value={stepMin} aria-invalid={errors.step ? 'true' : undefined} aria-describedby={errors.step ? 'f-step-err' : undefined} />
             {#if errors.step}<span id="f-step-err" class="field-error">{errors.step}</span>{/if}
           </p>
@@ -411,10 +395,10 @@
         {/if}
 
         <fieldset>
-          <legend>{adv ? 'Collegamento (ipotesi illustrative, tag I)' : STR.simple.link}</legend>
+          <legend>{t(adv ? 'analysis.page.linkAdvanced' : 'analysis.page.link')}</legend>
           <div class="grid">
             <p class="field">
-              <label for="f-station">{adv ? 'Stazione di terra' : STR.simple.station}</label>
+              <label for="f-station">{t(adv ? 'analysis.page.station' : 'analysis.page.simpleStation')}</label>
               <select id="f-station" bind:value={station}>
                 {#each defaults.stations as s (s.key)}<option value={s.key}>{s.name}</option>{/each}
               </select>
@@ -437,7 +421,7 @@
               </p>
             {/each}
             <p class="field">
-              <label for="f-rate">{adv ? 'Velocità per la finestra' : STR.simple.rate}</label>
+              <label for="f-rate">{t(adv ? 'analysis.page.rate' : 'analysis.page.simpleRate')}</label>
               <select id="f-rate" bind:value={rate}>
                 {#each defaults.rates_bps as r (r)}<option value={r}>{rateLabel(r)}</option>{/each}
               </select>
@@ -456,8 +440,8 @@
             {/if}
           </div>
           {#if !adv}
-            <p class="hint" data-testid="more-in-advanced">{STR.moreInAdvanced}</p>
-            {#if hiddenError}<p class="field-error" role="alert">{STR.hiddenError}</p>{/if}
+            <p class="hint" data-testid="more-in-advanced">{t('analysis.page.moreInAdvanced')}</p>
+            {#if hiddenError}<p class="field-error" role="alert">{t('analysis.page.hiddenError')}</p>{/if}
           {:else}
           <details class="more">
             <summary>Altri parametri illustrativi ({extras.length})</summary>
@@ -475,25 +459,25 @@
         </fieldset>
 
         <p class="submit">
-          <button type="submit" class="btn--primary" aria-disabled={running}>{running ? 'Analisi in corso...' : 'Esegui analisi'}</button>
+          <button type="submit" class="btn--primary" aria-disabled={running}>{t(running ? 'analysis.page.running' : 'analysis.page.run')}</button>
         </p>
       </form>
 
       <div class="results">
         <p class="status" role="status">{message}</p>
         {#if error}
-          <p role="alert" class="notice" data-kind={errorKind}>{error}</p>
+          <p role="alert" class="notice" data-kind={errorKind}>{errorKind ? t(`analysis.failure.${errorKind}`) : error}</p>
         {/if}
 
         {#if result}
           <section class="panel" aria-labelledby="res-h">
-            <h2 id="res-h">Risultati</h2>
+            <h2 id="res-h">{t('analysis.page.results')}</h2>
             <p class="muted small">
               {result.window.start_utc.replace('T', ' ').replace('Z', ' UTC')}, {result.window.days} giorni, passo {result.window.step_min} min
               ({result.window.n_steps} istanti). {result.site.id ? `Sito: ${result.site.id}.` : 'Nessun sito: spazzolamento della Terra.'} Etichetta: {result.label}.
             </p>
             {#if result.flags.terrain.synthetic || usedSynthetic}
-              <p class="notice warn" role="note" data-testid="synthetic-banner">Profilo sintetico di prova: il terreno non è lunare, i numeri servono solo a provare la pagina.</p>
+              <p class="notice warn" role="note" data-testid="synthetic-banner">{t('analysis.page.syntheticBanner')}</p>
             {/if}
             <dl class="overview" aria-label={t('analysis.summary')} data-testid="analysis-summary">
               <div><dt>{t('analysis.geometry')}</dt><dd data-testid="summary-geometric">{hoursText(result.windows.geometric_hours)}</dd></div>
@@ -506,17 +490,17 @@
                 <TabWindows {result} simple />
               </div>
             {:else}
-            <div class="tablist" role="tablist" aria-label="Risultati dell’analisi" tabindex="-1">
-              {#each tabs as t (t.id)}
+            <div class="tablist" role="tablist" aria-label={t('analysis.page.analysisResults')} tabindex="-1">
+              {#each tabs as item (item.id)}
                 <button
                   type="button"
                   role="tab"
-                  id="tab-{t.id}"
-                  aria-selected={shown === t.id}
-                  aria-controls="panel-{t.id}"
-                  tabindex={shown === t.id ? 0 : -1}
-                  onclick={() => (tab = t.id)}
-                  onkeydown={onTabKey}>{t.label}</button
+                  id="tab-{item.id}"
+                  aria-selected={shown === item.id}
+                  aria-controls="panel-{item.id}"
+                  tabindex={shown === item.id ? 0 : -1}
+                  onclick={() => (tab = item.id)}
+                  onkeydown={onTabKey}>{t(item.label)}</button
                 >
               {/each}
             </div>
@@ -525,8 +509,8 @@
                 {#if shown === t.id}
                   {#if t.id === 'time'}<TabTime {result} />
                   {:else if t.id === 'windows'}<TabWindows {result} />
-                  {:else if t.id === 'diffraction'}<TabDiffraction {result} {comp} {compError} />
-                  {:else if t.id === 'antenna'}<TabAntenna {result} {report} error={antError} />
+                  {:else if t.id === 'diffraction'}<TabDiffraction {result} {comp} compError={compError ? translateFailure(compError) : ''} />
+                  {:else if t.id === 'antenna'}<TabAntenna {result} {report} error={antError ? translateFailure(antError) : ''} />
                   {:else if t.id === 'compensator'}<TabCompensator {result} />
                   {:else}<TabParams {result} userProfile={usedProfile} syntheticMark={usedSynthetic} />{/if}
                 {/if}
@@ -541,8 +525,8 @@
           </section>
         {:else if !error && !running}
           <section class="panel empty" aria-labelledby="empty-h">
-            <h2 id="empty-h">Risultati</h2>
-            <p class="muted">Scegli un sito e una finestra e premi «Esegui analisi»: margine nel tempo, finestre, diffrazione, antenna e compensatore compaiono qui.</p>
+            <h2 id="empty-h">{t('analysis.page.results')}</h2>
+            <p class="muted">{t('analysis.page.empty')}</p>
           </section>
         {/if}
       </div>
