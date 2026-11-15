@@ -2,6 +2,7 @@
 <script lang="ts">
   import ChartBox, { type Spec } from './ChartBox.svelte';
   import ExportBar from './ExportBar.svelte';
+  import { formatNumber, t } from '../../i18n/i18n.svelte';
   import { chosenRateData, toJson, tradeCsv, tradeData, type AnalysisResult } from './grazing';
 
   let { result }: { result: AnalysisResult } = $props();
@@ -9,46 +10,46 @@
   const comp = $derived(result.compensator);
   const trade = $derived(tradeData(comp.tradeoff));
   const chosen = $derived(chosenRateData(result));
-  const f = (v: number, d = 2) => v.toFixed(d).replace('.', ',');
-  const tradeSpecs: Spec[] = [
-    { label: 'Interruzioni (%)', token: '--c-danger', scale: 'o' },
-    { label: 'Dati consegnati (% del programmato dal k scelto)', token: '--c-uplink', scale: 'd' },
-  ];
-  const rateSpec: Spec[] = [{ label: 'Velocità scelta (kbit/s)', token: '--c-uplink' }];
-  const declaredPct = $derived(chosen.kbps.length ? (100 * chosen.kbps.filter((v) => v > 0).length) / chosen.kbps.length : 0);
+  const f = (v: number, d = 2) => formatNumber(v, { minimumFractionDigits: d, maximumFractionDigits: d });
+  const tradeSpecs = $derived<Spec[]>([
+    { label: t('analysis.comp.outages'), token: '--c-danger', scale: 'o' },
+    { label: t('analysis.comp.deliveredSeries'), token: '--c-uplink', scale: 'd' },
+  ]);
+  const rateSpec = $derived<Spec[]>([{ label: t('analysis.comp.selectedRate'), token: '--c-uplink' }]);
+  const knownRates = $derived(chosen.kbps.filter(Number.isFinite));
+  const unknownRates = $derived(chosen.kbps.length - knownRates.length);
+  const declaredPct = $derived(knownRates.length ? (100 * knownRates.filter((v) => v > 0).length) / knownRates.length : null);
 </script>
 
 <p class="small muted">
-  Regola: la velocità è la massima tra quelle candidate per cui il margine previsto meno k·σ è almeno 0 dB; se nessuna soddisfa la regola
-  il link non è dichiarato. Interruzione: margine vero + rumore N(0, σ) sotto 0 dB. È un controllo in avanti con margine statistico,
-  non apprendimento per rinforzo. σ = {f(comp.sigma_db, 1)} dB e k sono ipotesi illustrative (tag I).
+  {t('analysis.comp.help', { sigma: f(comp.sigma_db, 1) })}
 </p>
 
-<h3>Interruzioni e dati contro k</h3>
+<h3>{t('analysis.comp.title')}</h3>
 <ChartBox
   series={tradeSpecs}
   x={trade.k}
   ys={[trade.outage, trade.data]}
   xNumeric
-  xLabel="k (margine di sicurezza in σ)"
-  axisLabels={{ o: 'interruzioni (%)', d: 'dati relativi (%)' }}
+  xLabel={t('analysis.comp.kAxis')}
+  axisLabels={{ o: t('analysis.comp.outageAxis'), d: t('analysis.comp.dataAxis') }}
   height={240}
-  label="Grafico del compromesso: percentuale di interruzioni e dati consegnati contro il margine k; i valori sono nella tabella sotto"
+  label={t('analysis.comp.chart')}
 />
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<div class="table-scroll" tabindex="0" role="region" aria-label="Tabella del compromesso">
+<div class="table-scroll" tabindex="0" role="region" aria-label={t('analysis.comp.table')}>
   <table data-testid="tradeoff-table">
-    <caption>Compromesso interruzioni e dati per valore di k (k scelto: {f(comp.k)})</caption>
+    <caption>{t('analysis.comp.caption', { k: f(comp.k) })}</caption>
     <thead>
       <tr>
-        <th scope="col">k</th><th scope="col">Backoff (dB)</th><th scope="col">Passi dichiarati</th><th scope="col">Interruzioni (%)</th>
-        <th scope="col">Interruzioni teoriche gaussiane (%)</th><th scope="col">Dati relativi (%)</th><th scope="col">Velocità media (kbit/s)</th>
+        <th scope="col">k</th><th scope="col">Backoff (dB)</th><th scope="col">{t('analysis.comp.declaredSteps')}</th><th scope="col">{t('analysis.comp.outages')}</th>
+        <th scope="col">{t('analysis.comp.gaussianOutages')}</th><th scope="col">{t('analysis.comp.relativeData')}</th><th scope="col">{t('analysis.comp.meanRate')}</th>
       </tr>
     </thead>
     <tbody>
       {#each [...comp.tradeoff].sort((a, b) => a.k - b.k) as r (r.k)}
         <tr class:chosen={r.k === comp.k}>
-          <th scope="row">{f(r.k)}{r.k === comp.k ? ' (scelto)' : ''}</th><td class="num">{f(r.backoff_db)}</td><td class="num">{r.declared_steps}</td>
+          <th scope="row">{f(r.k)}{r.k === comp.k ? ` (${t('analysis.comp.selected')})` : ''}</th><td class="num">{f(r.backoff_db)}</td><td class="num">{r.declared_steps}</td>
           <td class="num">{f(r.outage_pct, 3)}</td><td class="num">{f(r.gaussian_outage_pct, 3)}</td>
           <td class="num">{r.relative_data === null ? '—' : f(100 * r.relative_data, 1)}</td><td class="num">{f(r.mean_rate_bps / 1e3, 1)}</td>
         </tr>
@@ -57,22 +58,26 @@
   </table>
 </div>
 <p class="small summary" role="status">
-  Con k = {f(comp.k)}: {f(comp.chosen.outage_pct, 3)} % di interruzioni su {comp.chosen.declared_steps} passi dichiarati, dati consegnati
-  {comp.chosen.relative_data === null ? 'non definiti' : `${f(100 * comp.chosen.relative_data, 1)} % del riferimento`}.
+  {t('analysis.comp.summary', { k: f(comp.k), outages: f(comp.chosen.outage_pct, 3), steps: comp.chosen.declared_steps,
+    data: comp.chosen.relative_data === null ? t('analysis.comp.undefined') : t('analysis.comp.reference', { percent: f(100 * comp.chosen.relative_data, 1) }) })}
 </p>
 <ExportBar name="raven-compensatore-k" csv={() => tradeCsv(comp.tradeoff)} json={() => toJson(comp)} />
 
-<h3>Velocità scelta nel tempo</h3>
+<h3>{t('analysis.comp.rateTitle')}</h3>
 <ChartBox
   series={rateSpec}
   x={chosen.time}
   ys={[chosen.kbps]}
   axisLabels={{ y: 'kbit/s' }}
   height={220}
-  label="Grafico della velocità di trasmissione scelta dal compensatore nel tempo; 0 significa link non dichiarato"
+  label={t('analysis.comp.rateChart')}
 />
 <p class="small summary" role="status">
-  Link dichiarato nel {f(declaredPct, 1)} % dei punti della serie (0 kbit/s = nessuna velocità soddisfa la regola).
+  {#if declaredPct === null}
+    {t('analysis.comp.noKnown', { unknown: unknownRates })}
+  {:else}
+    {t('analysis.comp.declaredSummary', { percent: f(declaredPct, 1), known: knownRates.length, unknown: unknownRates })}
+  {/if}
 </p>
 <ExportBar
   name="raven-velocita-scelta"

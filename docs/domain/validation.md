@@ -1,6 +1,94 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Validazione dell'analisi lunare (Fase C)
 
+## Sensibilità esplorativa ai DEM LOLA (15 novembre 2026)
+
+Non è una validazione indipendente del terreno. A Shackleton (centro di feature,
+−89,67°, 129,78° Est), `scripts/compare_lola_resolution.py` confronta il mosaico NASA
+[LOLA 5 m](https://pgda.gsfc.nasa.gov/products/81) con i prodotti PDS 20 m e 240 m
+indicati nel lock del progetto. Tutti usano LOLA e riferimenti correlati.
+Il 240 m è confrontato qui **entro 10 km solo per sensibilità**; in produzione serve
+per la parte 10–200 km. Non si è confrontato l'orizzonte completo né il suo effetto
+sulle finestre.
+
+Metodo: quattro azimut cardinali; 500 distanze per azimut, da 20 m a 10 km ogni
+20 m, più il sito; interpolazione bilineare, osservatore 2 m sopra la quota di
+ciascun DEM, curvatura su sfera di raggio 1 737 400 m. La maschera di produzione
+usa un passo vicino di 10 m, più azimut e terreno lontano: questi massimi non sono
+la sua uscita. Le label dei DEM 20 m e 240 m dichiarano ME/asse polare DE421;
+NASA dichiara MOON_ME DE421 per il 5 m. Il GeoTIFF 5 m dichiara pixel-as-area,
+scala 5 m e origine angolo (−100 000, 100 000) m; i centri sono a mezzo pixel.
+Un controllo con PROJ al sito concorda sulla proiezione a meno di 2e-10 m;
+questo non quantifica eventuali differenze geodetiche tra prodotti.
+
+| Azimut | Massimo 5 m | Massimo 20 m | Massimo 240 m | 5 m − 20 m |
+|---|---:|---:|---:|---:|
+| 0° | 19,290352° | 19,291508° | 19,276465° | −0,001156° |
+| 90° | 21,938266° | 21,938153° | 21,894769° | +0,000113° |
+| 180° | 22,586064° | 22,592136° | 22,491782° | −0,006073° |
+| 270° | 20,502873° | 20,500804° | 20,458806° | +0,002069° |
+
+Quote del sito: −2788,9673 m (5 m), −2788,9680 m (20 m), −2785,9299 m (240 m).
+Sui 2001 punti campionati, 5 m − 20 m ha media +0,661 m, RMS 2,114 m e massimo
+assoluto 9,631 m; nessuna quota mancante. La mappa NASA `ldec` dei ritorni,
+campionata sui quattro pixel circostanti ciascun punto, ha rispettivamente
+**1340, 573, 85, 3 e 0** punti con 0, 1, 2, 3 e 4 pixel con conteggio positivo.
+Tutti i punti hanno quindi almeno un pixel senza ritorni nel supporto bilineare:
+il prodotto riempie i vuoti per interpolazione. Il conteggio non è una stima
+dell'errore verticale e i risultati non si possono generalizzare ad altri siti.
+
+Riproduzione: installare separatamente `tifffile==2026.9.9` e
+`imagecodecs==2026.1.14`, predisporre le tile 20/240 m in cache, poi eseguire
+`python -m scripts.compare_lola_resolution`. Il test HTTP verifica stato 206,
+dimensioni, `Content-Range` ed ETag, e fallisce su tile mancanti. I GeoTIFF 5 m
+non sono stati scaricati integralmente: per l'insieme ordinato di indice e byte
+compressi delle tile lette, gli SHA-256 sono rispettivamente
+`33ec4fa2a874ff1ff30550e44a67d46958d5d752fb4fa4bb5a7bf248a5e703cb` (quota) e
+`76e8d27fddcb31528cc011fa8da59d95332be0b675a3f8274887a2d9b41537d5` (conteggi).
+Sono hash dei soli intervalli letti, **non** degli interi prodotti. Le tile PDS
+20/240 m sono quelle della cache verificata dal lettore, non è stato rieseguito
+il download integrale. L'ETag è debole e non è un checksum crittografico.
+La libreria segnala che il tag GDAL NoData `nan` del file di conteggi uint8 non
+è interpretabile; i valori usati sono i conteggi grezzi, non un'asserzione di
+copertura completa. Fonte: Barker et al., 2021,
+[doi:10.1016/j.pss.2020.105119](https://doi.org/10.1016/j.pss.2020.105119).
+
+## Ricerca di osservazioni e misure hardware (15 novembre 2026)
+
+**LROC:** il [catalogo immagini ufficiale](https://data.lroc.im-ldi.com/lroc/search)
+ha restituito 332 CDR WAC_MONO per la ricerca bounding box 128–131° E,
+89,8–89,5° S, dal 21 settembre al 23 ottobre 2010. Un candidato verificabile è
+[M142511439MC](https://data.lroc.im-ldi.com/lroc/view_lroc/LRO-L-LROC-3-CDR-V1.0/M142511439MC):
+inizio 2010-10-23 22:16:11 UTC, fine 22:22:45 UTC, pixel nominale circa 60 m,
+centro −89,47°, 137,69° E. Il [CDR](https://pds.lroc.im-ldi.com/data/LRO-L-LROC-3-CDR-V1.0/LROLRC_1005/DATA/SCI/2010296/WAC/M142511439MC.IMG)
+è accessibile (46 573 568 byte). È **solo un candidato**, non una validazione:
+il filtro spaziale non dimostra che il pixel di Shackleton sia incluso, né che
+sia illuminato. La label incorporata è stata letta con una richiesta parziale:
+indica CDR v1.9, filtro 643 nm e `DATA_QUALITY_ID = 4`; il significato dei bit
+di qualità, in particolare la soglia per pixel sotto-saturati, va verificato
+nel SIS prima di usare un pixel scuro come ombra. L'immagine non è stata
+scaricata integralmente, proiettata o confrontata. Servono la label,
+kernel/pointing, calibrazione, georeferenziazione e incertezza, tempo del pixel
+(l'acquisizione dura diversi minuti), criterio radiometrico e altezza al suolo
+comparabili; la media WAC già descritta sotto non è uno stato istantaneo.
+
+**Energia:** il progetto NASA [PILS](https://www.nasa.gov/history/solar-power-investigation-to-launch-on-lunar-lander/)
+prevedeva misure di corrente e tensione delle celle sulla superficie, ma
+[Peregrine Mission One non è allunata](https://www.nasa.gov/news-release/nasa-science-astrobotic-peregrine-mission-one-concludes/).
+Non abbiamo acquisito una serie di celle, carichi e stato di carica comparabile:
+il progetto o i dati raccolti in volo non costituiscono una prova di energia sul
+suolo lunare. L'[archivio Apollo PDS](https://pds-geosciences.wustl.edu/missions/apollo/index.htm)
+è un'altra fonte da esplorare, ma qui non è stata identificata una traccia
+fotovoltaico/batteria adatta.
+
+**Radio:** il [DSN Telecommunications Link Design Handbook](https://deepspace.jpl.nasa.gov/dsndocs/810-005/)
+documenta proprietà e interfacce di progetto, non è da solo una serie misurata
+di un link di superficie. Non è stato reperito un caso completo con misure
+sincrone, geometria, antenna, EIRP, G/T, perdite, rate e incertezze. Restano
+validi i controlli aritmetici NASA documentati sotto, non una qualificazione
+assoluta S5. Le soglie e i protocolli di promozione restano quelli della sezione
+«Acceptance protocol» in fondo: S2/S4/S5 non sono promossi.
+
 ## Aggiornamento RAVEN: parita' browser e contratti (6 novembre 2026)
 
 La voce `s5.browser_mirror` della matrice `/api/raven/validation` e' **verificata come parita'

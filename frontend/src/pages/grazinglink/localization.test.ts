@@ -8,6 +8,7 @@ import fixture from '../../../../tests/backend/domain/golden/real.json';
 import type { AnalysisResult } from './grazing';
 import TabTime from './TabTime.svelte';
 import TabWindows from './TabWindows.svelte';
+import TabCompensator from './TabCompensator.svelte';
 import GrazingLink from './GrazingLink.svelte';
 import { modeStore } from '../../shell/mode';
 
@@ -22,6 +23,26 @@ describe('analysis localization', () => {
     useCatalog('it', itCatalog, en);
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Server non raggiungibile'));
     expect(screen.getByRole('button', { name: 'Riprova' })).toBeTruthy();
+  });
+
+  it('keeps unknown rate samples out of the declared-link percentage in both languages', async () => {
+    useCatalog('en', en, en);
+    const result = structuredClone(fixture.outputs.grazing_analyze_shackleton.response) as AnalysisResult;
+    result.series_time_unix = [1, 2, 3];
+    result.series.chosen_rate_bps = [1000, 0, null];
+    render(TabCompensator, { result });
+    expect(screen.getByText(/Link declared in 50\.0 % of 2 known samples\. Samples with unknown rate: 1/)).toBeTruthy();
+    useCatalog('it', itCatalog, en);
+    await waitFor(() => expect(screen.getByText(/Link dichiarato nel 50,0 % di 2 campioni noti\. Campioni con velocità ignota: 1/)).toBeTruthy());
+  });
+
+  it('reports an entirely unknown rate series without inventing a percentage', () => {
+    useCatalog('en', en, en);
+    const result = structuredClone(fixture.outputs.grazing_analyze_shackleton.response) as AnalysisResult;
+    result.series_time_unix = [1, 2];
+    result.series.chosen_rate_bps = [null, null];
+    render(TabCompensator, { result });
+    expect(screen.getByText('No known rate samples. Samples with unknown rate: 2.')).toBeTruthy();
   });
 
   it('updates the analysis setup and empty state after a language change', async () => {

@@ -112,7 +112,7 @@ requisiti aggiuntivi della competizione né garanzie di premio.
 | 5 — media | Risolvere gate licenze `pyphen` con revisione documentata; ripetere smoke di installazione realmente pulita; aggiornare E2E e ripetere CI. | La CI locale precedente non equivale a installazione pulita; E2E era stato interrotto. |
 | 6 — media | Rendere evidenti durata campionata, passo, cause di chiusura e intervalli ignoti; testare transizioni ai bordi e dati mancanti. | Non interpolare attraverso dati ignoti né attribuire precisione continua non dimostrata. |
 | 7 — media | Ampliare fixture Horizons con casi polari e quota, conservare risposte e convenzioni; valutare confronto software separato con NAIF/SPICE. | Primo ampliamento eseguito: otto confronti in `docs/ephemeris.md`. Horizons e kernel JPL sono correlati, non una validazione osservativa. |
-| 8 — medio/alta | Confrontare orizzonti ottenuti con LOLA 5 m e i prodotti correnti sugli stessi siti, frame, pixel e raggio; riportare copertura e sensibilità. | Il 5 m copre solo la regione polare e il DEM completo è grande; stesso strumento LOLA non è indipendenza fisica. |
+| 8 — medio/alta | Confrontare orizzonti ottenuti con LOLA 5 m e i prodotti correnti sugli stessi siti, frame, pixel e raggio; riportare copertura e sensibilità. | Avviato a Shackleton su quattro direzioni fino a 10 km: risultati e ritorni in `docs/domain/validation.md`. Mancano altri siti, azimut e orizzonte completo; lo stesso strumento LOLA non è indipendenza fisica. |
 | 9 — alta | Pianificare confronto osservativo di Sole/terreno con LROC a stesso luogo, tempo, quota, supporto spaziale e criterio; indagare la discrepanza polare già documentata. | Richiede dati comparabili e incertezza DEM; WAC radiometrico non equivale automaticamente a illuminazione geometrica istantanea. |
 | 10 — molto alta | Qualificare energia e RF su dati indipendenti, configurazioni e incertezze note; definire protocolli e soglie prima del confronto. | Richiede tracce hardware o soluzioni indipendenti convergenti e revisione esperta; test aritmetici non bastano. |
 | 11 — variabile | Raccogliere riscontri reali da utenti con competenze diverse; migliorare accessibilità e presentazione sulla base delle osservazioni. | Non inventare metriche di impatto o qualificazioni degli utenti. |
@@ -129,6 +129,12 @@ requisiti aggiuntivi della competizione né garanzie di premio.
 - **LOLA/PDS, PGDA e NAIF/SPICE:** già presenti o studiati sopra. Dare priorità a
   provenienza, sensibilità del terreno e controllo separato delle trasformazioni
   prima di aggiungere altre dipendenze; registrare copertura e risoluzione reali.
+- **SDEM LROC/LOLA:** i [prodotti NASA shape-from-shading](https://pgda.gsfc.nasa.gov/products/104)
+  combinano immagini NAC con DEM LOLA per 13 regioni Artemis III, e includono
+  mappe di copertura e differenze rispetto a LOLA. Sono candidati per confronti
+  del terreno con dettaglio aggiuntivo, non dati indipendenti da LOLA né validazione
+  delle finestre: verificare copertura, frame, licenza, incertezza e costi dei file
+  prima dell'integrazione.
 - **«donky»:** potrebbe indicare [DONKI](https://api.nasa.gov/), database NASA di
   eventi meteorologici spaziali, non un'API di geometria o terreno. È solo un'ipotesi:
   una prova dell'endpoint FLR con `DEMO_KEY` ha restituito HTTP 404. Non integrare
@@ -143,3 +149,32 @@ matrice; tutti passati senza skip. Dopo l'aggiunta delle quattro risposte Horizo
 23 test del modulo efemeridi passati. Questi risultati confermano le verifiche
 esercitate, non elevano S2, S4 o S5 a validazione fisica né S3 oltre la plausibilità.
 Dettagli e limiti delle prove fisiche restano in `docs/domain/validation.md`.
+
+### Prova A/B del motore corrente: risultati e limite
+
+Il 15 novembre 2026 due chiamate locali a `/api/raven/evaluate` hanno usato
+`start_utc: 2027-04-07T00:00:00Z`, `days: 7`, `step_min: 60`, `include_steps: false`
+e i default del server (DSN 34 m, 100 kbit/s, quote di pannello e antenna 2 m,
+parametri energia/RF illustrativi). Kernel e tile LOLA erano presenti;
+nessun download è stato consentito. Sono risultati del modello, non osservazioni
+né previsioni certificate.
+
+| `site_id` | Coordinate usate | Ore utili note | Ore ignote | Sole campionato | Energia raccolta |
+|---|---|---:|---:|---:|---:|
+| `malapert-massif` | −85,98°, −1,67° E, centro della feature | 140 | 0 | 0 h | 0 Wh |
+| `nobile-rim` | −85,28°, 53,27° E, centro del cratere | 127 | 41 | 33 h | 110,96 Wh |
+
+Per Nobile i dati ignoti impediscono di stabilire il totale delle ore utili e
+di scegliere un vincitore sulla sola base della tabella. L'energia raccolta è
+parziale e il minimo SOC riportato (28,3%) riguarda soltanto i passi noti.
+Nobile usa il centro del cratere, non
+le regioni sul bordo: non rappresenta un sito Artemis selezionato. Per Malapert
+il minimo SOC è 16,7% sull'intera finestra. I conteggi hanno passo orario; i
+parametri di batteria, pannello e radio non sono una configurazione qualificata.
+Nella stessa prova spostare Malapert al 7 maggio ha dato gli stessi valori
+aggregati: non è una dimostrazione convincente di un compromesso fra date.
+
+Questa prova espone gli ignoti invece di nasconderli, ma **non completa**
+l'esempio A/B per la giuria: bisogna scegliere coordinate e date documentate
+con dati sufficienti, riprodurre le impostazioni del Planner e spiegare una
+decisione senza considerare ignoto come successo o fallimento.
