@@ -13,13 +13,13 @@
 
 ---
 
-## Demo
+## Video Demo
 
 ![RAVEN demo, animated preview](docs/raven-demo.gif)
 
 [Download the original demo video (MP4)](https://raw.githubusercontent.com/AlePompeo/RAVEN/main/frontend/public/raven-demo.mp4)
 
-## PDF DEMO REPORT ECSS
+## PDF Demo Report ECSS
 [Download the demo PDF](https://github.com/AlePompeo/RAVEN/blob/main/Mission%20Planner%20_%20RAVEN.pdf)
 
 ---
