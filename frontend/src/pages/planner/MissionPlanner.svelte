@@ -51,7 +51,6 @@
   import { dossierProgress, effectiveReportMode } from './reportMode';
   import ReliabilityInputs from './ReliabilityInputs.svelte';
   import ReliabilityResults from './ReliabilityResults.svelte';
-  import LinkPreview from './LinkPreview.svelte';
   import { reliabilityReady, reliabilityRequest, isReliabilityResult, type ReliabilityResult } from './reliability';
 
   const store = scenarioStore();
@@ -883,7 +882,7 @@
             {#if draft.input.mode === 'dates'}<div><label for="journey-start-b">{t('planner.startB')} (UTC)</label><input id="journey-start-b" type="datetime-local" min={dateBounds?.min} max={dateBounds?.max} bind:value={draft.input.startB} /></div>{/if}
             {#if ephemerisRange}<p>{t('planner.ephemerisRange', { start: ephemerisRange.start_utc.replace('T', ' ').replace('Z', ''), end: ephemerisRange.end_utc.replace('T', ' ').replace('Z', '') })}</p>{/if}
           </div>
-          <fieldset><legend>{t('planner.duration')}</legend><div class="choices">{#each [1, 3, 7] as days}<button type="button" aria-pressed={draft.input.days === days} onclick={() => draft!.input.days = days}>{t('journey.days', { days })}</button>{/each}</div></fieldset>
+          <fieldset><legend>{t('planner.duration')}</legend><div class="choices">{#each [1, 3, 7, 28, 365] as days}<button type="button" aria-pressed={draft.input.days === days} onclick={() => { draft!.input.days = days; autoStep(); }}>{t('journey.days', { days })}</button>{/each}</div></fieldset>
           <div class="field-grid">
             <div><label for="journey-days">{t('journey.customDuration')}</label><input id="journey-days" type="number" min=".01" max="366" step=".01" bind:value={draft.input.days} onchange={autoStep} /></div>
             <div><label for="journey-resolution">{t('journey.resolution')}</label><select id="journey-resolution" bind:value={draft.input.stepMin}>{#each [10, 30, 60, 180, 360, 1440] as minutes}<option value={minutes}>{minutes} min</option>{/each}</select></div>
@@ -934,7 +933,6 @@
             {#if waveOpen}{#await import('../wave/Wave.svelte') then m}<m.default embedded />{:catch}<p role="alert">{t('journey.visualFailed')}</p>{/await}{/if}
           </details>
         {:else if step === 6}
-          <LinkPreview radio={draft.radio} />
           <div class="mission-shift-controls" role="group" aria-label={t('journey.shift.group')}>
             {#each MISSION_SHIFT_DAYS as days (days)}
               <button type="button" aria-pressed={missionShiftDays === days} disabled={running || firstIssue < 6 || !shiftInRange(days)}

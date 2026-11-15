@@ -4,11 +4,56 @@
 import io
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 
-from scripts.compare_lola_resolution import Remote
+from scripts.compare_lola_resolution import Remote, main
 
 PRODUCT = ("data.tif", 10, 'W/"revision"')
+
+
+@pytest.mark.parametrize("latitude", ["-86", "nan", "-91"])
+def test_rejects_latitudes_outside_polar_mosaic(latitude: str) -> None:
+    with (
+        patch("sys.argv", ["compare_lola_resolution", f"--lat={latitude}"]),
+        pytest.raises(SystemExit) as exc,
+    ):
+        main()
+    assert exc.value.code == 2
+
+
+@pytest.mark.parametrize("missing_sample", [False, True])
+def test_missing_window_tiles_only_invalidate_missing_samples(
+    missing_sample: bool, capsys: pytest.CaptureFixture[str]
+) -> None:
+    class Grid:
+        tiles_missing = 12
+
+        def __init__(self, *args: object) -> None:
+            pass
+
+        def sample(self, lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
+            result = np.zeros_like(lat)
+            if missing_sample:
+                result[1] = np.nan
+            return result
+
+    def samples(*args: object) -> tuple[np.ndarray, str]:
+        return np.zeros((4, 2001)), "test-hash"
+
+    with (
+        patch("sys.argv", ["compare_lola_resolution"]),
+        patch("scripts.compare_lola_resolution._Grid", Grid),
+        patch("scripts.compare_lola_resolution.LolaDem"),
+        patch("scripts.compare_lola_resolution.load_lock"),
+        patch("scripts.compare_lola_resolution.samples", samples),
+    ):
+        if missing_sample:
+            with pytest.raises(ValueError, match="non-finite PDS terrain samples"):
+                main()
+        else:
+            main()
+            assert "missing window tiles (20 m, 240 m): 12 12" in capsys.readouterr().out
 
 
 class Response(io.BytesIO):

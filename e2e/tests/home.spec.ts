@@ -36,7 +36,7 @@ test.describe('home: Il problema', () => {
     await mini(page);
     for (const name of [
       'How it works, in four steps', 'The Earth stays close to the horizon',
-      'Why a ridge matters', 'What RAVEN calculates', 'What this means for a mission', 'The research stack',
+      'Why a ridge matters', 'What RAVEN calculates', 'Compare sites by useful hours', 'The research stack',
     ]) await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
     await expect(page.getByRole('img', { name: /The half-lit Earth/ })).toHaveCount(1);
     await expect(page.getByTestId('strip-summary')).toContainText('hours of contact');
@@ -71,32 +71,31 @@ test.describe('home: Il problema', () => {
     expect((await page.request.get(favicon!)).ok()).toBe(true);
   });
 
-  test('Learning: il pitch, una CTA, testo semplice; "Prova il simulatore" apre Simula', async ({ page }) => {
+  test('Learning: il pitch, le azioni e il testo semplice; "Prova e impara" apre Simula', async ({ page }) => {
     await page.goto('/?mode=learning');
     await ready(page);
     const hero = page.getByRole('region', { name: 'RAVEN', exact: true });
     await expect(hero).toContainText('Confronta due siti lunari in una finestra di missione');
     await expect(hero).toContainText('Deep Space Network');
-    await expect(hero.getByRole('link')).toHaveText(['Prova il simulatore', 'Come funziona', 'Inizia il Mission Planner', 'Demo guidata']);
+    await expect(hero.getByRole('link')).toHaveText(['Prova e impara', 'Inizia il Mission Planner', 'Demo guidata', 'About']);
     await expect(page.getByTestId('learn-line')).toBeVisible();
     await expect(page.getByTestId('tech-line')).toHaveCount(0);
     await expect(page.getByTestId('stack')).toHaveCount(0);
     await expect(page.getByTestId('honesty')).toHaveCount(0);
     await expect(page.getByRole('main').getByRole('link', { name: 'Chi siamo' })).toHaveCount(0);
-    await page.getByRole('link', { name: 'Prova il simulatore' }).click();
+    await page.getByRole('link', { name: 'Prova e impara' }).click();
     await expect(page).toHaveURL(/\/simula/);
     await expect(page.getByRole('heading', { level: 1, name: 'Simula – Simulatore' })).toBeVisible({ timeout: 20_000 });
   });
 
-  test('Avanzato: una riga tecnica per passo e lo stack; "Come funziona" porta alla storia', async ({ page }) => {
+  test('Avanzato: una riga tecnica per passo e lo stack nella storia', async ({ page }) => {
     await page.goto('/?mode=avanzato');
     await ready(page);
     await expect(page.getByTestId('tech-line')).toHaveCount(4);
     await expect(page.getByTestId('tech-line').nth(1)).toContainText('Fresnel-Kirchhoff');
     await expect(page.getByTestId('stack')).toContainText('Skyfield');
     await expect(page.getByTestId('learn-line')).toHaveCount(0);
-    await page.getByRole('link', { name: 'Come funziona' }).click();
-    await expect(page).toHaveURL(/#come-funziona$/);
+    await page.getByRole('heading', { level: 2, name: 'Come funziona, in quattro passi' }).scrollIntoViewIfNeeded();
     await expect(page.getByRole('heading', { level: 2, name: 'Come funziona, in quattro passi' })).toBeInViewport();
   });
 
@@ -168,7 +167,7 @@ test.describe('home: Il problema', () => {
     }
   });
 
-  test('ordine del focus: dopo la barra la prima tappa è "Prova il simulatore" (Tab e frecce TV)', async ({ page }) => {
+  test('ordine del focus: dopo la barra la prima tappa è "Prova e impara" (Tab e frecce TV)', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto('/');
     await ready(page);
@@ -177,18 +176,18 @@ test.describe('home: Il problema', () => {
     await page.keyboard.press('Tab');
     await expect(page.getByTestId('lang-switch').getByRole('button')).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('link', { name: 'Prova il simulatore' })).toBeFocused();
+    await expect(page.getByRole('link', { name: 'Prova e impara' })).toBeFocused();
     // TV: freccia giù da una voce della barra arriva alla CTA, non al pulsante fluttuante "RAVEN SI"
     await page.goto('/?tv=1');
     await ready(page);
-    for (const name of ['Home', 'Mission Planner', 'Explore']) {
+    for (const name of ['Home', 'Mission Planner']) {
       await page.getByRole('navigation', { name: 'Principale' }).getByRole('link', { name }).focus();
       await page.keyboard.press('ArrowDown');
       const at = await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120));
-      await expect(page.getByRole('link', { name: 'Prova il simulatore' }), `giù da ${name}: ${at}`).toBeFocused();
+      await expect(page.getByRole('link', { name: 'Prova e impara' }), `giù da ${name}: ${at}`).toBeFocused();
     }
     await page.keyboard.press('ArrowRight');
-    await expect(page.getByRole('link', { name: 'Come funziona' })).toBeFocused();
+    await expect(page.getByRole('link', { name: 'Inizia il Mission Planner' })).toBeFocused();
   });
 
   for (const mode of ['learning', 'avanzato'] as const) {

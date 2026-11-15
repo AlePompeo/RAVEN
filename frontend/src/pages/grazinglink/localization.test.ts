@@ -83,12 +83,20 @@ describe('analysis localization', () => {
       return new Response('', { status: 500 });
     }));
     render(GrazingLink);
-    await fireEvent.click(await screen.findByRole('button', { name: 'Run analysis' }));
+    await screen.findByRole('button', { name: 'Run analysis' });
+    expect(screen.getByText('Terrain profile (optional)')).toBeTruthy();
+    await fireEvent.click(screen.getByRole('button', { name: 'Use a synthetic test ridge' }));
+    expect(screen.getByText(/Profile loaded:/)).toBeTruthy();
+    await fireEvent.click(screen.getByRole('button', { name: 'Run analysis' }));
     await screen.findByRole('tab', { name: 'Margin over time' });
     expect(screen.getByRole('tab', { name: 'Diffraction' })).toBeTruthy();
+    expect(screen.getByText(/^Analysis complete:/)).toBeTruthy();
     useCatalog('it', itCatalog, en);
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Margine nel tempo' })).toBeTruthy());
     expect(screen.getByRole('tab', { name: 'Diffrazione' })).toBeTruthy();
+    expect(screen.getByText(/^Analisi completata:/)).toBeTruthy();
+    expect(screen.getByText('Profilo del terreno (facoltativo)')).toBeTruthy();
+    expect(screen.getByText(/Profilo caricato:/)).toBeTruthy();
   });
 
   it('updates charts, summaries and export controls when the language changes', async () => {

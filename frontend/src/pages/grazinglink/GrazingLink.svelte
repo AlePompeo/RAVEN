@@ -61,9 +61,9 @@
    * restano ai loro valori e le schede tecniche sono raggiungibili passando ad Avanzato.
    */
   const ADV_FIELDS = [
-    ['tx_gain_dbi', 'Guadagno antenna rover (dBi)'],
-    ['tx_power_dbw', 'Potenza di trasmissione (dBW)'],
-    ['compensator_k', 'Margine k del compensatore (σ)'],
+    ['tx_gain_dbi', 'analysis.page.txGain'],
+    ['tx_power_dbw', 'analysis.page.txPower'],
+    ['compensator_k', 'analysis.page.compMargin'],
   ] as const;
   /** Campi visibili anche in Learning: un errore altrove va segnalato, non nascosto. */
   const LEARN_FIELDS = ['site', 'start', 'days'];
@@ -96,9 +96,9 @@
 
   let errors = $state<FormErrors>({});
   let running = $state(false);
-  let error = $state('');
+  let error = $state(false);
   let errorKind = $state<ApiFailure | ''>('');
-  let message = $state('');
+  let message = $state<'' | 'running' | 'complete'>('');
   let result = $state.raw<AnalysisResult | null>(null);
   let lastReq = $state.raw<AnalyzeRequest | null>(null);
   let usedProfile = $state(false);
@@ -220,7 +220,7 @@
   async function run(e: SubmitEvent) {
     e.preventDefault();
     if (running || !defaults || !status) return;
-    error = '';
+    error = false;
     errorKind = '';
     message = '';
     errors = validateForm(form(), rows, status);
@@ -229,7 +229,7 @@
     if (!lists.r) errors = { ...errors, antRates: 'Fino a 12 velocità tra 100 bit/s e 10 Gbit/s, separate da spazi.' };
     const keys = Object.keys(errors).filter((k) => errors[k]);
     if (keys.length) {
-      error = 'Correggi i campi evidenziati prima di eseguire l’analisi.';
+      error = true;
       await tick();
       const k = keys[0] as string;
       document.getElementById(k.startsWith('p-') ? k : `f-${k}`)?.focus();
@@ -237,7 +237,7 @@
     }
     const req = buildRequest(form(), rows);
     running = true;
-    message = 'Analisi in corso: efemeridi, profili del terreno e diffrazione possono richiedere alcuni secondi.';
+    message = 'running';
     ctrl?.abort();
     ctrl = new AbortController();
     const signal = ctrl.signal;
@@ -246,7 +246,7 @@
     running = false;
     if (!r.ok) {
       message = '';
-      error = r.message;
+      error = true;
       errorKind = r.kind;
       return;
     }
@@ -255,7 +255,7 @@
     usedProfile = profile !== null;
     usedSynthetic = syntheticMark && profile !== null;
     tab = 'time';
-    message = `Analisi completata: ${r.data.window.n_steps} istanti.`;
+    message = 'complete';
     report = null;
     antError = null;
     void loadExtras(r.data, signal, lists.r as number[], lists.d as number[]);
@@ -356,38 +356,37 @@
 
         {#if adv}
         <fieldset class="profile">
-          <legend>Profilo del terreno (facoltativo)</legend>
+          <legend>{t('analysis.page.profile')}</legend>
           <p class="hint">
-            CSV con due colonne, distanza (m, da 0, crescente) e quota (m), al massimo {status.limits.max_profile_points} punti e
-            {MAX_PROFILE_BYTES / 1000} kB. Se manca si usa il DEM LOLA del sito.
+            {t('analysis.page.profileHelp', { points: status.limits.max_profile_points, size: MAX_PROFILE_BYTES / 1000 })}
           </p>
           <p class="field">
-            <label for="f-profile">File CSV</label>
+            <label for="f-profile">{t('analysis.page.csvFile')}</label>
             <input id="f-profile" type="file" accept=".csv,.txt,text/csv,text/plain" onchange={onFile} aria-describedby={profileError ? 'f-profile-err' : undefined} aria-invalid={profileError ? 'true' : undefined} />
             {#if profileError}<span id="f-profile-err" class="field-error" role="alert">{profileError}</span>{/if}
           </p>
           <p class="inline">
-            <button type="button" onclick={useSynthetic}>Usa un crinale sintetico di prova</button>
-            {#if profile}<button type="button" onclick={dropProfile}>Rimuovi il profilo</button>{/if}
+            <button type="button" onclick={useSynthetic}>{t('analysis.page.useSynthetic')}</button>
+            {#if profile}<button type="button" onclick={dropProfile}>{t('analysis.page.removeProfile')}</button>{/if}
           </p>
           {#if profile}
-            <p role="status" data-testid="profile-loaded">Profilo caricato: {profileName}, {profile.distance_m.length} punti, fino a {profile.distance_m[profile.distance_m.length - 1]} m.</p>
-            <label class="check"><input type="checkbox" bind:checked={syntheticMark} /> Questo profilo è sintetico, di prova (non è un dato lunare)</label>
-            <label class="check"><input id="f-sweep" type="checkbox" bind:checked={sweep} /> Usa uno spazzolamento dell’elevazione della Terra al posto delle efemeridi del sito</label>
+            <p role="status" data-testid="profile-loaded">{t('analysis.page.profileLoaded', { name: profileName, count: profile.distance_m.length, distance: profile.distance_m[profile.distance_m.length - 1] ?? 0 })}</p>
+            <label class="check"><input type="checkbox" bind:checked={syntheticMark} /> {t('analysis.page.syntheticProfile')}</label>
+            <label class="check"><input id="f-sweep" type="checkbox" bind:checked={sweep} /> {t('analysis.page.useSweep')}</label>
             {#if sweep}
               <div class="grid">
                 <p class="field">
-                  <label for="f-elStart">Elevazione iniziale (°)</label>
+                  <label for="f-elStart">{t('analysis.page.elevationStart')}</label>
                   <input id="f-elStart" type="number" step="any" bind:value={elStart} aria-invalid={errors.elStart ? 'true' : undefined} />
                   {#if errors.elStart}<span class="field-error">{errors.elStart}</span>{/if}
                 </p>
                 <p class="field">
-                  <label for="f-elEnd">Elevazione finale (°)</label>
+                  <label for="f-elEnd">{t('analysis.page.elevationEnd')}</label>
                   <input id="f-elEnd" type="number" step="any" bind:value={elEnd} aria-invalid={errors.elEnd ? 'true' : undefined} />
                   {#if errors.elEnd}<span class="field-error">{errors.elEnd}</span>{/if}
                 </p>
               </div>
-              <p class="hint">Lo spazzolamento è lineare nel tempo e NON usa le efemeridi: serve a esplorare il crinale, non descrive la librazione reale.</p>
+              <p class="hint">{t('analysis.page.sweepHelp')}</p>
             {/if}
           {/if}
           {#if errors.profile}<span class="field-error">{errors.profile}</span>{/if}
@@ -415,7 +414,7 @@
             {#each adv ? ADV_FIELDS : [] as [k, label] (k)}
               {@const r = row(k as string)}
               <p class="field">
-                <label for="p-{k}">{label}</label>
+                <label for="p-{k}">{t(label)}</label>
                 <input id="p-{k}" type="number" step="any" inputmode="decimal" min={r?.min ?? undefined} max={r?.max ?? undefined} bind:value={values[k as string]} aria-invalid={errors[`p-${k}`] ? 'true' : undefined} aria-describedby={errors[`p-${k}`] ? `p-${k}-err` : undefined} />
                 {#if errors[`p-${k}`]}<span id="p-{k}-err" class="field-error">{errors[`p-${k}`]}</span>{/if}
               </p>
@@ -428,12 +427,12 @@
             </p>
             {#if adv}
             <p class="field">
-              <label for="f-diameters">Diametri per la scheda Antenna (m)</label>
+              <label for="f-diameters">{t('analysis.page.diameters')}</label>
               <input id="f-diameters" type="text" bind:value={diameters} aria-invalid={errors.diameters ? 'true' : undefined} aria-describedby={errors.diameters ? 'f-diameters-err' : undefined} />
               {#if errors.diameters}<span id="f-diameters-err" class="field-error">{errors.diameters}</span>{/if}
             </p>
             <p class="field">
-              <label for="f-antRates">Elenco di velocità per la scheda Antenna (bit/s)</label>
+              <label for="f-antRates">{t('analysis.page.antennaRates')}</label>
               <input id="f-antRates" type="text" bind:value={antRates} aria-invalid={errors.antRates ? 'true' : undefined} aria-describedby={errors.antRates ? 'f-antRates-err' : undefined} />
               {#if errors.antRates}<span id="f-antRates-err" class="field-error">{errors.antRates}</span>{/if}
             </p>
@@ -444,11 +443,11 @@
             {#if hiddenError}<p class="field-error" role="alert">{t('analysis.page.hiddenError')}</p>{/if}
           {:else}
           <details class="more">
-            <summary>Altri parametri illustrativi ({extras.length})</summary>
+            <summary>{t('analysis.page.extraParams', { count: extras.length })}</summary>
             <div class="grid">
               {#each extras as r (r.key)}
                 <p class="field">
-                  <label for="p-{r.key}"><code>{r.key}</code> ({r.unit === '-' ? 'adim.' : r.unit})</label>
+                  <label for="p-{r.key}"><code>{r.key}</code> ({r.unit === '-' ? t('analysis.page.dimensionless') : r.unit})</label>
                   <input id="p-{r.key}" type="number" step="any" inputmode="decimal" min={r.min ?? undefined} max={r.max ?? undefined} bind:value={values[r.key]} aria-invalid={errors[`p-${r.key}`] ? 'true' : undefined} aria-describedby={errors[`p-${r.key}`] ? `p-${r.key}-err` : undefined} />
                   {#if errors[`p-${r.key}`]}<span id="p-{r.key}-err" class="field-error">{errors[`p-${r.key}`]}</span>{/if}
                 </p>
@@ -464,17 +463,18 @@
       </form>
 
       <div class="results">
-        <p class="status" role="status">{message}</p>
+        <p class="status" role="status">{message === 'running' ? t('analysis.page.runningDetail') : message === 'complete' && result ? t('analysis.page.completed', { steps: result.window.n_steps }) : ''}</p>
         {#if error}
-          <p role="alert" class="notice" data-kind={errorKind}>{errorKind ? t(`analysis.failure.${errorKind}`) : error}</p>
+          <p role="alert" class="notice" data-kind={errorKind}>{errorKind ? t(`analysis.failure.${errorKind}`) : t('analysis.page.invalidForm')}</p>
         {/if}
 
         {#if result}
           <section class="panel" aria-labelledby="res-h">
             <h2 id="res-h">{t('analysis.page.results')}</h2>
             <p class="muted small">
-              {result.window.start_utc.replace('T', ' ').replace('Z', ' UTC')}, {result.window.days} giorni, passo {result.window.step_min} min
-              ({result.window.n_steps} istanti). {result.site.id ? `Sito: ${result.site.id}.` : 'Nessun sito: spazzolamento della Terra.'} Etichetta: {result.label}.
+              {t('analysis.page.resultWindow', { start: result.window.start_utc.replace('T', ' ').replace('Z', ' UTC'), days: result.window.days, step: result.window.step_min, count: result.window.n_steps })}
+              {result.site.id ? t('analysis.page.resultSite', { site: result.site.id }) : t('analysis.page.resultSweep')}
+              {t('analysis.page.resultLabel', { label: result.label })}
             </p>
             {#if result.flags.terrain.synthetic || usedSynthetic}
               <p class="notice warn" role="note" data-testid="synthetic-banner">{t('analysis.page.syntheticBanner')}</p>
@@ -517,8 +517,8 @@
               </div>
             {/each}
             <p class="muted small">
-              Esporta la richiesta completa:
-              <button type="button" class="linkish" onclick={async () => (await import('./grazing')).downloadText('raven-analisi.json', 'application/json', JSON.stringify({ request: lastReq && { ...lastReq, profile: lastReq.profile ? `${lastReq.profile.distance_m.length} punti` : undefined }, result }, null, 2))}>Scarica JSON dell’analisi</button>
+              {t('analysis.page.exportRequest')}
+              <button type="button" class="linkish" onclick={async () => (await import('./grazing')).downloadText('raven-analisi.json', 'application/json', JSON.stringify({ request: lastReq && { ...lastReq, profile: lastReq.profile ? `${lastReq.profile.distance_m.length} punti` : undefined }, result }, null, 2))}>{t('analysis.page.exportJson')}</button>
             </p>
             {/if}
             <p class="muted small disclaimer">{status.disclaimer}</p>

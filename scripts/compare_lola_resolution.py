@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Exploratory Shackleton 5/20/240 m comparison, not independent validation.
+"""Exploratory LOLA 5/20/240 m comparison, not independent validation.
 
 Run from the repository root with tifffile and imagecodecs installed separately:
     python -m scripts.compare_lola_resolution
@@ -11,6 +11,7 @@ not cryptographic hashes of the complete products.
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import io
 import urllib.request
@@ -118,30 +119,43 @@ def samples(
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--lat", type=float, default=LAT, help="latitude in degrees, -90 to -87")
+    parser.add_argument("--lon", type=float, default=LON, help="east longitude in degrees")
+    args = parser.parse_args()
+    if not np.isfinite(args.lat) or not -90 <= args.lat <= -87:
+        parser.error("latitude must be between -90 and -87 degrees")
+    if not np.isfinite(args.lon) or not -180 <= args.lon <= 360:
+        parser.error("east longitude must be between -180 and 360 degrees")
+    site_lat, site_lon = args.lat, args.lon
     distance = np.arange(20.0, 10_000.1, 20.0)
     azimuths = np.radians([0.0, 90.0, 180.0, 270.0])[:, None]
-    point_lat, point_lon = great_circle_destination(LAT, LON, azimuths, distance[None, :] / RADIUS)
-    lat, lon = np.r_[LAT, point_lat.ravel()], np.r_[LON, point_lon.ravel()]
+    point_lat, point_lon = great_circle_destination(
+        site_lat, site_lon, azimuths, distance[None, :] / RADIUS
+    )
+    lat, lon = np.r_[site_lat, point_lat.ravel()], np.r_[site_lon, point_lon.ravel()]
     rho = 2 * RADIUS * np.tan(np.radians(90 + lat) / 2)
     x, y = rho * np.sin(np.radians(lon)), rho * np.cos(np.radians(lon))
     col, row = (x + 100_000) / 5 - 0.5, (100_000 - y) / 5 - 0.5
+    grid20 = _Grid(LolaDem(allow_download=False), site_lat, site_lon, 10_200)
+    grid240 = _Grid(
+        LolaDem(spec=load_lock(dataset_id=FAR_DEM_ID), allow_download=False),
+        site_lat,
+        site_lon,
+        10_200,
+    )
+    z20, z240 = grid20.sample(lat, lon), grid240.sample(lat, lon)
+    if not all(np.isfinite(z).all() for z in (z20, z240)):
+        raise ValueError("non-finite PDS terrain samples; comparison is incomplete")
     corners, dem_hash = samples(DEM, row, col)
     counts, counts_hash = samples(COUNTS, row, col)
     fr, fc = row - np.floor(row), col - np.floor(col)
     z5 = corners[0] * (1 - fr) * (1 - fc) + corners[1] * (1 - fr) * fc
     z5 += corners[2] * fr * (1 - fc) + corners[3] * fr * fc
-    grid20 = _Grid(LolaDem(allow_download=False), LAT, LON, 10_200)
-    grid240 = _Grid(
-        LolaDem(spec=load_lock(dataset_id=FAR_DEM_ID), allow_download=False), LAT, LON, 10_200
-    )
-    z20, z240 = grid20.sample(lat, lon), grid240.sample(lat, lon)
-    if (
-        grid20.tiles_missing
-        or grid240.tiles_missing
-        or not all(np.isfinite(z).all() for z in (z5, z20, z240))
-    ):
-        raise ValueError("missing tiles or non-finite terrain samples; comparison is incomplete")
-    print("sample positions:", len(lat))
+    if not all(np.isfinite(z).all() for z in (z5, z20, z240)):
+        raise ValueError("non-finite terrain samples; comparison is incomplete")
+    print("missing window tiles (20 m, 240 m):", grid20.tiles_missing, grid240.tiles_missing)
+    print("site:", site_lat, site_lon, "sample positions:", len(lat))
     print(
         "5 m corner count >0:",
         [int(np.count_nonzero(counts > 0, axis=0).tolist().count(i)) for i in range(5)],

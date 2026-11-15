@@ -17,8 +17,8 @@ un'altra versione e a endpoint ritirati; non va preso come stato corrente.
 | 2D/3D e didattica | Planner, `/simula`, `/learn` e scene con fallback 2D | La verifica completa delle traduzioni IT/EN è ancora aperta; non dichiarare il sito interamente bilingue. |
 | NASA e confronti | DE440/NAIF, LOLA/PDS e fixture Horizons: `docs/ephemeris.md`, `backend/domain/grazing/dem.lock.json`, `docs/domain/validation.md` | Horizons e dati LOLA sono già utilizzati: non presentarli come integrazioni nuove o come validazione di tutta la catena. |
 
-Il quadrante e la mappa nello step 07 sono **esempi didattici con crinale sintetico**,
-non predizioni del sito selezionato. L'interfaccia lo dichiara in `LinkPreview.svelte`.
+Il quadrante e la mappa interattiva restano in `/simula` come strumenti didattici,
+non come predizioni del sito selezionato nel planner.
 I confronti con Horizons riguardano la geometria su sfera liscia; S2 terreno e S4/S5 fisici
 restano non validati e S3 resta plausibilità, secondo l'audit più recente in
 `docs/domain/validation.md`. L'analisi LROC WAC è utile ma non like-for-like: condivide
@@ -107,7 +107,7 @@ requisiti aggiuntivi della competizione né garanzie di premio.
 |---|---|---|
 | 1 — bassa | Preparare candidatura inglese, video pubblico di massimo 30 s o slide entro il limite ufficiale, fonti e disclosure SI. Dimostrare un A/B e la decisione che cambia. | Team; confermare con organizzatori lavoro pre-evento e contenuti commerciali. Vedi checklist submission. |
 | 2 — bassa | Correggere claim troppo forti nel README, report e demo; indicare modello, provenienza, precisione temporale, stati ignoti e finalità non operative. | Usare solo evidenze riproducibili; non chiamare qualificata la missione. |
-| 3 — bassa/media | Preparare un percorso A/B ripetibile: due siti/date con input, risultato e fonti registrati; spiegare il compromesso tra energia e DTE. | I grafici sintetici dello step 07 restano esempi, non misure dei due scenari. |
+| 3 — bassa/media | Preparare un percorso A/B ripetibile: due siti/date con input, risultato e fonti registrati; spiegare il compromesso tra energia e DTE. | I grafici didattici in `/simula` non sono misure dei due scenari del planner. |
 | 4 — media | Completare IT/EN per analisi, simulatori 2D/3D, errori backend e fallback; verificare cambio lingua e percorso della giuria. | L'audit precedente non ha coperto tutto il sito. |
 | 5 — media | Risolvere gate licenze `pyphen` con revisione documentata; ripetere smoke di installazione realmente pulita; aggiornare E2E e ripetere CI. | La CI locale precedente non equivale a installazione pulita; E2E era stato interrotto. |
 | 6 — media | Rendere evidenti durata campionata, passo, cause di chiusura e intervalli ignoti; testare transizioni ai bordi e dati mancanti. | Non interpolare attraverso dati ignoti né attribuire precisione continua non dimostrata. |

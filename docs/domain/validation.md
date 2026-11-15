@@ -37,14 +37,37 @@ Tutti i punti hanno quindi almeno un pixel senza ritorni nel supporto bilineare:
 il prodotto riempie i vuoti per interpolazione. Il conteggio non è una stima
 dell'errore verticale e i risultati non si possono generalizzare ad altri siti.
 
+Con lo stesso metodo, a de Gerlache (−88,48°, −88,34° Est), i massimi sono:
+
+| Azimut | Massimo 5 m | Massimo 20 m | Massimo 240 m | 5 m − 20 m |
+|---|---:|---:|---:|---:|
+| 0° | 0,319706° | 0,307960° | 0,363132° | +0,011746° |
+| 90° | 10,418006° | 11,343722° | 10,947034° | −0,925715° |
+| 180° | 11,466049° | 11,859717° | 12,873317° | −0,393668° |
+| 270° | 0,488402° | 0,488278° | 0,496811° | +0,000124° |
+
+Quote del sito: −1220,950 m, −1221,225 m e −1226,204 m rispettivamente.
+Sui 2001 punti, la differenza di quota 5 m − 20 m ha media +0,121 m,
+RMS 1,353 m e massimo assoluto 7,415 m. Il conteggio dei punti con
+0, 1, 2, 3 e 4 pixel con ritorni positivi è 1589, 364, 46, 2 e 0.
+Nella finestra 20 m mancano 12 tile, ma nessuno dei punti campionati è
+mancante; la copertura degli altri punti della finestra non è dimostrata.
+Il maggiore scarto angolare osservato evidenzia sensibilità locale, non un
+errore certificato né un confronto di tutte le direzioni o finestre operative.
+
 Riproduzione: installare separatamente `tifffile==2026.9.9` e
 `imagecodecs==2026.1.14`, predisporre le tile 20/240 m in cache, poi eseguire
-`python -m scripts.compare_lola_resolution`. Il test HTTP verifica stato 206,
-dimensioni, `Content-Range` ed ETag, e fallisce su tile mancanti. I GeoTIFF 5 m
+`python -m scripts.compare_lola_resolution` per Shackleton oppure aggiungere
+`--lat=-88.48 --lon=-88.34` per de Gerlache. Il test HTTP verifica stato 206,
+dimensioni, `Content-Range` ed ETag, e fallisce su campioni mancanti. Una tile della finestra
+non interessata dai punti campionati non invalida il confronto. I GeoTIFF 5 m
 non sono stati scaricati integralmente: per l'insieme ordinato di indice e byte
 compressi delle tile lette, gli SHA-256 sono rispettivamente
 `33ec4fa2a874ff1ff30550e44a67d46958d5d752fb4fa4bb5a7bf248a5e703cb` (quota) e
 `76e8d27fddcb31528cc011fa8da59d95332be0b675a3f8274887a2d9b41537d5` (conteggi).
+Per de Gerlache sono
+`c28bc43a957f6d7fe78a18773742b998ca401ba8f97f05184a1a6e3239256bf1` (quota) e
+`475d3213e78f8494d1c08dc81c135a19dc13349a68c13fc7912485fc1dae5e81` (conteggi).
 Sono hash dei soli intervalli letti, **non** degli interi prodotti. Le tile PDS
 20/240 m sono quelle della cache verificata dal lettore, non è stato rieseguito
 il download integrale. L'ETag è debole e non è un checksum crittografico.
@@ -116,7 +139,10 @@ il wizard usa 7 giorni a 60 minuti (168 passi), come il default HTTP di `evaluat
 
 Data: 2026-10-20. Test in `tests/backend/domain/`. Misure riproducibili con i kernel in `build/ephemeris` (`make ephemeris`).
 
-## Validato
+## Verifiche storiche: non validazione globale
+
+Questi risultati riguardano le singole formule, implementazioni o confronti
+indicati; non qualificano l'intero modello né i componenti fisici S2/S4/S5.
 
 | Cosa | Come | Risultato |
 |---|---|---|
