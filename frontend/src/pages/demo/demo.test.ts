@@ -5,8 +5,11 @@ import Demo from './Demo.svelte';
 
 afterEach(cleanup);
 
-it('shows a video placeholder rather than the previous guided sections', () => {
-  render(Demo);
-  expect(screen.getByRole('img', { name: /Video dimostrativo di circa 30 secondi/ })).toBeTruthy();
-  expect(screen.queryAllByRole('link')).toHaveLength(0);
+it('provides a labelled video and an accessible link to the same local file', () => {
+  const { container } = render(Demo);
+  const video = container.querySelector('video');
+  expect(video?.getAttribute('aria-label')).toBeTruthy();
+  expect(video?.hasAttribute('controls')).toBe(true);
+  expect(video?.querySelector('source')?.getAttribute('src')).toBe('/raven-demo.mp4');
+  expect(screen.getByRole('link').getAttribute('href')).toBe('/raven-demo.mp4');
 });

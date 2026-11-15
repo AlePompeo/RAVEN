@@ -13,6 +13,12 @@
 
 ---
 
+## Demo
+
+[Watch the RAVEN demo (MP4)](frontend/public/raven-demo.mp4)
+
+---
+
 ## 🌟 Overview & Hackathon Challenge
 
 **RAVEN (Rapid Assessment & Visual Exploration of Lunar Navigation)** is a mission-planning and scientific decision-support web platform built for the following **NASA Space Apps Challenge 2026** challenge:
