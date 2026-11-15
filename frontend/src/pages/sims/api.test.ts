@@ -63,16 +63,16 @@ describe('runSimulation', () => {
     expect(seen?.url).toBe('/api/simulations/example%20sim/run');
     expect(JSON.parse(seen?.body ?? '')).toEqual({ inputs: { x: 3 } });
   });
-  it('messaggi di errore in italiano per 404/504/502/422', async () => {
-    for (const [status, text] of [
-      [404, 'non trovata'],
-      [504, 'tempo massimo'],
-      [502, 'fallita'],
-      [422, 'non validi'],
+  it('restituisce chiavi di errore per 404/504/502/422', async () => {
+    for (const [status, key] of [
+      [404, 'sims.errorNotFound'],
+      [504, 'sims.errorTimeout'],
+      [502, 'sims.errorFailed'],
+      [422, 'sims.errorInvalidInputs'],
     ] as const) {
       const r = await runSimulation((async () => json({ detail: 'x' }, status)) as unknown as typeof fetch, 's', { x: 1 });
       expect(r.ok).toBe(false);
-      if (!r.ok) expect(r.error).toContain(text);
+      if (!r.ok) expect(r.error.key).toBe(key);
     }
   });
   it('rete giu', async () => {

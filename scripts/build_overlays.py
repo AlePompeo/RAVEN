@@ -68,7 +68,9 @@ def main() -> int:
     # regional illumination and Earth visibility: horizons from the height grid, Sun and Earth sub-points every 6 h over 2027
     h = np.full((SIZE, SIZE), np.nan)
     h[inside] = sampler(lat[inside], lon[inside])
-    np.save(OUT / "polar-heights.npy", h.astype(np.float32))  # the height grid, for the horizons of the site search (window-specific Sun and Earth)
+    np.save(
+        OUT / "polar-heights.npy", h.astype(np.float32)
+    )  # the height grid, for the horizons of the site search (window-specific Sun and Earth)
     print("horizons...", flush=True)
     horizons, trusted = ov.horizon_grid(h, LIMIT)
     start = datetime(2027, 1, 1, tzinfo=UTC)

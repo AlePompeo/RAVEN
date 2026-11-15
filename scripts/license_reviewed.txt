@@ -6,3 +6,4 @@ pip:certifi@2026.7.22  # MPL-2.0 a livello di file, non modificato, solo redistr
 pip:certifi@2026.10.19  # MPL-2.0 confermata nei metadati; bundle CA upstream non modificato, redistribuito
 pip:fqdn@1.6.0  # MPL-2.0 a livello di file, non modificato; dipendenza transitiva di jsonschema (dev)
 pip:pathspec@1.1.1  # MPL-2.0 a livello di file, non modificato; dipendenza di mypy (dev)
+pip:pillow@13.0.0  # MIT-CMU: permesso di utilizzo e redistribuzione con conservazione di copyright e licenza

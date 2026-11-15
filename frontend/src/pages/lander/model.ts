@@ -571,7 +571,25 @@ export function rateText(bps: number): string {
 }
 
 /** Descrizione testuale completa (alternativa alla grafica): tutti i numeri della scena. */
-export function textAlternative(s: LanderScene, p: Pointing, sun: SunLocal | null, sunReal: boolean): string {
+export function textAlternative(s: LanderScene, p: Pointing, sun: SunLocal | null, sunReal: boolean, language: 'it' | 'en' = 'it'): string {
+  if (language === 'en') {
+    const f = (value: number | null, digits = 2) => value === null ? '?' : value.toFixed(digits);
+    const above = (value: number) => value >= 0 ? 'above' : 'below';
+    const states = { open: 'open', transition: 'transition', blocked: 'blocked', unknown: 'unknown' } as const;
+    const parts = [
+      `Lander scene at site ${s.site.id ?? 'selected'} on ${s.tUtc.replace('T', ' ').replace('Z', ' UTC')}.`,
+      `Earth is at ${f(s.earth.elDeg, 2)} degrees relative to the horizon, azimuth ${f(s.earth.azDeg, 1)} degrees, distance ${Math.round(s.earth.rangeKm).toLocaleString('en-US')} km.`,
+      `The dominant ridge is ${f(s.ridge.arcDistanceM, 0)} m from the antenna along the ground, ${f(Math.abs(s.ridge.heightAboveLosM), 1)} m ${above(s.ridge.heightAboveLosM)} the line of sight; its top appears at ${f(s.ridge.tipElevationDeg, 2)} degrees, ${f(Math.abs(s.ridge.angleAboveLosDeg), 2)} degrees ${above(s.ridge.angleAboveLosDeg)} Earth. Parameter nu ${f(s.ridge.nu, 2)}.`,
+      `The first Fresnel zone radius at the ridge is ${f(s.fresnel.r1AtRidgeM, 2)} m (wavelength ${f(s.fresnel.wavelengthM * 100, 2)} cm); the ridge occupies ${f(ridgeObstruction(s) * 100, 0)} percent of that radius.`,
+      `Diffraction loss: knife edge ${f(s.diffraction.knifeEdgeDb, 2)} dB, ridge correction ${f(s.diffraction.correctionDb, 2)} dB (${s.diffraction.correctionLabel}), total ${f(s.diffraction.lossDb, 2)} dB.`,
+      s.diffraction.multipathApplicable ? `Multipath term ${f(s.diffraction.multipathGainDb ?? 0, 2)} dB.` : `Multipath term not applicable${s.diffraction.multipathReason ? `: ${s.diffraction.multipathReason}` : ''}.`,
+      `Link margin at ${s.link.rateBps >= 1e6 ? `${f(s.link.rateBps / 1e6, s.link.rateBps % 1e6 ? 1 : 0)} Mbit/s` : `${f(s.link.rateBps / 1e3, 0)} kbit/s`}: ${f(s.link.margin, 2)} dB, state ${states[s.link.state]}.`,
+      `Antenna height ${f(s.antenna.mastM, 1)} m (tag ${s.antenna.mastTag}), gain ${f(s.antenna.gainDbi, 1)} dBi, HPBW ${f(s.antenna.hpbwDeg, 1)} degrees; pointing error ${f(p.errorDeg, 1)} degrees, loss ${f(p.lossDb, 2)} dB, ${p.beyond ? 'beyond' : 'within'} half HPBW; pointing margin ${f(p.marginDb, 2)} dB.`,
+    ];
+    if (sun) parts.push(sunReal ? `Sun ${f(sun.elDeg, 2)} degrees above the horizon (actual illumination).` : `Fallback grazing light at ${f(sun.elDeg, 1)} degrees, not the actual Sun.`);
+    parts.push(`Terrain: ${s.terrain.label}${s.terrain.synthetic ? ' (synthetic test profile)' : ''}.`);
+    return parts.join(' ');
+  }
   const parts = [
     `Scena del lander al sito ${s.site.id ?? 'scelto'} il ${s.tUtc.replace('T', ' ').replace('Z', ' UTC')}.`,
     `La Terra e' a ${f(s.earth.elDeg, 2)} gradi sull'orizzonte, azimut ${f(s.earth.azDeg, 1)} gradi, distanza ${Math.round(s.earth.rangeKm).toLocaleString('it-IT')} km.`,

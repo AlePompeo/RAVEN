@@ -344,6 +344,15 @@ describe('parsing, text and export', () => {
     expect(j.terrain.patch.heights).toBeUndefined();
     expect(j.fresnel.obstruction_h_over_r1).toBeCloseTo(2.4 / 3.27, 6);
   });
+  it('uses English and decimal points for the scene text when English is selected', () => {
+    const s = scene();
+    const txt = textAlternative(s, pointing(s, 7), null, false, 'en');
+    expect(txt).toContain('Earth is at 5.00 degrees');
+    expect(txt).toContain('Multipath term not applicable');
+    expect(txt).toContain('state transition');
+    expect(txt).toContain('pointing margin');
+    expect(txt).toContain(s.diffraction.multipathReason);
+  });
   it('sceneUrl is the documented request', () => {
     const u = sceneUrl({ site: 'haworth', ms: Date.UTC(2027, 3, 7), station: 'dsn18', gain: 12, rate: 1e5, mast: 3 });
     expect(u).toBe('/api/raven/scene?site=haworth&t=2027-04-07T00%3A00%3A00Z&station=dsn18&gain_dbi=12&rate_bps=100000&antenna_height_m=3');

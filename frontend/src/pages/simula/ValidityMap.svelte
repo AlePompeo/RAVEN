@@ -7,24 +7,19 @@
 -->
 <script lang="ts">
   import { heatPick, type Heat, type LinkState, type ValidityLevel } from './linkModel';
-  import { fmt, STR as S } from './simState';
+  import { STR as S } from './simState';
+  import { formatNumber, t } from '../../i18n/i18n.svelte';
 
   let { heat, el, ridge, ms, onpick }: { heat: Heat; el: number; ridge: number; ms: number; onpick: (el: number, ridge: number) => void } = $props();
 
-  const STR = {
-    title: 'Mappa di validità',
-    lead: 'Dove la risposta vale: ogni cella è una combinazione di elevazione della Terra e quota del crinale, con gli altri parametri attuali.',
-    aria: 'Mappa di validità, elevazione della Terra da 0 a 10 gradi in orizzontale, quota del crinale da 0 a 150 metri in verticale. Clic o frecce per spostare il punto corrente.',
-    help: 'Con il focus sulla mappa: frecce sinistra e destra cambiano l’elevazione della Terra, su e giù la quota del crinale.',
-    x: 'Elevazione della Terra (°)',
-    y: 'Quota del crinale (m)',
-    legendState: 'Colore: stato del link',
-    legendValid: 'Trama: validità del modello',
-    summary: (r: number, u: number, o: number) => `Celle affidabili ${r} %, incerte ${u} %, fuori modello ${o} %.`,
-    table: 'Tabella ridotta della mappa (stato e validità)',
-    current: (e: string, h: string) => `Punto corrente: Terra a ${e}°, crinale a ${h} m.`,
-    computed: (t: string) => `Calcolata nel browser in ${t} ms.`,
-  } as const;
+  const fmt = (n: number, digits = 1) => formatNumber(n, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const STR = $derived({
+    title: t('vmap.title'), lead: t('vmap.lead'), aria: t('vmap.aria'), help: t('vmap.help'),
+    x: t('vmap.x'), y: t('vmap.y'), legendState: t('vmap.legendState'), legendValid: t('vmap.legendValid'),
+    summary: (r: number, u: number, o: number) => t('vmap.summary', { r, u, o }),
+    table: t('vmap.table'), current: (e: string, h: string) => t('vmap.current', { e, h }),
+    computed: (ms: string) => t('vmap.computed', { ms }),
+  });
   const FILL: Record<LinkState, string> = { open: '#30d158', transition: '#ffb340', blocked: '#ff6961' };
   const PAD = { l: 48, r: 10, t: 10, b: 36 };
 
@@ -211,7 +206,7 @@
     bind:this={wrap}
     tabindex="0"
     role="group"
-    aria-roledescription="mappa"
+    aria-roledescription={t('vmap.role')}
     aria-label={STR.aria}
     aria-describedby="vmap-help vmap-sum"
     data-testid="validity-canvas"
@@ -224,13 +219,13 @@
   <div class="legend">
     <p><strong>{STR.legendState}:</strong>
       {#each ['open', 'transition', 'blocked'] as const as s (s)}
-        <span class="sw" style:background={FILL[s]} aria-hidden="true"></span> {S.state[s].symbol} {S.state[s].word}
+        <span class="sw" style:background={FILL[s]} aria-hidden="true"></span> {S.state[s].symbol} {t(`sim.gauge.state.${s}`)}
       {/each}
     </p>
     <p><strong>{STR.legendValid}:</strong>
-      <span class="sw pat-reliable" aria-hidden="true"></span> {S.validity.reliable.symbol} {S.validity.reliable.word}
-      <span class="sw pat-uncertain" aria-hidden="true"></span> {S.validity.uncertain.symbol} {S.validity.uncertain.word}
-      <span class="sw pat-outside" aria-hidden="true"></span> {S.validity.outside.symbol} {S.validity.outside.word}
+      <span class="sw pat-reliable" aria-hidden="true"></span> {S.validity.reliable.symbol} {t('sim.gauge.validity.reliable')}
+      <span class="sw pat-uncertain" aria-hidden="true"></span> {S.validity.uncertain.symbol} {t('sim.gauge.validity.uncertain')}
+      <span class="sw pat-outside" aria-hidden="true"></span> {S.validity.outside.symbol} {t('sim.gauge.validity.outside')}
     </p>
   </div>
   <p id="vmap-sum" class="small" data-testid="vmap-summary">
@@ -247,7 +242,7 @@
               <th scope="row">{r} m</th>
               {#each TCOLS as c (c)}
                 {@const x = cellAt(c, r)}
-                <td>{S.state[x.state].symbol} {S.state[x.state].word}, {S.validity[x.validity].symbol} {S.validity[x.validity].word}</td>
+                <td>{S.state[x.state].symbol} {t(`sim.gauge.state.${x.state}`)}, {S.validity[x.validity].symbol} {t(`sim.gauge.validity.${x.validity}`)}</td>
               {/each}
             </tr>
           {/each}

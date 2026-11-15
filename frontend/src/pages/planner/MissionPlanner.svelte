@@ -51,6 +51,7 @@
   import { dossierProgress, effectiveReportMode } from './reportMode';
   import ReliabilityInputs from './ReliabilityInputs.svelte';
   import ReliabilityResults from './ReliabilityResults.svelte';
+  import LinkPreview from './LinkPreview.svelte';
   import { reliabilityReady, reliabilityRequest, isReliabilityResult, type ReliabilityResult } from './reliability';
 
   const store = scenarioStore();
@@ -933,6 +934,7 @@
             {#if waveOpen}{#await import('../wave/Wave.svelte') then m}<m.default embedded />{:catch}<p role="alert">{t('journey.visualFailed')}</p>{/await}{/if}
           </details>
         {:else if step === 6}
+          <LinkPreview radio={draft.radio} />
           <div class="mission-shift-controls" role="group" aria-label={t('journey.shift.group')}>
             {#each MISSION_SHIFT_DAYS as days (days)}
               <button type="button" aria-pressed={missionShiftDays === days} disabled={running || firstIssue < 6 || !shiftInRange(days)}

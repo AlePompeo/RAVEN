@@ -472,7 +472,9 @@ def test_views_real(client: TestClient) -> None:
 
 
 @needs_real
-def test_scene_and_snapshot_take_the_tx_gain_and_a_user_site(client: TestClient) -> None:
+def test_scene_and_snapshot_take_the_tx_gain_and_a_user_site(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     t = "2027-04-07T00:00:00Z"
     base = {"site": "malapert-massif", "t": t}
     lo = client.get("/api/raven/scene", params={**base, "gain_dbi": 10}).json()
@@ -485,9 +487,10 @@ def test_scene_and_snapshot_take_the_tx_gain_and_a_user_site(client: TestClient)
     assert n["malapert-massif"] - m["malapert-massif"] == pytest.approx(10.0, abs=1e-6)
     assert n["shackleton"] is None and m["shackleton"] is None
     custom = {"site": "c-a", "name": "A", "t": t, "lat_deg": -86.0, "lon_deg_east": 0.0}
-    assert (
-        client.get("/api/raven/scene", params=custom).status_code == 409
-    )  # tiles not cached: needs the flag
+    with monkeypatch.context() as m:
+        m.setenv("GRAZING_DEM_DIR", str(tmp_path))
+        with TestClient(build_app()) as empty_cache_client:
+            assert empty_cache_client.get("/api/raven/scene", params=custom).status_code == 409
     out = client.get("/api/raven/scene", params={**custom, "lat_deg": 89.9})
     assert out.status_code == 422 and "copertura DEM" in out.json()["detail"]
     assert client.get("/api/raven/scene", params={**base, "gain_dbi": 99}).status_code == 422

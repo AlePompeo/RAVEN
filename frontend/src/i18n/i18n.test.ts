@@ -55,9 +55,9 @@ describe('t() puro', () => {
     expect([h('it', 1), h('it', 5)]).toEqual(['1 ora', '5 ore']);
   });
   it('fallback all’inglese, chiave mancante mai mostrata in produzione, mai eccezioni', () => {
-    expect(translate(tr('it', {}), 'home.try')).toBe('Try the simulator');
-    expect(translate(tr('it', null), 'home.try')).toBe('Try the simulator');
-    expect(translate(tr('it', { 'home.try': '' }), 'home.try')).toBe('Try the simulator');
+    expect(translate(tr('it', {}), 'home.try')).toBe('Try and learn');
+    expect(translate(tr('it', null), 'home.try')).toBe('Try and learn');
+    expect(translate(tr('it', { 'home.try': '' }), 'home.try')).toBe('Try and learn');
     expect(translate(tr('it', itCat as Catalog), 'nope.nope')).toBe('');
     expect(translate(tr('it', itCat as Catalog, true), 'nope.nope')).toBe('⟦nope.nope⟧');
     expect(translate(tr('it', { x: 42 as never }), 'x')).toBe('');
@@ -120,7 +120,7 @@ describe('stato reattivo e documento', () => {
     history.replaceState(null, '', '/simula?mode=avanzato#x');
     expect(await setLang('en')).toBe(true);
     expect(lang.current).toBe('en');
-    expect(t('home.try')).toBe('Try the simulator');
+    expect(t('home.try')).toBe('Try and learn');
     expect(document.documentElement.lang).toBe('en');
     expect(document.documentElement.dir).toBe('ltr');
     expect(localStorage.getItem('hb.lang')).toBe('en');

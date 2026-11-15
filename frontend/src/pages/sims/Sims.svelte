@@ -4,31 +4,22 @@
   import SubNav from '../../components/ui/SubNav.svelte';
   import { setPageContext, clearPageContext } from '../../shell/pageContext.svelte';
   import { sanitizeParams } from '../chat/assistant';
-  import { buildInputs, listSimulations, runSimulation, type InputRow, type FieldError } from './api';
+  import { buildInputs, listSimulations, runSimulation, type InputRow, type FieldError, type UiError } from './api';
   import { modeNow } from '../../shell/modeState.svelte';
   import { t } from '../../i18n/i18n.svelte';
 
-  /**
-   * Learning | Avanzato: stessa esecuzione e stessi risultati. Learning aggiunge una spiegazione a passi; Avanzato è il modulo
-   * completo senza spiegazione. Chiavi stabili (i18n in arrivo).
-   */
-  const STR = {
-    learn: 'un banco di prova: scegli una simulazione, scrivi i valori degli ingressi e premi Esegui. Il risultato compare a destra.',
-    steps: '1. Scegli la simulazione. 2. Scrivi nome e valore di ogni ingresso (per esempio x e 1,5). 3. Premi Esegui.',
-  } as const;
-
   let sims = $state<string[]>([]);
   let loading = $state(true);
-  let loadError = $state('');
+  let loadError = $state(false);
   let selected = $state('');
   let rows = $state<InputRow[]>([{ name: 'x', value: '' }]);
   let running = $state(false);
-  let error = $state('');
+  let error = $state<UiError | null>(null);
   let fieldErrors = $state<FieldError[]>([]);
-  let status = $state('');
+  let completed = $state(false);
   let outputs = $state<Record<string, number> | null>(null);
   let fsplC = $state<number | null>(null);
-  let fsplError = $state('');
+  let fsplError = $state(false);
   let ctrl: AbortController | null = null;
 
   onMount(async () => {
@@ -36,7 +27,7 @@
       sims = await listSimulations(fetch);
       selected = sims[0] ?? '';
     } catch {
-      loadError = 'Impossibile caricare l’elenco delle simulazioni.';
+      loadError = true;
     } finally {
       loading = false;
     }
@@ -81,9 +72,9 @@
     const id = (e.currentTarget as HTMLSelectElement).value;
     outputs = null;
     fsplC = null;
-    fsplError = '';
-    error = '';
-    status = '';
+    fsplError = false;
+    error = null;
+    completed = false;
     fieldErrors = [];
     if (id === 'grazinglink-link') {
       rows = [{ name: 'earth_el_deg', value: '1' }, { name: 'ridge_radius_m', value: '100' }];
@@ -93,11 +84,11 @@
   async function run(e: SubmitEvent) {
     e.preventDefault();
     if (running) return;
-    error = '';
-    status = '';
+    error = null;
+    completed = false;
     outputs = null;
     fsplC = null;
-    fsplError = '';
+    fsplError = false;
     fieldErrors = [];
     const built = buildInputs(rows);
     if (!built.ok) {
@@ -112,15 +103,15 @@
     const r = await runSimulation(fetch, selected, built.inputs, ctrl.signal);
     if (r.ok) {
       outputs = r.outputs;
-      status = 'Simulazione completata.';
+      completed = true;
       if (selected === 'grazinglink-link') {
         const distance = r.outputs.distance_km;
         const frequency = r.outputs.frequency_ghz;
         if (!sims.includes('fspl-c') || distance === undefined || frequency === undefined || r.outputs.fspl_db === undefined) {
-          fsplError = t('sims.fsplUnavailable');
+          fsplError = true;
         } else {
           const check = await runSimulation(fetch, 'fspl-c', { distance_km: distance, freq_ghz: frequency }, ctrl.signal);
-          if (!check.ok || check.outputs.fspl_db === undefined) fsplError = t('sims.fsplUnavailable');
+          if (!check.ok || check.outputs.fspl_db === undefined) fsplError = true;
           else fsplC = check.outputs.fspl_db;
         }
       }
@@ -129,36 +120,36 @@
   }
 </script>
 
-<SubNav title="Simulazioni" learn={STR.learn} />
+<SubNav title={t('sims.title')} learn={t('sims.learn')} />
 
 <div class="workspace tile tile--alt">
   <div class="container container--wide">
     {#if loading}
-      <p role="status">Caricamento delle simulazioni...</p>
+      <p role="status">{t('sims.loading')}</p>
     {:else if loadError}
-      <p role="alert">{loadError}</p>
+      <p role="alert">{t('sims.loadError')}</p>
     {:else if sims.length === 0}
-      <p>Nessuna simulazione disponibile. Aggiungi un plugin di tipo simulazione nel backend per vederlo qui.</p>
+      <p>{t('sims.empty')}</p>
     {:else}
       <div class="layout">
         <form class="panel" onsubmit={run} novalidate>
-          <h2>Ingressi</h2>
-          {#if !modeNow.advanced}<p class="hint" data-testid="sims-steps">{STR.steps}</p>{/if}
+          <h2>{t('sims.inputs')}</h2>
+          {#if !modeNow.advanced}<p class="hint" data-testid="sims-steps">{t('sims.steps')}</p>{/if}
           <p class="field">
-            <label for="sim-id">Simulazione</label>
+            <label for="sim-id">{t('sims.simulation')}</label>
             <select id="sim-id" bind:value={selected} disabled={running} onchange={changeSimulation}>
               {#each sims as s (s)}<option value={s}>{s === 'grazinglink-link' ? 'RAVEN' : s}</option>{/each}
             </select>
           </p>
           {#if selected === 'grazinglink-link'}<p class="hint">{t('sims.grazingHelp')}</p>{/if}
           <fieldset>
-            <legend>Ingressi numerici</legend>
+            <legend>{t('sims.numericInputs')}</legend>
             {#each rows as row, i (i)}
               {@const ne = fieldError(i, 'name')}
               {@const ve = fieldError(i, 'value')}
               <div class="row">
                 <p class="field">
-                  <label for="in-name-{i}">Nome ingresso {i + 1}</label>
+                  <label for="in-name-{i}">{t('sims.inputName', { n: i + 1 })}</label>
                   <input
                     id="in-name-{i}"
                     type="text"
@@ -168,10 +159,10 @@
                     aria-invalid={ne ? 'true' : undefined}
                     aria-describedby={ne ? `in-name-err-${i}` : undefined}
                   />
-                  {#if ne}<span id="in-name-err-{i}" class="field-error">{ne.message}</span>{/if}
+                  {#if ne}<span id="in-name-err-{i}" class="field-error">{t(ne.message.key, ne.message.params)}</span>{/if}
                 </p>
                 <p class="field">
-                  <label for="in-val-{i}">Valore {i + 1}</label>
+                  <label for="in-val-{i}">{t('sims.inputValue', { n: i + 1 })}</label>
                   <input
                     id="in-val-{i}"
                     type="text"
@@ -181,23 +172,23 @@
                     aria-invalid={ve ? 'true' : undefined}
                     aria-describedby={ve ? `in-val-err-${i}` : undefined}
                   />
-                  {#if ve}<span id="in-val-err-{i}" class="field-error">{ve.message}</span>{/if}
+                  {#if ve}<span id="in-val-err-{i}" class="field-error">{t(ve.message.key, ve.message.params)}</span>{/if}
                 </p>
                 {#if rows.length > 1}
-                  <button type="button" class="remove" id="rm-{i}" onclick={() => removeRow(i)}>Rimuovi ingresso {i + 1}</button>
+                  <button type="button" class="remove" id="rm-{i}" onclick={() => removeRow(i)}>{t('sims.removeInput', { n: i + 1 })}</button>
                 {/if}
               </div>
             {/each}
-            <button type="button" id="add-row" onclick={addRow}>Aggiungi ingresso</button>
+            <button type="button" id="add-row" onclick={addRow}>{t('sims.addInput')}</button>
           </fieldset>
-          <p class="submit"><button type="submit" aria-disabled={running}>{running ? 'Esecuzione in corso...' : 'Esegui'}</button></p>
+          <p class="submit"><button type="submit" aria-disabled={running}>{t(running ? 'sims.running' : 'sims.run')}</button></p>
         </form>
 
         <section class="panel results" aria-labelledby="sim-out-h">
-          <h2 id="sim-out-h">Risultato</h2>
-          <p role="status">{status}</p>
-          {#if error}<p role="alert">{error}</p>{/if}
-          {#if fsplError}<p role="alert">{fsplError}</p>{/if}
+          <h2 id="sim-out-h">{t('sims.result')}</h2>
+          <p role="status">{completed ? t('sims.completed') : ''}</p>
+          {#if error}<p role="alert">{t(error.key, error.params)}</p>{/if}
+          {#if fsplError}<p role="alert">{t('sims.fsplUnavailable')}</p>{/if}
           {#if outputs}
             {#if selected === 'grazinglink-link'}
               <p>{t('sims.grazingSynthetic')}</p>
@@ -206,10 +197,10 @@
               {/if}
             {/if}
             <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-            <div class="table-scroll" tabindex="0" role="region" aria-label={`Risultato della simulazione ${selected}`}>
+            <div class="table-scroll" tabindex="0" role="region" aria-label={t('sims.resultOf', { name: selected })}>
               <table>
-                <caption>Risultato della simulazione {selected}</caption>
-                <thead><tr><th scope="col">Uscita</th><th scope="col">Valore</th></tr></thead>
+                <caption>{t('sims.resultOf', { name: selected })}</caption>
+                <thead><tr><th scope="col">{t('sims.output')}</th><th scope="col">{t('sims.value')}</th></tr></thead>
                 <tbody>
                   {#each Object.entries(outputs) as [k, v] (k)}
                     <tr><th scope="row">{k}</th><td class="num">{v}</td></tr>
@@ -218,7 +209,7 @@
               </table>
             </div>
           {:else if !error}
-            <p class="muted">Le uscite compaiono qui dopo l’esecuzione.</p>
+            <p class="muted">{t('sims.resultEmpty')}</p>
           {/if}
         </section>
       </div>

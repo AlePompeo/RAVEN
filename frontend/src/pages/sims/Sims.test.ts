@@ -2,10 +2,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/svelte';
 import Sims from './Sims.svelte';
+import { setLang, useCatalog } from '../../i18n/i18n.svelte';
+import itCatalog from '../../i18n/it.json';
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  useCatalog('it', itCatalog);
 });
 
 async function setup() {
@@ -51,5 +54,14 @@ describe('Sims', () => {
     await fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => expect(screen.getByRole('table')).toBeTruthy());
     expect(screen.getByRole('status').textContent).toMatch(/completata/i);
+  });
+  it('traduce interfaccia ed errori già visibili quando cambia lingua', async () => {
+    const { container } = await setup();
+    await fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+    expect(screen.getByText('Inserisci un numero finito.')).toBeTruthy();
+    await setLang('en', { persist: false, url: false });
+    await waitFor(() => expect(screen.getByLabelText('Input name 1')).toBeTruthy());
+    expect(screen.getByText('Enter a finite number.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Run' })).toBeTruthy();
   });
 });

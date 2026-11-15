@@ -43,7 +43,7 @@
   } from './model';
   import { buildTerrain, clampCam, orbit, PRESETS, presetCamera, zoomBy, type LanderViewState, type Preset } from './view';
   import { modeNow } from '../../shell/modeState.svelte';
-  import { formatNumber, t } from '../../i18n/i18n.svelte';
+  import { formatNumber, lang, t } from '../../i18n/i18n.svelte';
   import { customSites as customStore, isCustomId, type CustomSiteDef } from '../../shell/customSites';
   import CustomSiteControl from '../../shell/CustomSiteControl.svelte';
 
@@ -69,10 +69,10 @@
   const controlled = $derived(plannerSite !== null && plannerMs !== null);
 
   const TABS = [
-    { id: 'numbers', label: t('lander.tab.numbers') },
-    { id: 'section', label: t('lander.tab.section') },
-    { id: 'text', label: t('lander.tab.text') },
-    { id: 'limits', label: t('lander.tab.limits') },
+    { id: 'numbers' },
+    { id: 'section' },
+    { id: 'text' },
+    { id: 'limits' },
   ] as const;
   type TabId = (typeof TABS)[number]['id'];
   const STEP = 8 * (Math.PI / 180);
@@ -149,7 +149,7 @@
   const ptInfo = $derived(pt ? STATE_INFO[pt.state] : null);
   const sectionMode = $derived(mode === 'canvas2d');
   const hpbw = $derived(data?.antenna.hpbwDeg ?? 10);
-  const text = $derived(data && pt ? textAlternative(data, pt, sun, sunReal) : '');
+  const text = $derived(data && pt ? textAlternative(data, pt, sun, sunReal, lang.current) : '');
   const siteName = $derived(customSel ? customSel.name : sites.find((s) => s.id === siteId)?.name ?? siteId);
   const previousScene = $derived(controlled && !!data && (!readySceneParams || !currentParams(readySceneParams)));
   const renderedSiteName = $derived(readySceneParams?.customSite?.name ?? sites.find((s) => s.id === data?.site.id)?.name ?? siteName);
@@ -201,6 +201,13 @@
     handle?.update(vs);
     secHandle?.update(vs);
   }
+  $effect(() => {
+    const language = lang.current;
+    untrack(() => {
+      vs.language = language === 'en' ? 'en' : undefined;
+      push();
+    });
+  });
   function toggleCinematic() {
     cinematic = !cinematic;
     vs.showOverlays = !cinematic;
@@ -539,44 +546,38 @@
   const modeLabel = $derived(mode === 'webgl' ? t('lander.mode.webgl') : mode === 'canvas2d' ? t('lander.mode.canvas2d') : mode === 'none' ? t('lander.mode.none') : '');
 </script>
 
-{#if !embedded}<SubNav title="Scena lander" learn={STR.learn} />{/if}
+{#if !embedded}<SubNav title={t('lander.scene3d')} learn={STR.learn} />{/if}
 
 <div class="workspace tile tile--alt">
   <div class="container container--wide">
     {#snippet setup()}
     <Callout title={t('lander.introTitle')} id="intro">
       {#if !adv}<p>{STR.introSimple}</p>{:else}
-      <p>
-        Dal polo Sud la Terra sta pochi gradi sopra l’orizzonte: l’antenna del rover guarda quasi radente al suolo e il crinale davanti a lei può tagliare la
-        <strong>prima zona di Fresnel</strong> (il tubo traslucido). Verde, ambra o rosso: stato del link calcolato dal motore RAVEN; il testo e i numeri dicono la stessa cosa.
-      </p>
-      <p class="small">
-        Il terreno viene dal prodotto LOLA a 20 m (mai inventato), campionato su una griglia più grossolana. La Terra è a circa 384 000 km: la zona di Fresnel e il fascio sono
-        disegnati <strong>solo nel campo vicino</strong> all’antenna, e la Terra è disegnata con il suo diametro angolare vero ma a una distanza simbolica.
-      </p>{/if}
+      <p>{t('lander.advancedIntro')}</p>
+      <p class="small">{t('lander.advancedTerrain')}</p>{/if}
     </Callout>
 
     <form class="panel setup" onsubmit={(e) => e.preventDefault()} aria-labelledby="setup-h">
       <h2 id="setup-h">Scenario</h2>
       <div class="grid">
         <p class="field">
-          <label for="l-site">{adv ? 'Sito' : STR.site}</label>
+          <label for="l-site">{adv ? t('lander.siteTechnical') : STR.site}</label>
           <select id="l-site" value={siteId} onchange={(e) => selectSite((e.currentTarget as HTMLSelectElement).value)} disabled={sites.length === 0}>
             {#each sites as s (s.id)}
-              <option value={s.id} disabled={!s.dem_covered}>{s.name}{s.dem_covered ? '' : ' (fuori copertura DEM)'}</option>
+              <option value={s.id} disabled={!s.dem_covered}>{s.name}{s.dem_covered ? '' : ` (${t('lander.outsideDem')})`}</option>
             {/each}
             {#if customList.length}
               <optgroup label={t('custom.group')}>{#each customList as c (c.id)}<option value={c.id}>{c.name}</option>{/each}</optgroup>
             {/if}
           </select>
-          <span class="hint">siti del catalogo coperti dal DEM LOLA (lat ≤ −85°); i siti personalizzati usano il prodotto LOLA che li copre</span>
+          <span class="hint">{t('lander.demHint')}</span>
         </p>
         {#if !embedded}<CustomSiteControl onadd={(id) => selectSite(id)} />{/if}
         <p class="field">
-          <label for="l-station">{adv ? 'Stazione di terra' : STR.station}</label>
+          <label for="l-station">{adv ? t('lander.groundStation') : STR.station}</label>
           <select id="l-station" bind:value={station}>
             <option value="dsn34">DSN 34 m</option>
-            <option value="dsn18">DSN 18 m (ipotesi)</option>
+            <option value="dsn18">DSN 18 m ({t('lander.assumption')})</option>
           </select>
         </p>
         <p class="field">
@@ -587,32 +588,32 @@
         </p>
         {#if adv}
         <p class="field">
-          <label for="l-gain">Guadagno antenna rover (dBi) <Badge status="I" /></label>
+          <label for="l-gain">{t('lander.roverGain')} (dBi) <Badge status="I" /></label>
           <input id="l-gain" type="number" min="-10" max="45" step="0.5" bind:value={gain} />
         </p>
         {/if}
         <p class="field">
-          <label for="l-mast">{adv ? 'Altezza del palo' : STR.mast}: <output for="l-mast" data-testid="mast-value">{f(mast, 1)}</output> m <Badge status="I" /></label>
+          <label for="l-mast">{adv ? t('lander.mastHeight') : STR.mast}: <output for="l-mast" data-testid="mast-value">{f(mast, 1)}</output> m <Badge status="I" /></label>
           <input id="l-mast" type="range" min={MAST_RANGE[0]} max={MAST_RANGE[1]} step="0.5" bind:value={mast} />
         </p>
         {#if adv}
         <p class="field">
-          <label for="l-err">Errore di puntamento: <output for="l-err" data-testid="err-value">{f(errorDeg, 1)}</output>° (HPBW {data ? f(hpbw, 1) : '…'}°)</label>
+          <label for="l-err">{t('lander.pointingErrorLabel')}: <output for="l-err" data-testid="err-value">{f(errorDeg, 1)}</output>° (HPBW {data ? f(hpbw, 1) : '…'}°)</label>
           <input id="l-err" type="range" min="0" max={Math.max(5, Math.ceil(hpbw))} step="0.1" bind:value={errorDeg} aria-describedby="l-err-hint" />
-          <span id="l-err-hint" class="hint">{pt ? `perdita ${f(pt.lossDb, 2)} dB; ${pt.beyond ? 'oltre HPBW/2: cono rosso' : 'entro HPBW/2'}` : ''}</span>
+          <span id="l-err-hint" class="hint">{pt ? `${t('lander.loss')} ${f(pt.lossDb, 2)} dB; ${pt.beyond ? t('lander.beamBeyond') : t('lander.beamWithin')}` : ''}</span>
         </p>
         <p class="field">
-          <label for="l-vex">Esagerazione verticale del terreno</label>
+          <label for="l-vex">{t('lander.verticalExaggeration')}</label>
           <select id="l-vex" bind:value={vExag}>
-            <option value={1}>×1 (scala vera)</option>
+            <option value={1}>×1 ({t('lander.trueScale')})</option>
             <option value={2}>×2</option>
             <option value={5}>×5</option>
           </select>
         </p>
         <p class="field">
-          <label for="l-tube">Raggio disegnato del tubo di Fresnel</label>
+          <label for="l-tube">{t('lander.drawnFresnelRadius')}</label>
           <select id="l-tube" bind:value={tubeScale}>
-            <option value={1}>×1 (raggio vero)</option>
+            <option value={1}>×1 ({t('lander.trueRadius')})</option>
             <option value={5}>×5</option>
             <option value={20}>×20</option>
           </select>
@@ -731,20 +732,19 @@
     {#if pick}
       <p class="small" role="status" data-testid="instant-note" data-kind={pick.kind}>
         {#if pick.kind === 'grazing'}
-          Istante scelto perché il Sole è radente: {f(pick.elDeg, 1)}° sull’orizzonte del sito (tra 1° e 3° nel mese successivo all’ora attuale), così il rilievo si vede. L’istante è
-          nello scenario e si può cambiare dal pannello della data.
+          {t('lander.grazingInstant', { elevation: f(pick.elDeg, 1) })}
         {:else if pick.elDeg !== null && pick.elDeg < 0}
-          Nessun istante con Sole radente (1°-3°) nel mese successivo all’ora attuale: resta l’istante dato, con il Sole a {f(pick.elDeg, 1)}°. Il terreno è in ombra.
+          {t('lander.noGrazingDark', { elevation: f(pick.elDeg, 1) })}
         {:else}
-          Nessun istante con Sole radente (1°-3°) nel mese successivo all’ora attuale: resta l’istante dato{pick.elDeg !== null ? `, con il Sole a ${f(pick.elDeg, 1)}°` : ''}.
+          {pick.elDeg !== null ? t('lander.noGrazingElevation', { elevation: f(pick.elDeg, 1) }) : t('lander.noGrazing')}
         {/if}
       </p>
     {/if}
 {#if !compact}    <p class="small muted" data-testid="sun-note">
-      {#if sunReal}Luce: Sole reale a {f(sun.elDeg, 2)}° sull’orizzonte del sito (JPL DE440){vs.terrain ? `; ombre portate dal rilievo campionato: ${Math.round((vs.terrain.shadowFraction) * 100)}% del terreno in ombra` : ''}.
+      {#if sunReal}{t('lander.realSun', { elevation: f(sun.elDeg, 2) })}{vs.terrain ? ` ${t('lander.shadowFraction', { percent: Math.round(vs.terrain.shadowFraction * 100) })}` : ''}
       {:else if hasRealLight}{t('lander.previousLight')}
-      {:else}Luce di ripiego: Sole fisso a 1,5° dietro l’osservatore, <strong>non</strong> il Sole reale (nessuna luce calcolata per questo istante).{/if}
-      {#if data}Il terreno sotto l’orizzonte del Sole è scuro. Le ombre sono quelle del campo di quote campionato a {f(data.terrain.patch?.spacingM ?? 0, 0)} m.{/if}
+      {:else}{t('lander.fallbackSun')}{/if}
+      {#if data} {t('lander.sampledShadows', { spacing: f(data.terrain.patch?.spacingM ?? 0, 0) })}{/if}
     </p>{/if}
 
     <div class="legend" aria-label={t('lander.legend')}>
@@ -756,60 +756,60 @@
       </ul>
 {#if !compact}      <p class="small muted">
         {#if cinematic}{t('lander.overlaysHidden')} {/if}
-        {tubeScale > 1 ? `Il raggio del tubo di Fresnel è disegnato ×${tubeScale} (il valore vero è nei numeri). ` : ''}{vExag > 1 ? `Il terreno è esagerato ×${vExag} in verticale. ` : ''}Il richiamo giallo sull’antenna e il segno arancione sul crinale sono ingranditi nelle viste lontane.
+        {tubeScale > 1 ? `${t('lander.tubeExaggerated', { scale: tubeScale })} ` : ''}{vExag > 1 ? `${t('lander.terrainExaggerated', { scale: vExag })} ` : ''}{t('lander.markersEnlarged')}
       </p>{/if}
     </div>
 
     {#snippet sceneDetails()}
     <section class="panel" aria-labelledby="res-h">
-      <h2 id="res-h">Dettagli della scena</h2>
-      <div class="tablist" role="tablist" aria-label="Dettagli della scena" tabindex="-1">
+      <h2 id="res-h">{t('lander.sceneDetails')}</h2>
+      <div class="tablist" role="tablist" aria-label={t('lander.sceneDetails')} tabindex="-1">
         {#each visibleTabs as tabItem (tabItem.id)}
-          <button type="button" role="tab" id="ltab-{tabItem.id}" aria-selected={shown === tabItem.id} aria-controls="lpanel-{tabItem.id}" tabindex={shown === tabItem.id ? 0 : -1} onclick={() => (tab = tabItem.id)} onkeydown={onTabKey}>{tabItem.label}</button>
+          <button type="button" role="tab" id="ltab-{tabItem.id}" aria-selected={shown === tabItem.id} aria-controls="lpanel-{tabItem.id}" tabindex={shown === tabItem.id ? 0 : -1} onclick={() => (tab = tabItem.id)} onkeydown={onTabKey}>{STR.tabs[tabItem.id]}</button>
         {/each}
       </div>
       {#each TABS as tabItem (tabItem.id)}
         <div role="tabpanel" id="lpanel-{tabItem.id}" aria-labelledby="ltab-{tabItem.id}" hidden={shown !== tabItem.id} tabindex="0" class="tabpanel">
           {#if shown === tabItem.id}
             {#if !data}
-              <p class="muted">Nessuna scena: attendi il calcolo o scegli un sito coperto dal DEM.</p>
+              <p class="muted">{t('lander.noScene')}</p>
             {:else if tabItem.id === 'numbers'}
               <dl class="meta" data-testid="lander-hud">
-                <dt>Terra</dt>
-                <dd data-testid="hud-earth">elevazione {f(data.earth.elDeg, 2)}°, azimut {f(data.earth.azDeg, 1)}°, distanza {Math.round(data.earth.rangeKm).toLocaleString('it-IT')} km <Badge status="D" /></dd>
-                <dt>Crinale dominante</dt>
-                <dd data-testid="hud-ridge">cima a {f(data.ridge.tipElevationDeg, 2)}° ({sgn(data.ridge.angleAboveLosDeg)}° rispetto alla Terra), a {f(data.ridge.arcDistanceM, 0)} m; {f(Math.abs(data.ridge.heightAboveLosM), 1)} m {data.ridge.heightAboveLosM >= 0 ? 'sopra' : 'sotto'} la linea di vista <Badge status="V" /></dd>
+                <dt>{t('lander.detailEarth')}</dt>
+                <dd data-testid="hud-earth">{t('lander.detailEarthValue', { elevation: f(data.earth.elDeg, 2), azimuth: f(data.earth.azDeg, 1), distance: formatNumber(Math.round(data.earth.rangeKm)) })} <Badge status="D" /></dd>
+                <dt>{t('lander.detailRidge')}</dt>
+                <dd data-testid="hud-ridge">{t('lander.detailRidgeValue', { elevation: f(data.ridge.tipElevationDeg, 2), angle: sgn(data.ridge.angleAboveLosDeg), distance: f(data.ridge.arcDistanceM, 0), height: f(Math.abs(data.ridge.heightAboveLosM), 1), position: t(data.ridge.heightAboveLosM >= 0 ? 'lander.above' : 'lander.below') })} <Badge status="V" /></dd>
                 <dt>ν</dt><dd data-testid="hud-nu">{f(data.ridge.nu, 2)}</dd>
-                <dt>Zona di Fresnel</dt>
-                <dd data-testid="hud-fresnel">raggio al crinale {f(data.fresnel.r1AtRidgeM, 2)} m (λ {f(data.fresnel.wavelengthM * 100, 2)} cm, d1 {f(data.ridge.d1M, 0)} m); il crinale occupa {f(ridgeObstruction(data) * 100, 0)}% del raggio <Badge status="D" /></dd>
-                <dt>Perdita di diffrazione</dt>
-                <dd data-testid="hud-diffraction">lama {f(data.diffraction.knifeEdgeDb, 2)} dB + correzione cresta {f(data.diffraction.correctionDb, 2)} dB = {f(data.diffraction.lossDb, 2)} dB<br /><span class="small muted">{data.diffraction.correctionLabel}; raggio cresta {data.ridge.radiusM === null ? 'non stimabile' : `${f(data.ridge.radiusM, 0)} m`}{data.ridge.radiusResolved ? '' : ' (non risolto dal DEM)'}</span></dd>
+                <dt>{t('lander.detailFresnel')}</dt>
+                <dd data-testid="hud-fresnel">{t('lander.detailFresnelValue', { radius: f(data.fresnel.r1AtRidgeM, 2), wavelength: f(data.fresnel.wavelengthM * 100, 2), distance: f(data.ridge.d1M, 0), obstruction: f(ridgeObstruction(data) * 100, 0) })} <Badge status="D" /></dd>
+                <dt>{t('lander.detailDiffraction')}</dt>
+                <dd data-testid="hud-diffraction">{t('lander.detailDiffractionValue', { knife: f(data.diffraction.knifeEdgeDb, 2), correction: f(data.diffraction.correctionDb, 2), loss: f(data.diffraction.lossDb, 2) })}<br /><span class="small muted">{data.diffraction.correctionLabel}; {t('lander.ridgeRadius')} {data.ridge.radiusM === null ? t('lander.notEstimable') : `${f(data.ridge.radiusM, 0)} m`}{data.ridge.radiusResolved ? '' : ` (${t('lander.notResolvedDem')})`}</span></dd>
                 <dt>Multipath</dt>
-                <dd data-testid="hud-multipath">{data.diffraction.multipathApplicable ? `${sgn(data.diffraction.multipathGainDb ?? 0)} dB` : `non applicabile${data.diffraction.multipathReason ? `: ${data.diffraction.multipathReason}` : ''}`} <Badge status="D" /></dd>
-                <dt>Perdita totale</dt><dd data-testid="hud-total">{f(data.diffraction.totalLossDb, 2)} dB (lama + correzione − multipath)</dd>
-                <dt>Margine di link</dt>
+                <dd data-testid="hud-multipath">{data.diffraction.multipathApplicable ? `${sgn(data.diffraction.multipathGainDb ?? 0)} dB` : `${t('lander.notApplicable')}${data.diffraction.multipathReason ? `: ${data.diffraction.multipathReason}` : ''}`} <Badge status="D" /></dd>
+                <dt>{t('lander.totalLoss')}</dt><dd data-testid="hud-total">{f(data.diffraction.totalLossDb, 2)} dB ({t('lander.totalLossFormula')})</dd>
+                <dt>{t('lander.margin')}</dt>
                 <dd data-testid="hud-margin">{t('lander.marginAtRate', { value: f(data.link.margin, 2), rate: rateText(data.link.rateBps) })} <strong>{info?.symbol} {localizedState(data.link.state)}</strong> <span class="small muted">({localizedStateHelp(data.link.state)})</span> <Badge status="I" /></dd>
                 <dt>Antenna</dt>
-                <dd data-testid="hud-antenna">guadagno {f(data.antenna.gainDbi, 1)} dBi, diametro {f(data.antenna.diameterM, 2)} m, HPBW {f(data.antenna.hpbwDeg, 1)}°; palo {f(data.antenna.mastM, 1)} m <Badge status={data.antenna.mastTag} /></dd>
-                <dt>Puntamento</dt>
+                <dd data-testid="hud-antenna">{t('lander.detailAntennaValue', { gain: f(data.antenna.gainDbi, 1), diameter: f(data.antenna.diameterM, 2), hpbw: f(data.antenna.hpbwDeg, 1), mast: f(data.antenna.mastM, 1) })} <Badge status={data.antenna.mastTag} /></dd>
+                <dt>{t('lander.detailPointing')}</dt>
                 <dd data-testid="hud-pointing">{t('lander.pointingError', { error: f(errorDeg, 1) })}: {t('lander.loss')} {f(pt?.lossDb ?? 0, 2)} dB, {pt?.beyond ? t('lander.beamBeyond') : t('lander.beamWithin')}; {t('lander.pointingMargin')} {f(pt?.marginDb ?? null, 2)} dB, {t('lander.stateLabel')} {pt ? localizedState(pt.state).toLowerCase() : ''}</dd>
-                <dt>Terreno</dt>
-                <dd>{data.terrain.label}{data.terrain.synthetic ? ' — profilo sintetico di prova' : ''}; {data.terrain.patch ? `campo ${f(data.terrain.patch.sizeM / 1000, 1)} km, ${data.terrain.patch.n}×${data.terrain.patch.n} punti a ${f(data.terrain.patch.spacingM, 0)} m (prodotto a ${data.terrain.patch.nativeResolutionM} m)` : 'solo profilo'}; raggio cresta {data.terrain.radiusResolved ? 'risolto' : 'non risolto'}</dd>
+                <dt>{t('lander.detailTerrain')}</dt>
+                <dd>{data.terrain.label}{data.terrain.synthetic ? ` — ${t('lander.syntheticProfile')}` : ''}; {data.terrain.patch ? t('lander.terrainPatch', { size: f(data.terrain.patch.sizeM / 1000, 1), n: data.terrain.patch.n, spacing: f(data.terrain.patch.spacingM, 0), resolution: data.terrain.patch.nativeResolutionM }) : t('lander.profileOnly')}; {t('lander.ridgeRadius')} {t(data.terrain.radiusResolved ? 'lander.resolved' : 'lander.unresolved')}</dd>
               </dl>
               <p class="export">
-                <button type="button" onclick={exportJson} data-testid="export-json">Scarica i numeri della scena (JSON)</button>
+                <button type="button" onclick={exportJson} data-testid="export-json">{t('lander.downloadScene')}</button>
               </p>
             {:else if tabItem.id === 'section'}
-              <p class="small muted">Sezione verticale lungo l’azimut della Terra: la banda è la prima zona di Fresnel, il terreno la copre dove il crinale la interseca. La scala verticale è esagerata (indicata nel grafico).</p>
-              <div class="section-box" bind:this={secHost} data-testid="section-canvas" role="img" aria-label="Sezione laterale con profilo del terreno, crinale, linea di vista, zona di Fresnel, antenna, fascio e direzione della Terra. I numeri sono nella scheda Numeri e nella descrizione testuale."></div>
+              <p class="small muted">{t('lander.sectionDescription')}</p>
+              <div class="section-box" bind:this={secHost} data-testid="section-canvas" role="img" aria-label={t('lander.compactSectionLabel')}></div>
             {:else if tabItem.id === 'text'}
               <p data-testid="lander-text">{text}</p>
             {:else}
               <ul class="limits" data-testid="lander-limits">
                 {#each data.limits as l (l)}<li>{l}</li>{/each}
-                <li>La correzione della cresta arrotondata è T(m,n) di ITU-R P.526-9 par. 4.2 (formula verificata sul testo, non misurata); lo scarto dallo split-step simulato è l’incertezza.</li>
-                <li>I parametri radio (guadagno, potenza, Tsys, altezza del palo) hanno tag I: illustrativi, senza fonte.</li>
-                <li>Il campo di quote è a {data.terrain.patch ? f(data.terrain.patch.spacingM, 0) : '—'} m di passo: rocce o creste più piccole possono non comparire; il profilo del motore è a {f(data.terrain.profileSpacingM, 0)} m.</li>
+                <li>{t('lander.limitCorrection')}</li>
+                <li>{t('lander.limitRadio')}</li>
+                <li>{t('lander.limitTerrain', { patch: data.terrain.patch ? f(data.terrain.patch.spacingM, 0) : '—', profile: f(data.terrain.profileSpacingM, 0) })}</li>
               </ul>
               <p class="small muted">{data.disclaimer}</p>
             {/if}
