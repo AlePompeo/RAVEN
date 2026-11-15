@@ -47,7 +47,7 @@ test('report modes: Learn asks few questions and reports with one click; Expert 
   await expect(page.locator('#dossier-currency')).toHaveCount(0);
   await expect(page.getByTestId('dossier-optional-counter')).toHaveCount(0);
   await expect(page.getByTestId('learn-hidden')).toHaveCount(0);
-  await expect(page.getByTestId('dossier-progress')).toContainText('report fields are filled');
+  await expect(page.getByTestId('dossier-progress')).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include('[data-testid="report-dossier"]').analyze()).violations).toEqual([]);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -90,11 +90,12 @@ test('report modes: Learn asks few questions and reports with one click; Expert 
     expect(learnPdf.pages).toBeLessThanOrEqual(8);
   }
 
-  // Expert dossier: the same questions plus the RAVEN estimates; cost, CO2e and the plan text are not typed any more
+  // Expert dossier retains the objective type and the RAVEN estimates.
   await page.getByTestId('report-more').locator('summary').click();
   await page.getByRole('button', { name: 'Edit mission dossier', exact: true }).click();
   await expect(dossier).toHaveAttribute('data-mode', 'expert');
-  for (const id of ['purpose', 'missionStatement', 'successCriteria', 'owner']) await expect(page.locator(`#dossier-${id}`)).toHaveCount(1);
+  await expect(page.locator('#dossier-purpose')).toHaveCount(1);
+  for (const id of ['missionStatement', 'successCriteria', 'owner']) await expect(page.locator(`#dossier-${id}`)).toHaveCount(0);
   for (const id of ['architecture', 'launchPlan', 'environmentPlan', 'currency', 'year', 'cost-basis', 'contingency', 'funding']) await expect(page.locator(`#dossier-${id}`)).toHaveCount(0);
   await expect(page.locator('#cost-operations')).toHaveCount(0);
   await expect(page.locator('#carbon-boundary')).toHaveCount(0);

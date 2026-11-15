@@ -39,7 +39,7 @@ class Settings:
     discovery_timeout_s: float = 2.0
     breaker_failures: int = 3
     breaker_cooldown_s: float = 30.0
-    failover_budget_s: float = 30.0
+    failover_budget_s: float = 120.0
     min_score: float = 0.6
     route_simple: bool = False
 
@@ -69,7 +69,7 @@ def load_settings() -> Settings:
         discovery_timeout_s=env_positive_float("ASSISTANT_DISCOVERY_TIMEOUT_S", 2.0),
         breaker_failures=env_positive_int("ASSISTANT_BREAKER_FAILURES", 3),
         breaker_cooldown_s=env_positive_float("ASSISTANT_BREAKER_COOLDOWN_S", 30.0),
-        failover_budget_s=env_positive_float("ASSISTANT_FAILOVER_BUDGET_S", 30.0),
+        failover_budget_s=env_positive_float("ASSISTANT_FAILOVER_BUDGET_S", 120.0),
         min_score=_unit_float("ASSISTANT_MIN_SCORE", 0.6),
         route_simple=os.environ.get("ASSISTANT_ROUTE_SIMPLE") == "1",
     )

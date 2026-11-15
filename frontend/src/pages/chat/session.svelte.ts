@@ -35,7 +35,7 @@ export interface Turn {
 /** Messaggi per l'utente: dicono cosa è successo e cosa fare (le frasi del server restano un ripiego). */
 export function warningNotes(codes: string[], _messages: string[]): WarningNote[] {
   return codes.map((code) => ({ code, text: t(code === 'provider_fallback' || code === 'all_candidates_failed' || code === 'provider_unhealthy' ? 'si.fallback' :
-    code === 'llm_rate_limited' ? 'si.rateLimited' : code === 'llm_interrupted' ? 'si.partial' : 'si.verify') }));
+    code === 'no_citation' ? 'si.noCitation' : code === 'llm_rate_limited' ? 'si.rateLimited' : code === 'llm_interrupted' ? 'si.partial' : 'si.verify') }));
 }
 
 export function completionMessage(turn: Pick<Turn, 'refused' | 'citations' | 'retrieved'>): string {

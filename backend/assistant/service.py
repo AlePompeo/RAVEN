@@ -102,7 +102,7 @@ class AssistantService:
         max_context_tokens: int = 1800,
         max_stream_s: float = 120.0,
         router: ModelRouter | None = None,
-        failover_budget_s: float = 30.0,
+        failover_budget_s: float = 120.0,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self.kb = kb
@@ -265,10 +265,10 @@ class AssistantService:
                     st = self._llm_stream(
                         self.router.make_provider(cand),
                         messages,
-                        min(self.router.timeout_for(cand), remaining),
+                        self.router.timeout_for(cand),
                     )
                     try:
-                        first = await st.__anext__()
+                        first = await asyncio.wait_for(st.__anext__(), timeout=remaining)
                     except StopAsyncIteration:
                         first = ""
                     stream, chosen = st, cand

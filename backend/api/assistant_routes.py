@@ -213,7 +213,10 @@ def build_router(
                 raise PluginError("provider OpenAI-compatibile non disponibile")
             return local_llm.LazyProvider(
                 lambda url, model: OpenAICompatProvider(
-                    m_local, endpoint=(url, model, ""), trust_env=False
+                    m_local,
+                    endpoint=(url, model, ""),
+                    trust_env=False,
+                    timeout_s=local_llm.LOCAL_TIMEOUT_S,
                 )
             )
         if c.base_url and c.model:  # candidato scoperto: endpoint esplicito, chiave solo in header

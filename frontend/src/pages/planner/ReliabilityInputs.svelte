@@ -7,7 +7,6 @@
 
 <section class="reliability-inputs" data-testid="reliability-inputs">
   <h3>{t('rel.title')}</h3>
-  <p>{t('rel.scope')}</p>
   <label class="check"><input id="rel-enabled" type="checkbox" bind:checked={profile.enabled} />{t('rel.enable')}</label>
   <button type="button" onclick={() => profile = illustrativeReliability(t('rel.exampleBasis'))}>{t('rel.example')}</button>
   <p class="note">{t('rel.noDefaults')}</p>
@@ -26,8 +25,6 @@
       {/each}
     </div>
     <label class="check"><input id="rel-apply-power" type="checkbox" bind:checked={profile.apply_thermal_load} />{t('rel.applyPower')}</label>
-    <p class="note">{t('rel.powerScope')}</p>
-    <aside><h4>{t('rel.protectionTitle')}</h4><p>{t('rel.thermalHelp')}</p><p>{t('rel.radiationHelp')}</p></aside>
     {#each profile.components as component}
       <details>
         <summary>{t(`rel.component.${component.id}`)}</summary>
@@ -60,7 +57,6 @@
   .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem 1rem; }
   details { margin-top: 1rem; border-top: 1px solid #7499b64d; padding-top: .5rem; }
   summary { min-height: 44px; cursor: pointer; font-weight: 600; align-content: center; }
-  aside { border-inline-start: 3px solid #a4dfff; padding-inline-start: 1rem; }
   button { min-height: 44px; padding: .7rem 1rem; color: inherit; background: #11263c; border: 1px solid #7693aa69; border-radius: .5rem; }
   button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid #b1e6ff; outline-offset: 3px; }
   @media (max-width: 650px) { .fields { grid-template-columns: 1fr; } }

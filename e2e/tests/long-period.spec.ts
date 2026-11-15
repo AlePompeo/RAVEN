@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from '@playwright/test';
+import { openSimulationDetails } from './plannerHelpers';
 
 // A year-long period is admitted only with a step that keeps it inside the sample caps (chosen automatically and
 // explained); the calculation then finishes in seconds and the main thread is never blocked for long.
@@ -24,7 +25,7 @@ test('365 days: the step is raised and explained, the simulation ends in under 2
   const started = Date.now();
   await page.getByRole('navigation', { name: 'Mission planning steps' }).getByRole('button', { name: /Simulation/ }).click();
   await page.getByRole('button', { name: 'Simulate both scenarios', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Mission timeline' })).toBeVisible({ timeout: 40_000 });
+  await openSimulationDetails(page);
   expect(Date.now() - started).toBeLessThan(20_000);
   const gaps = await page.evaluate(() => (window as unknown as { __gaps: number[] }).__gaps);
   expect(Math.max(...gaps), 'longest main-thread block (ms)').toBeLessThan(2000);

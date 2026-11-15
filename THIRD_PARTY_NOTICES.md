@@ -7,8 +7,9 @@ separate local process. They are not part of this repository's source and are no
 |---|---|---|---|
 | llama.cpp (`llama-server` and its libraries) | build b12110 | MIT | ggml-org, https://github.com/ggml-org/llama.cpp |
 | Ministral 3 3B Instruct 2512, Q4_K_M quantisation | 2512 | Apache-2.0 | Mistral AI; GGUF conversion by Unsloth, https://huggingface.co/unsloth/Ministral-3-3B-Instruct-2512-GGUF |
+| IBM Granite 4.0-h 350M, 1B and micro (3B), Q4_K_M | 4.0 | Apache-2.0 | IBM, https://huggingface.co/ibm-granite |
 
 The licence texts travel with the downloaded files (llama.cpp archive: `LICENSE`; model repository: `LICENSE`). Files are checked against a
 pinned size and SHA-256 before use (see `scripts/install_local_llm.py`).
 
-Other alternatives that were measured and not shipped (Granite 4.0, Phi-4-mini, SmolLM3) are listed in `docs/process/BACKLOG.md`.
+Other alternatives that were measured and not shipped (Phi-4-mini, SmolLM3) are listed in `docs/process/BACKLOG.md`.

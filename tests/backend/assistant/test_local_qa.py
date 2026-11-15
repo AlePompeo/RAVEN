@@ -11,7 +11,10 @@ from backend.assistant import local_llm as ll
 from backend.assistant.breaker import CircuitBreakers
 from backend.assistant.config import DEFAULT_PREFERENCE, parse_preference
 from backend.assistant.discovery import EXTRACTIVE, Candidate, Discovery
+from backend.assistant.prompt import REFUSAL_EN, REFUSAL_IT
 from backend.assistant.router import AUTO, ModelRouter
+
+from .conftest import ScriptedLLM, answer_of, chat_body, parse_sse
 
 
 def _router(mode: str = AUTO, extra: list[Candidate] | None = None) -> ModelRouter:
@@ -102,3 +105,45 @@ def test_an_unavailable_server_raises_a_stable_code_so_the_assistant_falls_back(
     with pytest.raises(ll.LocalUnavailable) as e:
         asyncio.run(run())
     assert e.value.code == "unavailable"
+
+
+@pytest.mark.parametrize(
+    ("language", "question", "answer"),
+    [
+        ("it", "Che cos'è il margine del collegamento radio?", "Il margine è in dB [link-budget]."),
+        ("en", "What is the radio link margin?", "The margin is in dB [link-budget]."),
+    ],
+)
+def test_local_qa_passes_retrieval_and_language_to_model_and_returns_citations(
+    make_client: Any, monkeypatch: pytest.MonkeyPatch, language: str, question: str, answer: str
+) -> None:
+    llm = ScriptedLLM([answer])
+    monkeypatch.setattr(ll, "usable", lambda: True)
+    monkeypatch.setattr(ll, "manifest", lambda: {"name": "granite-test"})
+
+    async def ensure() -> tuple[str, str]:
+        return "http://127.0.0.1:1/v1", "granite-test"
+
+    monkeypatch.setattr(ll.MANAGER, "ensure", ensure)
+    options: list[dict[str, Any]] = []
+
+    def provider(*args: Any, **kwargs: Any) -> ScriptedLLM:
+        options.append(kwargs)
+        return llm
+
+    monkeypatch.setattr("backend.api.assistant_routes.OpenAICompatProvider", provider)
+    events = parse_sse(
+        make_client().post("/api/assistant/chat", json=chat_body(question, lang=language)).text
+    )
+    assert events[0][1]["provider"] == ll.LOCAL_ID
+    assert events[0][1]["lang"] == language
+    assert "link-budget" in events[0][1]["retrieved"]
+    system = llm.calls[0][0]["content"]
+    assert f"LANG: {language}" in system
+    assert f"REFUSAL: {REFUSAL_EN if language == 'en' else REFUSAL_IT}" in system
+    assert "<<<DOC id=link-budget " in system
+    assert options[0]["timeout_s"] == ll.LOCAL_TIMEOUT_S
+    assert answer_of(events) == answer
+    assert [c["id"] for e, d in events if e == "citations" for c in d["citations"]] == [
+        "link-budget"
+    ]

@@ -6,6 +6,7 @@
 // confrontato qui (ha la sua fixture di parita' a 0,01 dB); per i siti coperti da terreno lontano noto (D4, es. Haworth)
 // scena e istantanea possono dare «bloccato» dove la vecchia regola dava «aperto»: il sito scelto qui (Malapert) non lo e'.
 import { expect, test, type Page } from '@playwright/test';
+import { openSimulationDetails } from './plannerHelpers';
 
 const SITE = 'malapert-massif';
 const T0 = '2027-04-07T00:00:00Z';
@@ -45,7 +46,7 @@ test('Planner, Confronto, scena, istantanea, Simula e pagina Modello mostrano gl
   expect(pj.metrics.useful_hours).toBeCloseTo(ref.metrics.useful_hours, 9);
   expect(pj.steps.lit.filter((x) => x === true).length).toBe(litHours);
   expect(Math.min(...pj.steps.margin_db.filter((x): x is number => x !== null))).toBeCloseTo(minMargin, 9);
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 60_000 });
+  await openSimulationDetails(page);
   await expect(page.locator('.model-stamp').first()).toContainText(version);
 
   // --- Confronto: componenti della classifica = metriche della valutazione

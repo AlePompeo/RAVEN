@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # RAVEN SI
 
-Assistente "ancorato" che aiuta a capire il problema dell'hackathon e la soluzione: spiega siti,
-simulazioni, metodi e formule rispondendo SOLO dal materiale del repository. Funziona senza chiavi
+Assistente "ancorato" che aiuta a capire il problema dell'hackathon e la soluzione: e' istruito a spiegare siti,
+simulazioni, metodi e formule sulla base del materiale del repository, ma puo' commettere errori. Funziona senza chiavi
 API e senza rete (provider `assistant-extractive`); un modello generativo e' opzionale. Di default (`ASSISTANT_PROVIDER=auto`) seleziona un modello autorizzato disponibile e ripiega esplicitamente sull'estrattivo. I candidati remoti non sono usati senza consenso per richiesta.
 
 Base: `backend/assistant/` (libreria), `backend/api/assistant_routes.py` (HTTP),
@@ -31,6 +31,10 @@ La conversazione e le preferenze restano solo in memoria fra minimizzazione e
 navigazione SPA: nessun messaggio in localStorage/sessionStorage, reload azzera
 lo storico. Cambiare fra locale e online cancella lo storico prima di inviarlo.
 I parametri visibili sono facoltativi e hanno un'anteprima dei valori trasmessi.
+La lingua della chat segue quella del sito, salvo scelta esplicita nelle impostazioni.
+Il modello riceve questa indicazione ma potrebbe non rispettarla. Se si usa il
+fallback estrattivo in inglese, i passaggi sono riportati nella lingua originale
+italiana, come indicato nell'introduzione: non viene simulata una traduzione.
 
 Groq richiede due autorizzazioni distinte:
 
@@ -115,7 +119,9 @@ Soglia di pertinenza: copertura IDF dei termini della domanda >= 0.34, altriment
 deittica ("questa pagina", "this simulation") e non c'e' corrispondenza, si usano i documenti della pagina. Limiti: massimo
 `ASSISTANT_TOP_K` passaggi, 2 per documento, budget `ASSISTANT_MAX_CONTEXT_TOKENS` (stima 3.5 caratteri/token). Deterministico; l'indice si costruisce una
 volta all'avvio (con `ASSISTANT_DEV_RELOAD=1` si ricostruisce se i file cambiano, controllo al massimo una volta al secondo).
-Gancio per embeddings futuri: `Index.search(..., reranker=...)`; nessuna dipendenza pesante e' stata aggiunta.
+Gancio per embeddings futuri: `Index.search(..., reranker=...)`; al momento non viene
+creato ne' usato un indice vettoriale di embeddings. I passaggi recuperati vengono
+inseriti nel prompt del modello.
 
 ### Prompt e difese
 
@@ -198,17 +204,25 @@ Un nuovo plugin compare da solo come `plugin-<id>` (manifest) e un nuovo contrat
 1. Candidati = modelli scoperti (cache `ASSISTANT_DISCOVERY_TTL_S`) che corrispondono a una voce di `ASSISTANT_PREFERENCE` (e' anche una lista di ammessi); l'estrattivo e' sempre ultimo.
 2. Si scartano i candidati NON sani (circuit breaker aperto); i misurati sotto `ASSISTANT_MIN_SCORE` (default 0.6) sono esclusi.
 3. Primo il punteggio misurato piu' alto (`ASSISTANT_RANKING_FILE`; a parita': ordine di preferenza, poi id); poi i NON misurati in ordine di preferenza.
-4. Per richiesta: catena scelto -> prossimo sano -> estrattivo, un tentativo per candidato, budget `ASSISTANT_FAILOVER_BUDGET_S`; mai cambio di modello dopo il primo token.
+4. Per richiesta: catena scelto -> prossimo sano -> estrattivo, un tentativo per candidato, budget `ASSISTANT_FAILOVER_BUDGET_S` (default 120 s) fino al primo token; mai cambio di modello dopo il primo token. Lo stream mantiene il proprio timeout ed e' limitato dalla durata massima della risposta.
 5. Nessun candidato sano -> estrattivo, senza avvisi (non e' un guasto).
 
 **Scoperta (a prova di SSRF)**: si contattano SOLO `ASSISTANT_OLLAMA_URL` (default `http://127.0.0.1:11434`, `off` la disattiva) con `GET /api/tags` e `ASSISTANT_LLM_BASE_URL` con `GET <base>/models` se e' locale. Mai scansioni di rete, mai redirect seguiti (un 3xx e' `redirect_refused`), timeout `ASSISTANT_DISCOVERY_TIMEOUT_S`, risposta max 256 KiB, nomi dei modelli validati (max 32; embedding esclusi), URL con credenziali o query rifiutati, nessuna risoluzione DNS. Un endpoint NON locale (non loopback/privato/link-local; nomi in `ASSISTANT_LOCAL_HOSTS` contano come locali) e' candidato SOLO con `ASSISTANT_LLM_API_KEY` E `ASSISTANT_LLM_MODEL` espliciti e non viene sondato: senza chiave non viene mai contattato. La chiave viaggia solo nell'header verso quell'endpoint; mai in risposte, log o `repr`. Un guasto a runtime invalida la cache dell'endpoint (re-sonda al massimo ogni 5 s).
 
 **Preferenza di default** (`ASSISTANT_PREFERENCE`): `ollama:llama3.1*, ollama:qwen3*, ollama:gemma3*, ollama, assistant-openai-compat, assistant-extractive` = modelli aperti locali citati in questo documento (Llama 3.1: italiano tra le lingue supportate; Qwen3; Gemma 3), poi qualunque altro modello Ollama, poi l'endpoint compatibile OpenAI configurato (anche ospitato), infine l'estrattivo. Formato: `provider[:glob-del-modello]`; l'ordine e' una scelta, NON una misura di qualita'.
 
-**Modello incluso (`raven-local`)**: se e' installato (`./install.sh --with-llm`, `--with-llm-small`) e la memoria libera basta (soglia scritta dall'installer, 4096 MB per il 3B), compare tra i candidati dopo quelli
+**Modello incluso (`raven-local`)**: se e' installato (`./install.sh --llm-model 350m|1b|3b` per IBM Granite; `--with-llm` per Ministral, `--with-llm-small` per Granite 1B) e la memoria libera basta (soglia scritta dall'installer, 4096 MB per il 3B), compare tra i candidati dopo quelli
 dell'utente (Ollama, servizio online configurato) e prima dell'estrattivo. Non parte all'avvio: il server `llama-server` (solo 127.0.0.1) si avvia alla prima domanda a cui tocca, si ferma dopo 5 minuti di inattivita'
 e alla chiusura. Tempo massimo per risposta 120 s. Se non parte (memoria, errore) il codice di errore e' `unavailable`, il breaker lo conta e la risposta passa all'estrattivo. Stesso processo usato dalla
 ricerca dei siti (brief, resoconto) e dal verdetto del report. Cartella `RAVEN_LLM_DIR` (default `build/llm`).
+
+La presenza di un ID valido non verifica che la fonte sostenga ogni affermazione.
+Il 350M e' particolarmente limitato: in una prova reale su una domanda teorica in
+italiano e in inglese ha omesso le citazioni e dato spiegazioni errate. Sulla stessa
+domanda il 1B ha omesso le citazioni e, in una prova inglese, risposto in italiano
+nonostante la lingua richiesta. L'avviso
+`no_citation` segnala questo caso, ma non corregge la risposta. Verificare sempre
+le fonti e non usare l'assistente per certificare decisioni di missione.
 
 **Circuit breaker** (per modello): `ASSISTANT_BREAKER_FAILURES` (3) guasti consecutivi (errore, timeout, flusso non valido) aprono il breaker per `ASSISTANT_BREAKER_COOLDOWN_S` (30); un HTTP 429 lo apre subito. Scaduto il raffreddamento passa UNA richiesta di prova (half-open): se riesce si chiude, altrimenti si riapre. Mentre e' aperto il modello non viene contattato (`healthy: false`, warning `provider_unhealthy`).
 

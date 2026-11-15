@@ -46,6 +46,7 @@ class OpenAICompatProvider:
         max_tokens: int = MAX_TOKENS,
         json_mode: bool = False,
         reasoning_effort: str | None = None,
+        timeout_s: float | None = None,
     ) -> None:
         self.manifest = manifest
         self._transport = transport
@@ -54,6 +55,7 @@ class OpenAICompatProvider:
         self._max_tokens = max_tokens
         self._json_mode = json_mode
         self._reasoning_effort = reasoning_effort
+        self._timeout_s = timeout_s if timeout_s is not None else manifest.timeout_s
 
     def _resolve(self) -> tuple[str, str, str]:
         return self._endpoint if self._endpoint is not None else self._config()
@@ -85,7 +87,7 @@ class OpenAICompatProvider:
             body["response_format"] = {"type": "json_object"}
         if self._reasoning_effort:
             body["reasoning_effort"] = self._reasoning_effort
-        timeout = httpx.Timeout(self.manifest.timeout_s, connect=5.0)
+        timeout = httpx.Timeout(self._timeout_s, connect=5.0)
         total = 0
         events = 0
         try:

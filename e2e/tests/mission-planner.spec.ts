@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { frames, pixels } from './landerHelpers';
 import type { RavenEvaluation } from '../../frontend/src/shell/ravenApi';
+import { openSimulationDetails } from './plannerHelpers';
 const appOrigin = `http://127.0.0.1:${process.env.E2E_PROXY_PORT ?? 8001}`;
 
 const next = (page: Page) => page.getByRole('button', { name: 'Continua', exact: true }).click();
@@ -59,7 +60,7 @@ test('planner: RAVEN SI online proposals retain provenance but never persist clo
   });
   await openComparison(page);
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 60_000 });
+  await openSimulationDetails(page);
   await expect(page.getByTestId('mission-statistics').locator('.composition-chart')).toHaveCount(2);
   await expect(page.getByTestId('mission-statistics').getByRole('figure', { name: 'Totali energetici A/B', exact: true })).toBeVisible();
   expect((await new AxeBuilder({ page }).include('[data-testid="mission-statistics"]').analyze()).violations).toEqual([]);
@@ -106,7 +107,7 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   await next(page);
   await expect(page.getByTestId('planner-scene-status')).toBeVisible({ timeout: 20_000 });
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 60_000 });
+  await openSimulationDetails(page);
   expect(bodies).toHaveLength(2);
   for (const body of bodies) {
     expect(body).toMatchObject({
@@ -127,18 +128,19 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   await expect(page.getByRole('heading', { name: 'Dossier di missione', exact: true })).toBeVisible();
   await expect(page.getByTestId('report-mode')).toHaveAttribute('data-mode', 'expert');
   await page.locator('#dossier-purpose').selectOption('scientific');
-  await page.locator('#dossier-missionStatement').fill('Measure lunar dust near the selected landing site.');
+  await expect(page.locator('#dossier-missionStatement')).toHaveCount(0);
+  await page.locator('#report-option-parameters').check();
   await expect(page.getByTestId('report-cloud-consent')).toBeDisabled();
   await page.getByRole('button', { name: 'Genera proposte RAVEN SI', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Nessun modello SI configurato disponibile', { timeout: 15000 });
-  await page.locator('#journey-decision').fill('Compare terrain constraints before choosing a site.');
+  await expect(page.locator('#journey-decision')).toHaveCount(0);
   await page.getByRole('button', { name: 'Prepara il report' }).click();
   expect(await page.locator('.report-preview').innerText()).not.toMatch(/\uFFFD|\\u[0-9a-f]{4}/i);
   await expect(page.getByTestId('report-bar')).toBeVisible();
   await expect(page.getByText('Il report viene generato in inglese.')).toBeVisible();
   await expect(page.locator('.report-preview .rp-meta')).toContainText('South Pole Study');
   await expect(page.locator('.report-preview .rp-meta')).toContainText('2027-04-16');
-  await expect(page.getByTestId('report-decision')).toContainText('terrain constraints');
+  await expect(page.getByTestId('report-decision')).toHaveCount(0);
   await expect(page.getByTestId('report-digital-savings')).toContainText('estimated');
   await expect(page.getByTestId('report-final-seal')).toContainText('DEMO-');
   const downloadPromise = page.waitForEvent('download');
@@ -157,7 +159,7 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
     Object.entries(e.parameters_used!).flatMap(([g, v]) => Object.entries(v).map(([k, x]) => [`${g}.${k}`, x] as const)));
   // one table, one row per parameter of either scenario; rows that differ are marked
   await expect(page.locator('.rp-params tbody tr')).toHaveCount(new Set(flat.flatMap((rows) => rows.map(([k]) => k))).size);
-  expect(report.config.decision).toContain('terrain constraints');
+  expect(report.config.decision).toBe('');
   expect(report.evaluations[0].parameters_used.rf.compensator_k).toBe(1.7);
   expect(report.evaluations[0].steps.gen_w.some((v: number | null) => v !== null && v > 0)).toBe(true);
   expect(report.schema_version).toBe(5);
@@ -166,7 +168,7 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   expect(report.lifecycle.completion_audit.proposed_or_missing).toContain('qualification_tests');
   expect(report.lifecycle.phases.flatMap((phase: { deliverables: { input_dependencies: string[] }[] }) => phase.deliverables)
     .every((item: { input_dependencies: string[] }) => item.input_dependencies.length > 0)).toBe(true);
-  expect(report.lifecycle.planning_objectives.mission_statement).toContain('lunar dust');
+  expect(report.lifecycle.planning_objectives.mission_statement).toBeNull();
   expect(report.lifecycle.assistance.mission_specific_si_generated).toBe(false);
   expect(report.lifecycle.sustainability).toMatchObject({ perspective: 'ESG', esg_score: null, conformity_claim: false });
   expect(report.lifecycle.sustainability.document_paper_estimate).toMatchObject({ paper_factor_id: '19_506_5164_15_1', sides_per_sheet: 1 });
@@ -297,8 +299,9 @@ test('planner: nine-step journey completes a traceable dossier and coherent repo
   await expect(page.getByTestId('report-more')).toBeVisible();
   await page.getByTestId('report-more').evaluate((el) => { (el as HTMLDetailsElement).open = true; });
   await page.getByRole('button', { name: 'Modifica dossier di missione', exact: true }).click();
-  await expect(page.locator('#journey-decision')).toHaveValue('Compare terrain constraints before choosing a site.');
-  await expect(page.locator('#dossier-missionStatement')).toHaveValue('Measure lunar dust near the selected landing site.');
+  await expect(page.locator('#journey-decision')).toHaveCount(0);
+  await expect(page.locator('#dossier-missionStatement')).toHaveCount(0);
+  await expect(page.locator('#dossier-purpose')).toHaveValue('scientific');
   expect(bodies).toHaveLength(4);
   await page.getByRole('button', { name: 'Prepara il report' }).click();
   await navigation(page).getByRole('button', { name: /Energia/ }).click();
@@ -320,7 +323,7 @@ for (const prefixed of [false, true]) {
     await page.locator('#journey-resolution').selectOption('60');
     await navigation(page).getByRole('button', { name: /Simulazione/ }).click();
     await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-    await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 60_000 });
+    await openSimulationDetails(page);
     await page.getByRole('button', { name: 'Prepara il report' }).click();
     await page.getByRole('button', { name: 'Prepara il report' }).click();
     const downloadPromise = page.waitForEvent('download');
@@ -442,7 +445,7 @@ test('planner: two-date comparison evaluates the same site in different windows'
   await page.locator('#journey-start-b').fill('2027-04-17T00:00');
   await navigation(page).getByRole('button', { name: /Simulazione/ }).click();
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 60_000 });
+  await openSimulationDetails(page);
   expect(bodies.map((r) => r.site_id)).toEqual(['malapert-massif', 'malapert-massif']);
   expect(bodies.map((r) => r.start_utc)).toEqual(['2027-04-16T00:00:00Z', '2027-04-17T00:00:00Z']);
 });
@@ -518,7 +521,7 @@ test('planner: default lander follows the comparison timeline and wave stays emb
   test.setTimeout(60_000);
   await openComparison(page);
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 40_000 });
+  await openSimulationDetails(page);
   await expect(page.getByTestId('planner-scene-status')).toContainText('2027-04-16 00:00:00 UTC', { timeout: 20_000 });
   await page.locator('#journey-time').fill('1');
   await expect(page.getByTestId('planner-scene-status')).toContainText('2027-04-16 01:00:00 UTC');
@@ -534,7 +537,7 @@ test('planner: replay updates keep the rover camera and last WebGL frame, includ
   test.setTimeout(90_000);
   await openComparison(page);
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 40_000 });
+  await openSimulationDetails(page);
   const canvas = page.locator('#lander-stage canvas');
   await expect(page.getByTestId('planner-scene-status')).toContainText('2027-04-16 00:00:00 UTC', { timeout: 20_000 });
   await expect(canvas).toHaveAttribute('data-sky', 'nasa');
@@ -622,18 +625,18 @@ test('planner: period charts and communications scene appear without opening a p
 test('dashboard: shared calculation, timeline, stale warning and no extra mission calculation', async ({ page }) => {
   await openComparison(page);
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 30_000 });
+  await openSimulationDetails(page);
   const dashboardCalculations: string[] = [];
   page.on('request', (r) => { if (r.url().endsWith('/api/raven/evaluate')) dashboardCalculations.push(r.url()); });
   await page.getByRole('navigation', { name: 'Principale' }).getByRole('link', { name: 'Dashboard' }).click();
   await expect(page.getByTestId('mission-dashboard')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible();
+  await openSimulationDetails(page);
   await page.locator('#journey-time').fill('1');
   await expect(page.locator('label[for="journey-time"]')).toContainText('01:00:00 UTC');
   await expect(page.getByRole('slider', { name: 'Sole', exact: true })).toHaveValue('1');
   const archive = await page.evaluate(() => sessionStorage.getItem('hb.planner-journey.run.v1'));
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible();
+  await openSimulationDetails(page);
   expect(await page.evaluate(() => sessionStorage.getItem('hb.planner-journey.run.v1'))).toBe(archive);
   expect(dashboardCalculations).toEqual([]);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -673,7 +676,7 @@ test('dashboard history: two final calculations survive the tab, stay read-only 
   await page.locator('#journey-name').fill('Archive A');
   await navigation(page).getByRole('button', { name: /Simulazione/ }).click();
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 60_000 });
+  await openSimulationDetails(page);
   await expect(page.getByText('Calcolo definitivo salvato nella cronologia locale.')).toBeVisible();
   await navigation(page).getByRole('button', { name: /Missione/ }).click();
   await page.locator('#journey-name').fill('Archive B');
@@ -682,7 +685,7 @@ test('dashboard history: two final calculations survive the tab, stay read-only 
   await navigation(page).getByRole('button', { name: /Simulazione/ }).click();
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
   await expect(page.getByRole('button', { name: 'Simula i due scenari', exact: true })).toBeEnabled();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 60_000 });
+  await openSimulationDetails(page);
   const entries = await page.evaluate(() => JSON.parse(localStorage.getItem('hb.planner-journey.history.v1')!).entries as { id: string; name: string }[]);
   expect(entries.map((e) => e.name)).toEqual(['Archive B', 'Archive A']);
   const draft = await page.evaluate(() => sessionStorage.getItem('hb.planner-journey.v1'));

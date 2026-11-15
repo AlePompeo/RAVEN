@@ -24,7 +24,7 @@ STAMP="$ROOT/.install-stamp"
 PIDFILE="$ROOT/.server.pid"
 VENV="$ROOT/.venv"
 
-YES=0; NO_BROWSER=0; WITH_LLM=0; LLM_SMALL=""; SKIP_DATA=0; NO_START=0; REINSTALL=0; PORT="$DEFAULT_PORT"; PORT_GIVEN=0
+YES=0; NO_BROWSER=0; WITH_LLM=0; LLM_MODEL="default"; SKIP_DATA=0; NO_START=0; REINSTALL=0; PORT="$DEFAULT_PORT"; PORT_GIVEN=0
 STEP=0
 
 usage() {
@@ -41,6 +41,7 @@ Options:
   --skip-data     skip the NAIF ephemeris kernels and the lunar terrain (otherwise mandatory)
   --with-llm      also download the local language model of RAVEN SI (llama.cpp + Ministral 3B, about 2.2 GB, Linux only)
   --with-llm-small  the same with a smaller model (Granite 1B, about 1 GB; for machines with under 4 GB of free memory)
+  --llm-model MODEL  install IBM Granite instead: 350m, 1b or 3b (Linux only)
   --no-start      install only, do not start the server
   --reinstall     discard .venv, the build stamps and the frontend build, then redo them
   --help, -h      show this help
@@ -54,7 +55,11 @@ while [ $# -gt 0 ]; do
     --yes|-y) YES=1 ;;
     --no-browser) NO_BROWSER=1 ;;
     --with-llm) WITH_LLM=1 ;;
-    --with-llm-small) WITH_LLM=1; LLM_SMALL="--small" ;;
+    --with-llm-small) WITH_LLM=1; LLM_MODEL="1b" ;;
+    --llm-model)
+      [ $# -ge 2 ] || { echo "ERROR: --llm-model needs 350m, 1b or 3b" >&2; exit 2; }
+      LLM_MODEL="$2"; WITH_LLM=1; shift ;;
+    --llm-model=*) LLM_MODEL="${1#--llm-model=}"; WITH_LLM=1 ;;
     --skip-data) SKIP_DATA=1 ;;
     --no-start) NO_START=1 ;;
     --reinstall) REINSTALL=1 ;;
@@ -67,6 +72,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+case "$LLM_MODEL" in default|350m|1b|3b) ;; *) echo "ERROR: --llm-model must be 350m, 1b or 3b" >&2; exit 2 ;; esac
 case "$PORT" in
   ''|*[!0-9]*) echo "ERROR: --port must be a number between 1 and 65535" >&2; exit 2 ;;
 esac
@@ -502,7 +508,7 @@ else
 fi
 start_data_jobs
 llm_job() {
-  "$VPY" -I "$ROOT/scripts/install_local_llm.py" $LLM_SMALL
+  "$VPY" -I "$ROOT/scripts/install_local_llm.py" --model "$LLM_MODEL"
 }
 [ "$WITH_LLM" = 1 ] && job_start llm llm_job
 

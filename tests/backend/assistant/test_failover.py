@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Failover per richiesta e circuit breaker: provider scriptati e orologio finto (nessuno sleep)."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -219,6 +220,26 @@ async def test_time_budget_stops_further_attempts() -> None:
     ev = await ask(svc)
     assert b.calls == 0 and ev[0][1]["provider"] == "assistant-extractive"
     assert "all_candidates_failed" in warn(ev)
+
+
+async def test_failover_budget_only_limits_time_to_first_token() -> None:
+    class SlowStream:
+        async def stream(self, messages: list[dict[str, str]]) -> AsyncIterator[str]:
+            yield f"Risposta [{CID}]"
+            await asyncio.sleep(0.08)
+            yield " completata."
+
+    svc = AssistantService(
+        KnowledgeBase(ROOT),
+        make_provider=lambda _: SlowStream(),
+        provider_id="test",
+        timeout_for=lambda _: 1.0,
+        llm_allowed=lambda _: True,
+        failover_budget_s=0.04,
+    )
+    events = await ask(svc)
+    assert answer_of(events).endswith("completata.")
+    assert "llm_interrupted" not in warn(events)
 
 
 async def test_external_flag_and_forced_override() -> None:

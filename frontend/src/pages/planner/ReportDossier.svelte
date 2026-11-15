@@ -12,15 +12,15 @@
   import MissionClassSlider from './MissionClassSlider.svelte';
   import type { MissionObjectives } from './objectives';
   import type { ReportMode } from './reportSections';
-  import { SCENARIO_SLOT, type DossierProgress } from './reportMode';
+  import { SCENARIO_SLOT } from './reportMode';
   let { planning = $bindable(), budget, carbon = null, busy, error, siBusy, siError, generate, clearSi,
-    allowExternal = $bindable(false), cloudAvailable = false, mode, setMode, objectives, editMission, progress, canOpenReport, openReport,
+    allowExternal = $bindable(false), cloudAvailable = false, mode, setMode, objectives, editMission, canOpenReport, openReport,
     scenarioSlot }: {
     planning: ReportPlanning; budget: BudgetEstimate | null; carbon?: CarbonEstimate | null; busy: boolean; error: string | null;
     siBusy: boolean; siError: string | null; generate: () => void; clearSi: () => void;
     allowExternal?: boolean; cloudAvailable?: boolean;
     mode: ReportMode; setMode: (mode: ReportMode) => void; objectives: MissionObjectives; editMission: () => void;
-    progress: DossierProgress; canOpenReport: boolean; openReport: () => void;
+    canOpenReport: boolean; openReport: () => void;
     /** Extension slot for the scenario slider (a later job). Nothing is rendered until a snippet is passed. */
     scenarioSlot?: Snippet;
   } = $props();
@@ -28,8 +28,6 @@
 
 <div class="dossier" data-testid="report-dossier" data-mode={mode}>
   <ReportModeSwitch {mode} onchange={setMode} />
-  {#if mode === 'expert'}<p>{t('dossier.intro')}</p>{/if}
-  <p role="status" data-testid="dossier-progress"><strong>{t('prog.title')}.</strong> {t('prog.text', { ...progress })}</p>
   {#if busy}<p role="status">{t('dossier.calculating')}</p>{/if}
   {#if error}<p role="alert">{error}</p>{/if}
 

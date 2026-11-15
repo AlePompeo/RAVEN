@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { pageCtx } from '../../shell/pageContext.svelte';
+import { lang } from '../../i18n/i18n.svelte';
 import { sanitizeParams, type Level, type PageContext } from './assistant';
 import { Session } from './session.svelte';
 
@@ -19,7 +20,7 @@ export function conversationContext(): PageContext {
 export const conversationSession = new Session({
   getContext: conversationContext,
   getLevel: () => conversation.level,
-  getLang: () => conversation.language === 'auto' ? undefined : conversation.language,
+  getLang: () => conversation.language === 'auto' ? lang.current : conversation.language,
   getAllowExternal: () => conversation.allowExternal,
   getProvider: () => conversation.allowExternal && conversation.cloudAvailable ? 'groq' : undefined,
 });

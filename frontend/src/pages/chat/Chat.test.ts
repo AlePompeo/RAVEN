@@ -3,10 +3,14 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/svelte';
 import Chat from './Chat.svelte';
 import { resetConversation } from './conversation.svelte';
+import { useCatalog } from '../../i18n/i18n.svelte';
+import itCatalog from '../../i18n/it.json';
+import enPages from '../../i18n/en.pages.json';
 
 afterEach(() => {
   cleanup();
   resetConversation();
+  useCatalog('it', itCatalog, enPages);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   document.body.innerHTML = '';
@@ -146,7 +150,7 @@ describe('Chat: conversazione', () => {
     const input = await ask('Come si calcola la perdita?');
     await waitFor(() => expect(screen.getByTestId('assistant-status').textContent).toContain('Risposta pronta, 1 fonte.'));
     const chat = calls.find((c) => c.url === '/api/assistant/chat')!;
-    expect(JSON.parse(chat.init!.body as string)).toEqual({ messages: [{ role: 'user', content: 'Come si calcola la perdita?' }], level: 'intermedio', page_context: { page_id: 'chat' } });
+    expect(JSON.parse(chat.init!.body as string)).toEqual({ messages: [{ role: 'user', content: 'Come si calcola la perdita?' }], level: 'intermedio', lang: 'it', page_context: { page_id: 'chat' } });
     expect(screen.getByText('210 dB').tagName).toBe('STRONG');
     const chips = screen.getAllByRole('button', { name: /^Fonte fspl:/ });
     expect(chips).toHaveLength(1);
@@ -158,6 +162,29 @@ describe('Chat: conversazione', () => {
     expect(screen.getAllByRole('status')).toHaveLength(1);
     expect(setItem).not.toHaveBeenCalled();
     expect(window.localStorage.length + window.sessionStorage.length).toBe(0);
+  });
+
+  it('uses the current site language unless a chat language is selected', async () => {
+    const calls = stubNet();
+    useCatalog('en', {}, enPages);
+    render(Chat, { embedded: true });
+    const send = async (text: string) => {
+      const input = screen.getByRole('textbox') as HTMLTextAreaElement;
+      await fireEvent.input(input, { target: { value: text } });
+      await fireEvent.submit(input.form as HTMLFormElement);
+      await waitFor(() => expect(input.value).toBe(''));
+    };
+    await send('What is link margin?');
+    let chatCalls = calls.filter((call) => call.url === '/api/assistant/chat');
+    expect(JSON.parse(chatCalls.at(-1)!.init!.body as string).lang).toBe('en');
+    useCatalog('it', itCatalog, enPages);
+    await send('Che cos’è il margine?');
+    chatCalls = calls.filter((call) => call.url === '/api/assistant/chat');
+    expect(JSON.parse(chatCalls.at(-1)!.init!.body as string).lang).toBe('it');
+    await fireEvent.change(screen.getByLabelText('Lingua'), { target: { value: 'en' } });
+    await send('Spiega il margine');
+    chatCalls = calls.filter((call) => call.url === '/api/assistant/chat');
+    expect(JSON.parse(chatCalls.at(-1)!.init!.body as string).lang).toBe('en');
   });
 
   it('il testo in streaming non finisce nella regione live prima della fine', async () => {
@@ -204,6 +231,16 @@ describe('Chat: conversazione', () => {
     await ask('ciao');
     const list = await screen.findByRole('list', { name: 'Avvisi su questa risposta' });
     expect(list.textContent).toMatch(/Il modello richiesto non è disponibile/);
+  });
+
+  it('warns explicitly when a model answer has no citations', async () => {
+    stubNet({ chat: async () => sseRes(META + ev('token', { token: 'answer' }) + ev('warning', { codes: ['no_citation'], messages: [] }) + ev('done', { refused: false, followups: [], chars: 6 })) });
+    useCatalog('en', {}, enPages);
+    render(Chat);
+    const input = screen.getByRole('textbox') as HTMLTextAreaElement;
+    await fireEvent.input(input, { target: { value: 'Question' } });
+    await fireEvent.submit(input.form as HTMLFormElement);
+    expect((await screen.findByText(/does not cite the retrieved sources/)).textContent).toMatch(/may be incorrect/);
   });
 
   it('errore del server: un solo alert che dice cosa fare e il testo resta nel campo', async () => {

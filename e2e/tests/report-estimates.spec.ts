@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from '@playwright/test';
+import { openSimulationDetails } from './plannerHelpers';
 import { execFileSync } from 'node:child_process';
 
 const next = (page: import('@playwright/test').Page) => page.getByRole('button', { name: 'Continua', exact: true }).click();
@@ -19,7 +20,7 @@ test('report: RAVEN estimates appear after the run, an accepted one is boxed in 
   await next(page);
   await expect(page.getByTestId('planner-scene-status')).toBeVisible({ timeout: 20_000 });
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 60_000 });
+  await openSimulationDetails(page);
   await page.getByRole('button', { name: 'Prepara il report' }).click();
   await expect(page.getByRole('heading', { name: 'Dossier di missione', exact: true })).toBeVisible();
 
@@ -88,7 +89,7 @@ test('report: the PDF waits for the written comparison of the two sites (a local
   await next(page);
   await expect(page.getByTestId('planner-scene-status')).toBeVisible({ timeout: 20_000 });
   await page.getByRole('button', { name: 'Simula i due scenari' }).click();
-  await expect(page.getByRole('heading', { name: 'Timeline della missione' })).toBeVisible({ timeout: 60_000 });
+  await openSimulationDetails(page);
   await page.getByRole('button', { name: 'Prepara il report' }).click();
   await expect(page.getByRole('heading', { name: 'Dossier di missione', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Prepara il report' }).click();

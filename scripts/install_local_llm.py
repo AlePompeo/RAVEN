@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Install the local language model of RAVEN SI into build/llm (opt-in: ./install.sh --with-llm, or run this script).
+"""Install an optional local RAVEN SI model into build/llm.
 
 Downloads two pinned files over HTTPS, checks size and SHA-256 before using them, and writes build/llm/manifest.json:
   * llama.cpp b12110 (MIT), the server binary for Linux x86_64 or aarch64;
-  * Ministral 3 3B Instruct 2512, Q4_K_M quantisation (Apache-2.0, Mistral AI), 2.1 GB; with --small, Granite 4.0-h 1B Q4_K_M
-    (Apache-2.0, IBM), 0.9 GB, for machines with little memory.
+  * Ministral 3 3B or IBM Granite 4.0 (350M, 1B or 3B), Q4_K_M quantisation.
 Linux only. Nothing outside build/llm is touched. Attribution notices of both are in THIRD_PARTY_NOTICES.md, not in the README.
 """
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
@@ -43,12 +43,26 @@ MODELS = {
         "ministral-3-3b-instruct-2512-q4_k_m",
         4096,
     ),
-    "small": (  # for machines with little memory: measured 79 % of the fields instead of 91 %, about 1.7 GB instead of 2.8 GB
+    "350m": (
+        "https://huggingface.co/ibm-granite/granite-4.0-h-350m-GGUF/resolve/main/granite-4.0-h-350m-Q4_K_M.gguf",
+        222_662_560,
+        "0a8d6a7373602fadfba274a640ba784b86cc6847f1c67f1b0a90fa2ec266b7fb",
+        "granite-4.0-h-350m-q4_k_m",
+        1536,
+    ),
+    "1b": (
         "https://huggingface.co/ibm-granite/granite-4.0-h-1b-GGUF/resolve/main/granite-4.0-h-1b-Q4_K_M.gguf",
         901_162_208,
         "da3d737121a96f3c9a316685212376257a7f167b74380855666dd488d6af3bcb",
         "granite-4.0-h-1b-q4_k_m",
         2560,
+    ),
+    "3b": (
+        "https://huggingface.co/ibm-granite/granite-4.0-h-micro-GGUF/resolve/main/granite-4.0-h-micro-Q4_K_M.gguf",
+        1_942_564_512,
+        "bcc78b9b25450101d1ad90d4b9a264e1bac892f534dfb76066f4eec792fdf023",
+        "granite-4.0-h-micro-q4_k_m",
+        4096,
     ),
 }
 
@@ -75,7 +89,12 @@ def fetch(url: str, size: int, sha: str, to: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
-    kind = "small" if "--small" in argv else "default"
+    parser = argparse.ArgumentParser(description=__doc__)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--model", choices=MODELS, default="default")
+    group.add_argument("--small", action="store_true", help="legacy alias for --model 1b")
+    args = parser.parse_args(argv)
+    kind = "1b" if args.small else args.model
     murl, msize, msha, mname, mfree = MODELS[kind]
     if sys.platform != "linux":
         print("the local model is supported on Linux only", file=sys.stderr)

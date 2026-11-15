@@ -48,10 +48,12 @@
   import { modeNow } from '../../shell/modeState.svelte';
   import ReportModeSwitch from './ReportModeSwitch.svelte';
   import MissionShiftSummary from './MissionShiftSummary.svelte';
-  import { dossierProgress, effectiveReportMode } from './reportMode';
+  import { effectiveReportMode } from './reportMode';
   import ReliabilityInputs from './ReliabilityInputs.svelte';
   import ReliabilityResults from './ReliabilityResults.svelte';
   import { reliabilityReady, reliabilityRequest, isReliabilityResult, type ReliabilityResult } from './reliability';
+  import MissionRecovery from './MissionRecovery.svelte';
+  import { recoveryInput, type RecoveryOption } from './recovery';
 
   const store = scenarioStore();
   const initial = store.reload();
@@ -666,6 +668,13 @@
       historyMessage = archived.ok ? 'history.saved' : archived.error;
     } catch { historyMessage = 'history.writeError'; }
   }
+  async function applyRecovery(option: RecoveryOption, originalSiteId: string) {
+    if (!draft || running) return;
+    draft.input = recoveryInput(draft.input, option, originalSiteId);
+    missionShiftDays = 0;
+    await tick();
+    await calculate();
+  }
   async function loadHorizon() {
     if (!draft || !activeId || draft.radio.mast === null) return;
     horizonController?.abort();
@@ -768,7 +777,7 @@
     <div class="workspace">
       <section class="step-body" aria-busy={running} aria-labelledby="journey-step-heading">
         <header class="step-heading"><p class="eyebrow">{t('journey.stepOf', { step: step + 1, total: JOURNEY_STEPS.length })}</p>
-          <h2 id="journey-step-heading" tabindex="-1" bind:this={heading}>{t(stepTitles[step]!)}</h2><p>{t(stepDescriptions[step]!)}</p></header>
+          <h2 id="journey-step-heading" tabindex="-1" bind:this={heading}>{t(stepTitles[step]!)}</h2>{#if step !== 7}<p>{t(stepDescriptions[step]!)}</p>{/if}</header>
         {#if step === 2 || step === 3}
           <section class="visual-stage" aria-label={t('journey.graphs')}>
             <h3>{t(step === 2 ? 'journey.periodVisual' : 'journey.energyVisual')}</h3>
@@ -910,7 +919,9 @@
         {:else if step === 4}
           {#if draft.planning?.reliability}<ReliabilityInputs bind:profile={draft.planning.reliability} />{/if}
           {#if draft.planning?.reliability?.enabled}
-            {#if run && !stale && shownReliability}<ReliabilityResults result={shownReliability} />
+            {#if run && !stale && shownReliability}<details class="result-disclosure" data-testid="reliability-disclosure">
+              <summary>{t('rel.title')}</summary><ReliabilityResults result={shownReliability} />
+            </details>
             {:else if !reliabilityIssue && !reliabilityBusy && !reliabilityError}<p class="note" role="status">{t('journey.reliabilityPending')}</p>{/if}
           {/if}
         {:else if step === 5}
@@ -963,13 +974,22 @@
                 <p class="note">{t('journey.sceneNote')}</p>
               {/if}
             {/if}
-            <div class:previous={stale}>
-              <JourneyResults {run} objectives={stale ? run.config.objectives : draft.objectives} bind:scenario bind:index />
-            </div>
-            {#if !stale}
-              <MissionShiftSummary evaluations={run.evaluations} baseline={shiftBaseline} shiftDays={missionShiftDays}
-                tr={(key, params) => t(`journey.shift.${key}` as MessageKey, params)}
-                fmt={(value, digits = 1) => formatNumber(value, { minimumFractionDigits: digits, maximumFractionDigits: digits })} />
+            <details class="result-disclosure" data-testid="simulation-disclosure">
+              <summary>{t('stats.missionTitle')}</summary>
+              <div class:previous={stale}>
+                <JourneyResults {run} objectives={stale ? run.config.objectives : draft.objectives} bind:scenario bind:index />
+              </div>
+              {#if !stale}
+                <MissionShiftSummary evaluations={run.evaluations} baseline={shiftBaseline} shiftDays={missionShiftDays}
+                  tr={(key, params) => t(`journey.shift.${key}` as MessageKey, params)}
+                  fmt={(value, digits = 1) => formatNumber(value, { minimumFractionDigits: digits, maximumFractionDigits: digits })} />
+              {/if}
+            </details>
+            {#if !stale && !running && active && run.requests[scenario]}
+              {#key `${run.createdAt}:${scenario}`}
+                <MissionRecovery baseline={active} request={run.requests[scenario]!} sites={catalog} range={ephemerisRange}
+                  onapply={(option) => applyRecovery(option, active.site.id)} />
+              {/key}
             {/if}
             {#if !stale && plan?.reliability?.enabled}<p class="note pointer">{t('journey.reliabilityPointer')} <button type="button" onclick={() => go(4)}>{t('journey.openReliability')}</button></p>{/if}
           {/if}
@@ -978,11 +998,9 @@
           <ReportDossier bind:planning={draft.planning} budget={shownBudget} carbon={shownCarbon} busy={budgetBusy}
             bind:allowExternal={reportAllowExternal} cloudAvailable={reportCloudAvailable}
             mode={reportMode} setMode={setReportMode} objectives={draft.objectives} editMission={() => go(0)}
-            progress={dossierProgress(draft, run.evaluations, shownBudget, shownCarbon)}
             canOpenReport={!(budgetBusy || dossierIssue || budgetError || reliabilityBlocked)} openReport={() => go(8)}
             error={budgetError ? t(budgetError) : null} {siBusy} siError={siError ? t(siError) : null}
             generate={generateNarrative} clearSi={() => { if (draft?.planning) delete draft.planning.si; }} />
-          <div class="decision-field"><label for="journey-decision">{t('planner.decisionPrompt')}</label><textarea id="journey-decision" maxlength="2000" rows="3" bind:value={draft.decision}></textarea></div>
           {#if reportCloudStatusError}<p role="alert">{t('si.unreachable')}</p>{/if}
         {:else if step === 8 && run && !stale}
           {@const reportRun = run}
@@ -1040,11 +1058,11 @@
   .step-heading { margin-bottom: 2rem; } .step-heading p:last-child { color: var(--c-muted); max-width: 60ch; line-height: 1.6; }
   .step-heading h2 { scroll-margin-top: 7rem; }
   label { display: block; font-weight: 600; margin-bottom: .5rem; }
-  input:not([type='checkbox']):not([type='range']), select, textarea { width: 100%; min-width: 0; box-sizing: border-box; min-height: 46px; background: #081426; color: #e4effa; border: 1px solid #7b9cb36e; border-radius: .65rem; padding: .7rem; }
+  input:not([type='checkbox']):not([type='range']), select { width: 100%; min-width: 0; box-sizing: border-box; min-height: 46px; background: #081426; color: #e4effa; border: 1px solid #7b9cb36e; border-radius: .65rem; padding: .7rem; }
   input[type='checkbox'] { min-width: 1.2rem; min-height: 1.2rem; accent-color: #9bdfff; } .check { display: flex; gap: .6rem; align-items: center; margin-block: 1rem; }
   button { min-height: 44px; padding: .7rem 1rem; border: 1px solid #7693aa69; border-radius: .65rem; background: #11263c; color: #e8f4ff; cursor: pointer; }
   button:disabled { opacity: .45; cursor: not-allowed; } button[aria-pressed='true'] { border-color: #9bdfff; background: #20425b; }
-  button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 2px solid #b1e6ff; outline-offset: 3px; }
+  button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid #b1e6ff; outline-offset: 3px; }
   .primary { background: #b5e5fb; color: #081322; font-weight: 700; border-color: transparent; }
   fieldset { border: 0; padding: 0; margin: 1.5rem 0; } legend { margin-bottom: .8rem; font-weight: 600; }
   .choices { display: flex; gap: .7rem; flex-wrap: wrap; margin-block: .75rem; } .choice { flex: 1; min-width: 9rem; text-align: start; }
@@ -1061,7 +1079,9 @@
   .warning { padding: .85rem; background: #e8ab3c12; border-inline-start: 3px solid #d6ba7c; line-height: 1.5; }
   .step-actions { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid #7499b64d; }
   .more-menu summary { min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; padding-inline: .5rem; } .more-items { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .5rem; }
-  .decision-field { margin-block: 1rem; display: grid; gap: .4rem; } .report-options { margin-block: .5rem; }
+  .result-disclosure { margin-block: 1.5rem; padding: 1rem; border: 1px solid #7499b64d; border-radius: .8rem; }
+  .result-disclosure > summary { min-height: 44px; cursor: pointer; font-weight: 600; align-content: center; }
+  .report-options { margin-block: .5rem; }
   .report-bar, .replay { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-block: 1rem; } .replay select { width: auto; }
   .mission-shift-controls { display: flex; flex-wrap: wrap; gap: .65rem; margin-block: 1rem; }
   .report-preview { --c-muted: #526170; margin-top: 2rem; padding: clamp(1rem, 3vw, 2rem); color: #172a3a; background: #fff; color-scheme: light; border: 1px solid #dce4ea; border-radius: .25rem; box-shadow: 0 12px 40px #00000020; overflow-wrap: anywhere; } .previous { opacity: .7; }

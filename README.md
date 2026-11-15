@@ -13,29 +13,29 @@
 
 ---
 
-## 🌟 Executive Overview & Hackathon Challenge
+## 🌟 Overview & Hackathon Challenge
 
-**RAVEN (Rapid Assessment & Visual Exploration of Lunar Navigation)** is a high-fidelity, intuitive mission planning and scientific decision-support web platform engineered for the **NASA Space Apps Challenge 2026** under the challenge:
+**RAVEN (Rapid Assessment & Visual Exploration of Lunar Navigation)** is a mission-planning and scientific decision-support web platform built for the following **NASA Space Apps Challenge 2026** challenge:
 
 > **[Lunar Landing Site Navigator](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/)**  
 > *Event:* 2026 NASA Space Apps Challenge · *Difficulty:* Advanced / Intermediate  
 > *Subjects:* Human Exploration, Moon, Software, Space Exploration
 
-### 🎯 The Challenge: The South Pole Conundrum
+### 🎯 The Challenge: The Lunar South Pole
 
-The Moon’s South Pole has emerged as the frontier of human and robotic exploration (NASA Artemis, Commercial Lunar Payload Services — CLPS, ESA, and international initiatives) due to its reservoirs of volatile water ice hidden in **Permanently Shadowed Regions (PSRs)**. However, operating at the lunar south pole presents extreme physical and operational bottlenecks:
+The Moon’s south pole is a focus of human and robotic exploration, including NASA Artemis, Commercial Lunar Payload Services (CLPS), ESA, and other international initiatives. Its **Permanently Shadowed Regions (PSRs)** contain reservoirs of water ice, but operating there presents physical and operational challenges:
 
-1. **Grazing Solar Dynamics:** The solar elevation angle oscillates merely between approximately $-1.5^\circ$ and $+1.5^\circ$ relative to the mean sphere. Crater rims, massifs, and ridges cast colossal, rapidly moving dynamic shadows across potential landing zones. A difference of a few meters in landing location or a few hours in departure date can mean the difference between abundant solar power and catastrophic freezing darkness.
-2. **Direct-to-Earth (DTE) Horizon Blockage:** Because the Earth also hovers at a very low elevation ($\sim 1^\circ$ above the horizon), topographical elevations create knife-edge obstacles. Pure line-of-sight geometric visibility is insufficient: electromagnetic waves experience **diffraction, terrain grazing losses, and multipath degradation**.
-3. **The Agile Planning Gap:** Current reference tools — such as *NASA QuickMap*, *Moon Trek*, and the *JPL Horizons System* — provide rich technical datasets but are fragmented across separate interfaces with steep learning curves. Mission timelines regularly face delays or contingency recalculations; engineers, planners, and educators need to evaluate alternatives (e.g. *Shackleton Crater* vs. *Malapert Massif* vs. *Haworth*) instantaneously without weeks of manual cross-referencing.
+1. **Grazing solar angles:** The solar elevation angle oscillates between approximately $-1.5^\circ$ and $+1.5^\circ$ relative to the mean sphere. Crater rims, massifs, and ridges cast moving shadows across potential landing zones. A few meters in landing location or a few hours in departure date can make the difference between abundant solar power and freezing darkness.
+2. **Direct-to-Earth (DTE) horizon blockage:** Earth also sits at a low elevation ($\sim 1^\circ$ above the horizon), so terrain can create knife-edge obstacles. Geometric line of sight alone is insufficient: electromagnetic waves experience **diffraction, terrain grazing losses, and multipath degradation**.
+3. **Planning alternatives:** Reference tools such as *NASA QuickMap*, *Moon Trek*, and the *JPL Horizons System* provide extensive technical datasets, but use separate interfaces with steep learning curves. When a mission is delayed or needs contingency planning, engineers, planners, and educators need a quick way to evaluate alternatives (e.g. *Shackleton Crater* vs. *Malapert Massif* vs. *Haworth*) without weeks of manual cross-referencing.
 
-**RAVEN bridges this gap:** An intuitive, unified, publication-grade web application translating complex ephemeris and LOLA topographic data into clear, comparable visualizations, quantitative link margins, and automated mission feasibility verdicts.
+**RAVEN brings these calculations together** in a web application that turns ephemeris and LOLA topographic data into comparable visualizations, quantitative link margins, and automated mission feasibility verdicts.
 
 ---
 
 ## 🏛️ System Architecture
 
-RAVEN is designed as a **Modular Hexagonal Monolith (*Ports & Adapters*)**. The architecture enforces zero coupling between the pure domain physics and external infrastructure, ensuring that any component can operate locally, in an isolated container, or as an independent service without altering core logic.
+RAVEN is designed as a **modular hexagonal monolith (*Ports & Adapters*)**. Its architecture separates the domain physics from external infrastructure, so components can operate locally, in an isolated container, or as independent services without altering the core logic.
 
 ```mermaid
 flowchart TB
@@ -95,15 +95,15 @@ flowchart TB
 ## 🔬 Core Architectural Pillars
 
 ### 1. 🌑 RAVEN (The Core Platform & Experience)
-* **Modular Monolith & Strict Boundary Enforcement:** Guided by `import-linter` with four verified contracts: `backend.core` never imports from API, adapters, ML, or network layers.
+* **Modular Monolith & Boundary Enforcement:** `import-linter` checks four contracts: `backend.core` never imports from API, adapters, ML, or network layers.
 * **Dual-Experience Modes:**
   * **Learning Mode (Default):** Plain-language scientific narrative, visual cues, accessible explanations for students, enthusiasts, and educators.
   * **Advanced Mode:** Unfiltered engineering telemetry, link budget breakdowns ($E_b/N_0$, EIRP, $G/T$, free space path loss), raw parameter tables, and CSV/JSON exports.
-* **Universal Rendering Engine (`ViewportPort`):** Combines an ultra-smooth **Three.js** 3D WebGL simulator with a **100% Canvas 2D fallback**. The platform runs identically on high-end workstations, smartphones, low-power laptops, and Smart TVs without WebGL support.
-* **Hermetic & Accessible:** Built to strictly adhere to **WCAG 2.2 AA**, complete keyboard navigation, D-pad TV mode, and zero non-essential cookies.
+* **Universal Rendering Engine (`ViewportPort`):** Combines a **Three.js** 3D WebGL simulator with a **Canvas 2D fallback**. The platform runs on high-end workstations, smartphones, low-power laptops, and Smart TVs without WebGL support.
+* **Hermetic & Accessible:** Built for **WCAG 2.2 AA**, with keyboard navigation, D-pad TV mode, and no non-essential cookies.
 
 ### 2. ⚙️ RAVEN Engine (Celestial & Physics Computing Engine)
-The mathematical backbone of RAVEN executes an uncompromised 8-stage physical pipeline:
+RAVEN's physical model runs through eight stages:
 * **Stage S0 — Geometry & Site Setup:** Precise lunar IAU coordinates covering 51 pre-computed polar landing sites, plus dynamic ingestion of arbitrary custom coordinates.
 * **Stage S1 — Ephemerides:** Milliradian-accurate positioning of the Sun, Earth, and Moon using NASA NAIF / JPL DE440 kernels, including Earth's libration oscillations.
 * **Stage S2 — Topography & Horizons:** 360-degree local horizon azimuth-elevation profiles computed directly from high-resolution NASA Lunar Orbiter Laser Altimeter (**LOLA DEM**) datasets (20 m to 240 m resolution).
@@ -201,13 +201,13 @@ timeline
 
 * **Zero Cloud Expenditure ($0/mo SaaS Footprint):** By architecting RAVEN with lightweight, quantized local models (Granite 1B / 3B) and an in-process FastAPI engine, the platform requires no recurring cloud API subscriptions, no external token billing, and no costly remote server clusters.
 * **Green Computing & Low-Power Hardware:** Designed to run comfortably on standard commercial off-the-shelf (COTS) consumer laptops and edge devices with $\le 4$ CPU cores and $\le 4$ GB of available RAM. Automatic process unloading ensures zero passive energy waste.
-* **Mission De-risking for CLPS & Explorers:** Pre-Phase A and Phase A lunar mission design cycles typically cost hundreds of thousands of dollars in engineering person-hours. RAVEN compresses site feasibility trade-offs from weeks into minutes, providing immediate scientific feedback and preventing costly late-stage mission redesigns.
+* **Mission De-risking for CLPS & Explorers:** Pre-Phase A and Phase A lunar mission design cycles typically cost hundreds of thousands of dollars in engineering person-hours. RAVEN reduces site feasibility trade-offs from weeks to minutes, providing scientific feedback and helping prevent costly late-stage mission redesigns.
 
 ---
 
 ## 👥 Project Team & Contacts
 
-*This project was developed for the NASA Space Apps Challenge 2026. For detailed contact information, team credentials, and clickable LinkedIn profiles, visit the in-app **Contacts** view (`/contacts`).*
+*This project was developed for the NASA Space Apps Challenge 2026. For contact information, team credentials, and LinkedIn profiles, visit the in-app **Contacts** view (`/contacts`).*
 
 <div align="center">
 
@@ -223,7 +223,7 @@ timeline
 ## 🚀 Quickstart & Installation
 
 ### Option 1: Automated Local Installation (Recommended)
-RAVEN includes a self-contained installation script that inspects prerequisites, sets up virtual environments, downloads verified ephemerides and LOLA DEM tiles in parallel, and starts the platform:
+RAVEN includes an installation script that checks prerequisites, sets up virtual environments, downloads verified ephemerides and LOLA DEM tiles in parallel, and starts the platform:
 
 ```bash
 # Clone the repository
@@ -232,13 +232,19 @@ cd RAVEN
 
 # Run the automated installer (no root or sudo required)
 ./install.sh
+
+# Optionally install one local IBM Granite model (Linux):
+./install.sh --yes --llm-model 1b  # choices: 350m, 1b, 3b
 ```
 
 *Options for `./install.sh`:*
 * `--yes`: Non-interactive mode (accepts default downloads).
 * `--no-browser`: Do not auto-launch default web browser.
 * `--port <PORT>`: Bind to a specific HTTP port (default: `8000`).
-* `--with-llm`: Download and configure local offline LLM (`llama.cpp` + Granite SLM).
+* `--llm-model 350m|1b|3b`: Download the selected IBM Granite model and `llama.cpp` (Linux only).
+* `--with-llm`: Install the existing default, Ministral 3B; `--with-llm-small` remains an alias for Granite 1B.
+  The model is optional and its answers are not guaranteed to be accurate.
+  In a small real test, Granite 350M gave incorrect, uncited explanations; check the sources and prefer a larger model when possible.
 
 To stop the background server:
 ```bash
@@ -257,7 +263,7 @@ Then navigate to `http://127.0.0.1:8000` in your web browser.
 
 ## 🧪 Verification & Development
 
-RAVEN enforces strict engineering rigor with comprehensive automated test suites:
+RAVEN includes automated tests and checks for development:
 
 ```bash
 # Backend pytest suite (over 1500 unit and integration tests)
@@ -311,5 +317,5 @@ cd frontend && npm run build
 ---
 
 <div align="center">
-  <sub>Engineered with precision for the NASA Space Apps Challenge 2026. Distributed under the Apache-2.0 License.</sub>
+  <sub>Built for the NASA Space Apps Challenge 2026. Distributed under the Apache-2.0 License.</sub>
 </div>

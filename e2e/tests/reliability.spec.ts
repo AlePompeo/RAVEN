@@ -38,6 +38,11 @@ for (const english of [false, true]) {
     const result = await (await response).json();
     await expect(page.getByTestId('reliability-results')).toHaveCount(0);
     await nav().getByRole('button', { name: english ? /Reliability/ : /Affidabilità/ }).click();
+    const reliabilityDetails = page.getByTestId('reliability-disclosure');
+    await expect(reliabilityDetails).toBeVisible();
+    await expect(reliabilityDetails).not.toHaveAttribute('open', '');
+    await expect(page.getByTestId('reliability-results')).toBeHidden();
+    await reliabilityDetails.locator('summary').click();
     expect(result.model).toBe('raven-reliability-1');
     const scenario = result.scenarios[0];
     expect(scenario.duration_hours).toBe(3);

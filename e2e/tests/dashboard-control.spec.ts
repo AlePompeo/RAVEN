@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from '@playwright/test';
+import { openSimulationDetails } from './plannerHelpers';
 import AxeBuilder from '@axe-core/playwright';
 
 // Mission control: the sessions panel, the Lunar Landing Sites Navigator with overlays, the key numbers and the charts.
@@ -47,7 +48,7 @@ test('dashboard after a simulation: key numbers for A and B, replay, rover view,
   await page.locator('#journey-days').fill('7');
   await page.getByRole('navigation', { name: 'Mission planning steps' }).getByRole('button', { name: /Simulation/ }).click();
   await page.getByRole('button', { name: 'Simulate both scenarios', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Mission timeline' })).toBeVisible({ timeout: 90_000 });
+  await openSimulationDetails(page);
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Dashboard' }).click();
   const kpi = page.getByTestId('dashboard-kpi');
   await expect(kpi.locator('article[data-scenario="A"]')).toContainText('Malapert', { timeout: 30_000 });
