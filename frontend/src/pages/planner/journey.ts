@@ -144,13 +144,20 @@ export function earthVisibility(e: RavenEvaluation): (boolean | null)[] {
   }) ?? [];
 }
 
-export function firstChange(values: readonly (boolean | null)[], index: number): number | null {
-  if (values[index] == null) return null;
+export type NextChange = { kind: 'change'; index: number } | { kind: 'unknown' } | { kind: 'end' };
+
+export function nextChange(values: readonly (boolean | null)[], index: number): NextChange {
+  if (values[index] == null) return { kind: 'unknown' };
   for (let i = index + 1; i < values.length; i++) {
-    if (values[i] === null) return null;
-    if (values[i] !== values[index]) return i;
+    if (values[i] === null) return { kind: 'unknown' };
+    if (values[i] !== values[index]) return { kind: 'change', index: i };
   }
-  return null;
+  return { kind: 'end' };
+}
+
+export function firstChange(values: readonly (boolean | null)[], index: number): number | null {
+  const next = nextChange(values, index);
+  return next.kind === 'change' ? next.index : null;
 }
 
 export function readDraft(raw: string | null, rows: readonly ParamRow[], ids: readonly string[], definitions = customSites.get()): JourneyDraft | null {

@@ -26,6 +26,7 @@
   ] as const);
   const when = (c: Countdown | undefined, body: 'sun' | 'earth') => {
     if (!c || c.visible === null) return tr('vis.unknown');
+    if (c.status === 'unknown') return tr('vis.changeUnknown');
     if (c.hours === null) return tr('vis.noChange');
     return tr(`vis.${body}${c.visible ? 'Sets' : 'Rises'}`, { h: fmt(c.hours, 1) });
   };
@@ -53,6 +54,9 @@
       </tbody>
     </table>
     <p class="note">{tr('vis.note')}</p>
+    {#each evaluations as e, i}
+      <p class="note">{names[i]}: {tr('vis.sampling', { step: e.window.step_min })}</p>
+    {/each}
   </section>
 {/if}
 

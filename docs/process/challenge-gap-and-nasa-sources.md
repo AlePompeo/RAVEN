@@ -95,3 +95,51 @@ La complessità è relativa, non una stima temporale. Le dipendenze esterne sono
 Le API remote non devono sostituire i calcoli offline senza esplicitarne disponibilità,
 versione, cache, limiti di richiesta e errori; l'analisi proposta non è stata eseguita
 come nuova validazione scientifica.
+
+## Aggiornamento operativo: priorità per la giuria e validazione
+
+Aggiornamento del 2026-11-15, successivo alle traduzioni parziali e ai nuovi confronti
+polari in `docs/ephemeris.md`. I cinque criteri ufficiali valutano Impact, Creativity,
+Validity, Relevance e Presentation: le azioni sotto sono proposte del progetto, non
+requisiti aggiuntivi della competizione né garanzie di premio.
+
+| Ordine e complessità | Attività e risultato verificabile | Dipendenze e limite |
+|---|---|---|
+| 1 — bassa | Preparare candidatura inglese, video pubblico di massimo 30 s o slide entro il limite ufficiale, fonti e disclosure SI. Dimostrare un A/B e la decisione che cambia. | Team; confermare con organizzatori lavoro pre-evento e contenuti commerciali. Vedi checklist submission. |
+| 2 — bassa | Correggere claim troppo forti nel README, report e demo; indicare modello, provenienza, precisione temporale, stati ignoti e finalità non operative. | Usare solo evidenze riproducibili; non chiamare qualificata la missione. |
+| 3 — bassa/media | Preparare un percorso A/B ripetibile: due siti/date con input, risultato e fonti registrati; spiegare il compromesso tra energia e DTE. | I grafici sintetici dello step 07 restano esempi, non misure dei due scenari. |
+| 4 — media | Completare IT/EN per analisi, simulatori 2D/3D, errori backend e fallback; verificare cambio lingua e percorso della giuria. | L'audit precedente non ha coperto tutto il sito. |
+| 5 — media | Risolvere gate licenze `pyphen` con revisione documentata; ripetere smoke di installazione realmente pulita; aggiornare E2E e ripetere CI. | La CI locale precedente non equivale a installazione pulita; E2E era stato interrotto. |
+| 6 — media | Rendere evidenti durata campionata, passo, cause di chiusura e intervalli ignoti; testare transizioni ai bordi e dati mancanti. | Non interpolare attraverso dati ignoti né attribuire precisione continua non dimostrata. |
+| 7 — media | Ampliare fixture Horizons con casi polari e quota, conservare risposte e convenzioni; valutare confronto software separato con NAIF/SPICE. | Primo ampliamento eseguito: otto confronti in `docs/ephemeris.md`. Horizons e kernel JPL sono correlati, non una validazione osservativa. |
+| 8 — medio/alta | Confrontare orizzonti ottenuti con LOLA 5 m e i prodotti correnti sugli stessi siti, frame, pixel e raggio; riportare copertura e sensibilità. | Il 5 m copre solo la regione polare e il DEM completo è grande; stesso strumento LOLA non è indipendenza fisica. |
+| 9 — alta | Pianificare confronto osservativo di Sole/terreno con LROC a stesso luogo, tempo, quota, supporto spaziale e criterio; indagare la discrepanza polare già documentata. | Richiede dati comparabili e incertezza DEM; WAC radiometrico non equivale automaticamente a illuminazione geometrica istantanea. |
+| 10 — molto alta | Qualificare energia e RF su dati indipendenti, configurazioni e incertezze note; definire protocolli e soglie prima del confronto. | Richiede tracce hardware o soluzioni indipendenti convergenti e revisione esperta; test aritmetici non bastano. |
+| 11 — variabile | Raccogliere riscontri reali da utenti con competenze diverse; migliorare accessibilità e presentazione sulla base delle osservazioni. | Non inventare metriche di impatto o qualificazioni degli utenti. |
+
+### Fonti: decisione di integrazione
+
+- **Horizons:** già usato come benchmark; proseguire con fixture offline versionate,
+  inclusi frame, tempo e risposte originali, invece di rendere la demo dipendente
+  dal servizio. Le nuove risposte polari usano DE441 contro DE440s di RAVEN.
+- **Moon Trek / WMTS:** [GetCapabilities del layer LOLA](https://trek.nasa.gov/tiles/Moon/EQ/LRO_LOLA_DEM_Global_128ppd_v04/1.0.0/WMTSCapabilities.xml)
+  dichiara tile `image/png`. È candidato come sfondo cartografico con attribuzione;
+  non usarlo come quota numerica senza una codifica e scala ufficiali verificabili.
+  Un layer LOLA non è prova indipendente dal DEM LOLA usato da RAVEN.
+- **LOLA/PDS, PGDA e NAIF/SPICE:** già presenti o studiati sopra. Dare priorità a
+  provenienza, sensibilità del terreno e controllo separato delle trasformazioni
+  prima di aggiungere altre dipendenze; registrare copertura e risoluzione reali.
+- **«donky»:** potrebbe indicare [DONKI](https://api.nasa.gov/), database NASA di
+  eventi meteorologici spaziali, non un'API di geometria o terreno. È solo un'ipotesi:
+  una prova dell'endpoint FLR con `DEMO_KEY` ha restituito HTTP 404. Non integrare
+  finché nome, documentazione, accesso e utilità per il caso d'uso non siano chiariti.
+  Eventuali avvisi meteo sarebbero separati dalla validazione delle finestre DTE.
+
+### Evidenza realmente riprodotta
+
+Kernel locali verificati con `python -m backend.ephemeris.fetch --check`. Eseguiti
+88 test mirati efemeridi e stadi S1–S7, più 128 test terreno/orizzonte/multipath e
+matrice; tutti passati senza skip. Dopo l'aggiunta delle quattro risposte Horizons,
+23 test del modulo efemeridi passati. Questi risultati confermano le verifiche
+esercitate, non elevano S2, S4 o S5 a validazione fisica né S3 oltre la plausibilità.
+Dettagli e limiti delle prove fisiche restano in `docs/domain/validation.md`.

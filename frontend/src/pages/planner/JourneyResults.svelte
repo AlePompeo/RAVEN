@@ -7,7 +7,7 @@
   import VisibilityFigures from './VisibilityFigures.svelte';
   import LunarDays from './LunarDays.svelte';
   import { utcMinute } from './reportFormat';
-  import { earthVisibility, firstChange, fraction, type JourneyRun } from './journey';
+  import { earthVisibility, nextChange, fraction, type JourneyRun } from './journey';
   import type { MissionObjectives } from './objectives';
   let { run, objectives, report = false, includeSummary = true, includeCharts = true, includeWindows = true, scenario = $bindable(0), index = $bindable(0) }: {
     run: JourneyRun; objectives: MissionObjectives; report?: boolean; scenario?: number; index?: number;
@@ -130,7 +130,7 @@
       </div>
       {#each rows as row}
         {@const values = row.key === 'earth' ? earthVisibility(active) : samples[row.key]}
-        {@const next = firstChange(values, index)}
+        {@const next = nextChange(values, index)}
         {@const nextLabel: MessageKey = row.key === 'lit' ? values[index] ? 'journey.nextSunset' : 'journey.nextSunrise' :
           row.key === 'earth' ? values[index] ? 'journey.nextEarthset' : 'journey.nextEarthrise' : 'journey.nextChange'}
         <div class="timeline">
@@ -139,7 +139,7 @@
             {#each segments(values) as s}<span class:yes={s.value === true} class:no={s.value === false} class:unknown={s.value === null} style:flex-grow={s.length}></span>{/each}
             <i style:left={`${samples.time_unix.length < 2 ? 0 : index / (samples.time_unix.length - 1) * 100}%`}></i>
           </div>
-          <small>{next === null ? t('journey.noChange') : t(nextLabel, { hours: ((next - index) * active.window.step_min / 60).toFixed(1) })}</small>
+          <small>{next.kind === 'unknown' ? t('journey.changeUnknown') : next.kind === 'end' ? t('journey.noChange') : t(nextLabel, { hours: ((next.index - index) * active.window.step_min / 60).toFixed(1) })}</small>
         </div>
       {/each}
       <p class="note">{t('journey.timelineLegend')}</p>

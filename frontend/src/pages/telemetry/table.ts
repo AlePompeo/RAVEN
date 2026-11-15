@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Telemetry } from '../../contracts/telemetry';
+import { t } from '../../i18n/i18n.svelte';
 
 export const MAX_SAMPLES = 120;
 export const TABLE_ROWS = 10;
@@ -21,8 +22,8 @@ export function pushSample(buf: readonly Telemetry[], s: Telemetry, max = MAX_SA
 export function buildTable(samples: readonly Telemetry[], n = TABLE_ROWS): TableModel {
   const last = samples.slice(-n).reverse();
   return {
-    caption: `Ultimi ${last.length} campioni di telemetria (più recente per primo)`,
-    headers: ['Istante (UTC)', 'Sito', 'Potenza (W)', 'Margine di link (dB)'],
+    caption: t('telemetry.tableCaption', { count: last.length }),
+    headers: [t('telemetry.timeUtc'), t('telemetry.site'), t('telemetry.powerW'), t('telemetry.csvMargin')],
     rows: last.map((s) => [
       s.t_utc,
       s.site_id ?? '—',

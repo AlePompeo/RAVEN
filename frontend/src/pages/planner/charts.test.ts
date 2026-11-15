@@ -3,13 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import HorizonProfile from './HorizonProfile.svelte';
 import SeriesChart from './SeriesChart.svelte';
-import { useCatalog } from '../../i18n/i18n.svelte';
+import { t, useCatalog, type MessageKey } from '../../i18n/i18n.svelte';
 import en from '../../i18n/en.pages.json';
 import itCatalog from '../../i18n/it.json';
 import evaluationFixture from '../../shell/fixtures/raven/evaluate.json';
 import type { RavenEvaluation } from '../../shell/ravenApi';
 import JourneyPreview from './JourneyPreview.svelte';
 import JourneyResults from './JourneyResults.svelte';
+import VisibilityFigures from './VisibilityFigures.svelte';
 import { defaultObjectives } from './objectives';
 import { RADIO_PRESETS } from './setup';
 import type { JourneyRun } from './journey';
@@ -18,6 +19,23 @@ beforeEach(() => useCatalog('en', en, en));
 afterEach(() => { cleanup(); useCatalog('it', itCatalog, en); });
 
 describe('mission charts', () => {
+  it('distinguishes missing future samples from a known unchanged window', () => {
+    const evaluation = structuredClone(evaluationFixture) as RavenEvaluation;
+    evaluation.window.step_min = 30;
+    evaluation.steps!.lit[0] = true;
+    evaluation.steps!.lit[1] = null;
+    evaluation.steps!.earth_el_deg.fill(5);
+    evaluation.steps!.earth_horizon_deg.fill(0);
+    render(VisibilityFigures, {
+      evaluations: [evaluation], countdown: true,
+      tr: (key: string, params?: Record<string, string | number>) => t(key as MessageKey, params),
+      fmt: (value: number) => String(value),
+    });
+    expect(screen.getByText('next change unknown: a sample is missing')).toBeTruthy();
+    expect(screen.getByText('no sampled change in the window')).toBeTruthy();
+    expect(screen.getByText(/Sampled every 30 minutes/)).toBeTruthy();
+  });
+
   it('uses the full percentage scale for a full or partially discharged battery', async () => {
     const { container, rerender } = render(SeriesChart, {
       label: 'Battery', unit: '%', values: [100, 100], rangeLabel: 'Range', emptyLabel: 'Unknown',

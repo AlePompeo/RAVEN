@@ -5,6 +5,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Telemetry } from '../../contracts/telemetry';
+import { useCatalog } from '../../i18n/i18n.svelte';
+import enPages from '../../i18n/en.pages.json';
+import itCatalog from '../../i18n/it.json';
 import { createTelemetryClient, parseSample, statusText, type ConnectionStatus, type SourceLike } from './client';
 import { buildTable, pushSample, toChartData } from './table';
 
@@ -120,6 +123,7 @@ describe('telemetry client', () => {
   });
 
   it('parseSample validates; statusText is textual', () => {
+    useCatalog('it', itCatalog, enPages);
     expect(parseSample(JSON.stringify(sample(0)))).not.toBeNull();
     expect(parseSample(42)).toBeNull();
     expect(parseSample('null')).toBeNull();
@@ -127,6 +131,17 @@ describe('telemetry client', () => {
     expect(statusText({ kind: 'reconnecting', attempt: 2, delayMs: 2000 })).toBe(
       statusText({ kind: 'reconnecting', attempt: 3, delayMs: 4000 }),
     );
+  });
+
+  it('translates stream status and table text when the language changes', () => {
+    useCatalog('en', {}, enPages);
+    expect(statusText({ kind: 'open' })).toContain('Connected');
+    expect(buildTable([sample(0)]).headers).toContain('Power (W)');
+    expect(buildTable([sample(0)]).caption).toContain('Latest 1');
+    useCatalog('it', itCatalog, enPages);
+    expect(statusText({ kind: 'open' })).toContain('Connesso');
+    expect(buildTable([sample(0)]).headers).toContain('Potenza (W)');
+    expect(buildTable([sample(0)]).caption).toContain('Ultimi 1');
   });
 });
 

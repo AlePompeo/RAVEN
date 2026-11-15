@@ -92,6 +92,32 @@ Spiegazioni e discrepanze, dichiarate:
 - **Distanze**: Horizons `delta` e' la lunghezza del percorso della luce (astrometrica). La distanza **simultanea** tra i centri (`distance_km` di default) differisce da essa di circa v_orbitale x tempo di luce (fino a ~40 km per Terra-Luna: 39 km misurati): sono due grandezze diverse, non un errore. `light_path=True` dà la prima.
 - Le epoche dopo il 2027-01-13 usano UTC predetto da entrambe le parti; un futuro secondo intercalare (non noto) sposterebbe entrambi di 1 s: ~0.004 deg di rotazione terrestre, ~0.0001 deg per la Luna.
 
+### Nuovi casi polari Horizons
+
+Il 2026-11-15 sono state salvate quattro risposte complete in
+`tests/backend/ephemeris/fixtures/horizons_raw/{polar,seam}_{sun,earth}.txt`.
+Si interrogano Sole (10) e Terra (399) da due siti: latitudine -89.5°, longitudine
+45°E, quota 0 m; e -89.9°, 179.999°E, quota 100 m. I due istanti sono
+2027-02-03 12:37 UTC e 2028-06-11 08:15 UTC. Non sono i poli esatti.
+Richiesta a `https://ssd.jpl.nasa.gov/api/horizons.api`: `format=text`,
+`OBJ_DATA=NO`, `MAKE_EPHEM=YES`, `EPHEM_TYPE=OBSERVER`, `CENTER=coord@301`,
+`COORD_TYPE=GEODETIC`, `SITE_COORD=lon,lat,quota_km`,
+`TLIST='2027-Feb-03 12:37' '2028-Jun-11 08:15'`, `TIME_TYPE=UT`,
+`QUANTITIES=4,20`, `APPARENT=AIRLESS`, `ANG_FORMAT=DEG`, `RANGE_UNITS=KM`,
+`CSV_FORMAT=YES`, `EXTRA_PREC=YES`, e `COMMAND=10` o `399`. I valori sono
+quelli della tabella `$$SOE` delle risposte archiviate; API 1.2, DE441,
+MEAN_ME, raggio lunare 1737.4 km, EOP `eop.261113.p270209`.
+
+Sugli otto confronti, scarto massimo azimut moltiplicato per cos(elevazione):
+7.1e-9° Sole e 3.44e-7° Terra; elevazione: 5.1e-10° e 4.2e-8°;
+distanza: 6.66 m e 0.087 m. I test usano le tolleranze preesistenti
+(1e-5°; 50 m Sole, 5 m Terra). Riproduzione:
+`.venv/bin/python -m pytest tests/backend/ephemeris/test_validation.py -q`.
+Questa verifica confronta implementazioni e convenzioni con effemeridi JPL
+correlate, non valida osservazioni indipendenti, terreno, illuminazione o RF.
+I tempi futuri assumono i secondi intercalari noti alla data della risposta;
+le differenze DE440s/DE441 non sono isolate.
+
 ## Intervallo supportato
 
 Derivato dai kernel (intersezione dei segmenti di DE440s e del primo segmento del PCK lunare, meno 1 giorno di margine per i tempi di luce), con inizio non prima del 1972-01-01 (era dei secondi intercalari interi; prima UTC non e' definito allo stesso modo): **1972-01-01T00:00:00Z .. 2150-01-20T23:58:50Z** (`GET /api/raven/sky/status`). Fuori: `OutOfRange` (libreria), 422 (API). La raccomandazione JPL per DE440 e' 1550-2650 (Park et al. 2021); DE440s e' la versione corta (1849-2150). L'accuratezza e' misurata solo nel 2026-2030: oltre, UT1 e Delta-T sono estrapolati (errore crescente fino a secondi, che pesa solo sulla rotazione terrestre).

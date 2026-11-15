@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { AzEl, Telemetry } from '../../contracts/telemetry';
+import { t } from '../../i18n/i18n.svelte';
 
 export type ConnectionStatus =
   | { kind: 'connecting' }
@@ -154,12 +155,12 @@ export function createTelemetryClient(opts: TelemetryClientOptions): TelemetryCl
 export function statusText(s: ConnectionStatus): string {
   switch (s.kind) {
     case 'connecting':
-      return 'Connessione al flusso di telemetria in corso.';
+      return t('telemetry.connecting');
     case 'open':
-      return 'Connesso: ricezione telemetria in tempo reale.';
+      return t('telemetry.connected');
     case 'reconnecting':
-      return 'Connessione persa. Riconnessione in corso.'; // testo costante: un solo annuncio per interruzione
+      return t('telemetry.reconnecting'); // testo costante: un solo annuncio per interruzione
     case 'closed':
-      return 'Disconnesso.';
+      return t('telemetry.disconnected');
   }
 }

@@ -15,7 +15,7 @@
   import { archiveRun, readHistory, writeHistory, HISTORY_LIMIT, type HistoryEntry } from '../planner/history';
   import JourneyResults from '../planner/JourneyResults.svelte';
   import DashboardNavigator from './DashboardNavigator.svelte';
-  import { countdownAt, siteStats } from '../planner/visibilityStats';
+  import { countdownAt, siteStats, type Countdown } from '../planner/visibilityStats';
 
   let ready = $state(false);
   let currentRun = $state.raw<JourneyRun | null>(null);
@@ -66,8 +66,8 @@
 
   const hours = (v: number | null | undefined) => (v == null ? t('journey.unknown') : `${formatNumber(v, { maximumFractionDigits: 0 })} h`);
   const pct = (v: number | null | undefined) => (v == null ? t('journey.unknown') : `${formatNumber(v * 100, { maximumFractionDigits: 1 })} %`);
-  const countText = (c: { visible: boolean | null; hours: number | null } | undefined, body: 'sun' | 'earth') =>
-    !c || c.visible === null ? t('journey.unknown') : c.hours === null ? t('journey.noChange')
+  const countText = (c: Countdown | undefined, body: 'sun' | 'earth') =>
+    !c || c.visible === null ? t('journey.unknown') : c.status === 'unknown' ? t('journey.changeUnknown') : c.hours === null ? t('journey.noChange')
       : t(body === 'sun' ? (c.visible ? 'journey.nextSunset' : 'journey.nextSunrise') : (c.visible ? 'journey.nextEarthset' : 'journey.nextEarthrise'), { hours: formatNumber(c.hours, { maximumFractionDigits: 1 }) });
 
   onMount(() => {

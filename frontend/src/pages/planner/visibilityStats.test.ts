@@ -30,9 +30,17 @@ describe('site figures', () => {
 describe('countdown', () => {
   it('counts the hours to the next change, null when none', () => {
     const e = make([true, true, true, false, false], [1, 1, 1, -1, -1], [5, 5, 5, 5, 5], [0, 0, 0, 0, 0], [true, true, true, false, false]);
-    expect(countdownAt(e, 0)).toEqual({ sun: { visible: true, hours: 3 }, earth: { visible: true, hours: null } });
-    expect(countdownAt(e, 4)!.sun).toEqual({ visible: false, hours: null });
+    expect(countdownAt(e, 0)).toEqual({ sun: { visible: true, hours: 3, status: 'change' }, earth: { visible: true, hours: null, status: 'end' } });
+    expect(countdownAt(e, 4)!.sun).toEqual({ visible: false, hours: null, status: 'end' });
     expect(countdownAt(e, 99)).toBeNull();
+  });
+  it('distinguishes an unknown future from the end of a known window', () => {
+    const e = make([true, null, false], [1, null, -1], [1, null, 1], [0, null, 0], [true, null, false], 30);
+    expect(countdownAt(e, 0)!.sun).toEqual({ visible: true, hours: null, status: 'unknown' });
+    expect(countdownAt(e, 0)!.earth.status).toBe('unknown');
+    expect(countdownAt(e, 1)!.sun.status).toBe('unknown');
+    e.steps!.lit = [true, true, false];
+    expect(countdownAt(e, 0)!.sun).toEqual({ visible: true, hours: 1, status: 'change' });
   });
 });
 

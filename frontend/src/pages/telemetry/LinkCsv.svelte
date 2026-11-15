@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { t } from '../../i18n/i18n.svelte';
+  import { t, type MessageKey } from '../../i18n/i18n.svelte';
+  import type { Params } from '../../i18n/core';
   import { scenarioStore } from '../../shell/scenario';
   import { raven, type RavenSites } from '../../shell/ravenApi';
   import ChartBox, { type Spec } from '../grazinglink/ChartBox.svelte';
@@ -13,12 +14,13 @@
   let samples = $state.raw<LinkSample[]>([]);
   let filename = $state('');
   let simulated = $state(false);
-  let error = $state('');
+  type UiError = { key: MessageKey; params?: Params };
+  let error = $state<UiError | null>(null);
   let status = $state.raw<RavenSites | null>(null);
   let statusError = $state(false);
   let site = $state('');
   let comparing = $state(false);
-  let comparisonError = $state('');
+  let comparisonError = $state<UiError | null>(null);
   let comparison = $state.raw<LinkComparison | null>(null);
   let model = $state.raw<PredictionSeries | null>(null);
   let runStation = $state('');
@@ -66,7 +68,7 @@
     comparing = false;
     comparison = null;
     model = null;
-    comparisonError = '';
+    comparisonError = null;
   }
 
   async function load(event: Event) {
@@ -78,17 +80,17 @@
     samples = [];
     filename = '';
     simulated = false;
-    error = '';
+    error = null;
     if (!file) return;
     if (file.size > MAX_LINK_CSV_BYTES) {
-      error = t('telemetry.csvSize');
+      error = { key: 'telemetry.csvSize' };
       return;
     }
     let text: string;
     try {
       text = await file.text();
     } catch {
-      if (current === generation) error = t('telemetry.csvRead');
+      if (current === generation) error = { key: 'telemetry.csvRead' };
       return;
     }
     if (current !== generation) return;
@@ -101,7 +103,7 @@
         empty: 'telemetry.csvEmpty',
         size: 'telemetry.csvSize',
       } as const;
-      error = t(key[result.reason], { line: result.line ?? 0 });
+      error = { key: key[result.reason], params: { line: result.line ?? 0 } };
       return;
     }
     samples = result.samples;
@@ -113,7 +115,7 @@
     const snapshot = scenarioStore().get();
     const request = comparisonRequest(samples, snapshot, site);
     if (!request) {
-      comparisonError = t('telemetry.compareRange');
+      comparisonError = { key: 'telemetry.compareRange' };
       return;
     }
     const current = ++generation;
@@ -125,15 +127,15 @@
     controller = null;
     comparing = false;
     if (!response.ok) {
-      comparisonError = t('telemetry.compareError', { reason: response.kind });
+      comparisonError = { key: 'telemetry.compareError', params: { reason: response.kind } };
       return;
     }
     if (response.data.site.id !== request.site_id) {
-      comparisonError = t('telemetry.compareMismatch');
+      comparisonError = { key: 'telemetry.compareMismatch' };
       return;
     }
     const prediction = predictionFromRaven(response.data);
-    if (!prediction) { comparisonError = t('telemetry.compareMismatch'); return; }
+    if (!prediction) { comparisonError = { key: 'telemetry.compareMismatch' }; return; }
     model = prediction;
     runStation = snapshot.station;
     runGain = snapshot.gain;
@@ -155,7 +157,7 @@
     const start = snapshot.t ?? new Date().toISOString();
     const request = comparisonRequest([{ t_utc: start, margin_db: 0, elevation_deg: 0, rate_bps: 1 }], snapshot, site);
     if (!request) {
-      comparisonError = t('telemetry.compareRange');
+      comparisonError = { key: 'telemetry.compareRange' };
       return;
     }
     const current = ++generation;
@@ -167,24 +169,24 @@
     controller = null;
     comparing = false;
     if (!response.ok) {
-      comparisonError = t('telemetry.compareError', { reason: response.kind });
+      comparisonError = { key: 'telemetry.compareError', params: { reason: response.kind } };
       return;
     }
     if (response.data.site.id !== request.site_id) {
-      comparisonError = t('telemetry.compareMismatch');
+      comparisonError = { key: 'telemetry.compareMismatch' };
       return;
     }
     const prediction = predictionFromRaven(response.data);
-    if (!prediction) { comparisonError = t('telemetry.compareMismatch'); return; }
+    if (!prediction) { comparisonError = { key: 'telemetry.compareMismatch' }; return; }
     const rows = simulateLink(prediction, snapshot.bitrate ?? prediction.rate_bps);
     if (!rows) {
-      comparisonError = t('telemetry.simulateError');
+      comparisonError = { key: 'telemetry.simulateError' };
       return;
     }
     samples = rows;
     filename = '';
     simulated = true;
-    error = '';
+    error = null;
     model = prediction;
     runStation = snapshot.station;
     runGain = snapshot.gain;
@@ -207,7 +209,7 @@
   <p class="small muted">{t('telemetry.csvProvenance')}</p>
   <label for="link-csv">{t('telemetry.csvSelect')}</label>
   <input id="link-csv" type="file" accept=".csv,text/csv" onchange={load} />
-  {#if error}<p role="alert">{error}</p>{/if}
+  {#if error}<p role="alert">{t(error.key, error.params)}</p>{/if}
   <p class="small muted">{t('telemetry.compareAssumptions')}</p>
   {#if statusError}
     <p role="alert">{t('telemetry.compareStatusError')}</p>
@@ -227,7 +229,7 @@
   {:else}
     <p role="status">{t('telemetry.compareLoading')}</p>
   {/if}
-  {#if comparisonError}<p role="alert">{comparisonError}</p>{/if}
+  {#if comparisonError}<p role="alert">{t(comparisonError.key, comparisonError.params)}</p>{/if}
   {#if samples.length}
     {@const latest = samples[samples.length - 1]!}
     {#if simulated}

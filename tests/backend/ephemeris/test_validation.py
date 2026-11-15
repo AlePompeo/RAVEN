@@ -8,6 +8,7 @@ prima docs/ephemeris.md con la nuova misura, poi la tolleranza.
 I test si saltano se l'extra `sky` o i kernel (`make ephemeris`) mancano.
 """
 
+import csv
 import json
 import math
 from datetime import UTC, datetime, timedelta
@@ -142,6 +143,34 @@ def test_phase_a_azel_sun_earth(eng: Engine) -> None:
     assert worst["earth"][0] < TOL["azel_earth_angle"][0]
     assert worst["sun"][1] < TOL["azel_sun_range_km"][0]
     assert worst["earth"][1] < TOL["azel_earth_range_km"][0]
+
+
+@pytest.mark.parametrize(
+    ("name", "lat", "lon", "height_m", "target"),
+    [
+        ("polar_sun", -89.5, 45.0, 0.0, "sun"),
+        ("polar_earth", -89.5, 45.0, 0.0, "earth"),
+        ("seam_sun", -89.9, 179.999, 100.0, "sun"),
+        ("seam_earth", -89.9, 179.999, 100.0, "earth"),
+    ],
+)
+def test_polar_azel_vs_horizons(
+    eng: Engine, name: str, lat: float, lon: float, height_m: float, target: str
+) -> None:
+    raw = (FIX.parent / "horizons_raw" / f"{name}.txt").read_text(encoding="utf-8")
+    data = raw.split("$$SOE", 1)[1].split("$$EOE", 1)[0].strip()
+    rows = list(csv.reader(data.splitlines()))
+    assert len(rows) == 2
+    for row in rows:
+        t = datetime.strptime(row[0].strip(), "%Y-%b-%d %H:%M:%S.%f").replace(tzinfo=UTC)
+        az, el, distance = (float(value) for value in row[3:6])
+        result = eng.topocentric_azel("moon", lat, lon, target, t, h_m=height_m)
+        assert (
+            float(dlon(result.az_deg, az)) * math.cos(math.radians(el))
+            < TOL[f"azel_{target}_angle"][0]
+        )
+        assert abs(float(result.el_deg) - el) < TOL[f"azel_{target}_angle"][0]
+        assert abs(float(result.range_km) - distance) < TOL[f"azel_{target}_range_km"][0]
 
 
 # --------------------------------------------------------------------------- sub-punti

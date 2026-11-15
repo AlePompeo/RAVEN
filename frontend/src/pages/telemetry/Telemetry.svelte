@@ -12,14 +12,6 @@
   import { sanitizeParams } from '../chat/assistant';
   import { t } from '../../i18n/i18n.svelte';
 
-  /**
-   * Learning | Avanzato: stessi campioni. Learning mostra i valori correnti e il grafico con una frase semplice;
-   * gli azimut di Sole e Terra sono in Avanzato; la tabella resta in entrambe (equivalente testuale del grafico).
-   */
-  const STR = {
-    learn: 'i campioni del collegamento ricevuti dal flusso: potenza e margine del segnale verso la Terra. Sopra 0 dB il collegamento funziona.',
-  } as const;
-
   let samples = $state<Telemetry[]>([]);
   let status = $state<ConnectionStatus>({ kind: 'connecting' });
   let chartEl: HTMLElement | undefined = $state();
@@ -76,8 +68,8 @@
         .then(({ createLineChart }) =>
           createLineChart(el, {
             series: [
-              { label: 'Potenza (W)', stroke: v('--c-power', '#b25000'), scale: 'w' },
-              { label: 'Margine di link (dB)', stroke: v('--c-uplink', '#0066cc'), scale: 'db' },
+              { label: t('telemetry.powerW'), stroke: v('--c-power', '#b25000'), scale: 'w' },
+              { label: t('telemetry.csvMargin'), stroke: v('--c-uplink', '#0066cc'), scale: 'db' },
             ],
             axisLabels: { w: 'W', db: 'dB' },
             axisStroke: v('--c-muted', '#6e6e73'),
@@ -111,7 +103,7 @@
   });
 </script>
 
-<SubNav title="Telemetria" learn={STR.learn}>
+<SubNav title={t('telemetry.title')} learn={t('telemetry.learn')}>
   {#snippet aside()}
     <p id="telemetry-status" class="status-pill" role="status" data-state={pill}>{statusText(status)}</p>
   {/snippet}
@@ -122,62 +114,62 @@
     <p class="muted small" data-testid="telemetry-provenance">{t('telemetry.provenance')}</p>
     <LinkCsv onContext={updateLinkContext} />
     <section class="panel readouts-panel" aria-labelledby="now-h">
-      <h2 id="now-h" class="visually-hidden">Ultimo campione</h2>
+      <h2 id="now-h" class="visually-hidden">{t('telemetry.latest')}</h2>
       <dl class="readouts">
         <div>
-          <dt>Potenza</dt>
+          <dt>{t('telemetry.power')}</dt>
           <dd><span class="value num">{fmt(last?.power_w)}</span> <span class="unit">W</span></dd>
         </div>
         <div>
-          <dt>Margine di link</dt>
+          <dt>{t('telemetry.margin')}</dt>
           <dd><span class="value num">{fmt(last?.link_margin_db)}</span> <span class="unit">dB</span></dd>
         </div>
         <div>
-          <dt>Sole</dt>
+          <dt>{t('telemetry.sun')}</dt>
           <dd>
             <span class="value num">{fmt(last?.sun?.el_deg, 0)}</span><span class="unit">° alt.</span>
             {#if modeNow.advanced}<span class="sub num">az. {fmt(last?.sun?.az_deg, 0)}°</span>{/if}
           </dd>
         </div>
         <div>
-          <dt>Terra</dt>
+          <dt>{t('telemetry.earth')}</dt>
           <dd>
             <span class="value num">{fmt(last?.earth?.el_deg, 0)}</span><span class="unit">° alt.</span>
             {#if modeNow.advanced}<span class="sub num">az. {fmt(last?.earth?.az_deg, 0)}°</span>{/if}
           </dd>
         </div>
         <div>
-          <dt>Sito</dt>
+          <dt>{t('telemetry.site')}</dt>
           <dd><span class="site">{last?.site_id ?? '—'}</span></dd>
         </div>
       </dl>
     </section>
 
     <section class="panel" aria-labelledby="chart-h">
-      <h2 id="chart-h">Andamento</h2>
+      <h2 id="chart-h">{t('telemetry.trend')}</h2>
       <p class="legend small muted">
-        <span class="key key--power" aria-hidden="true"></span>Potenza (W, asse sinistro)
-        <span class="key key--link" aria-hidden="true"></span>Margine di link (dB, asse destro)
+        <span class="key key--power" aria-hidden="true"></span>{t('telemetry.powerAxis')}
+        <span class="key key--link" aria-hidden="true"></span>{t('telemetry.marginAxis')}
       </p>
       <div
         bind:this={chartEl}
         class="chart"
         role="group"
-        aria-label="Grafico di potenza e margine di link nel tempo"
+        aria-label={t('telemetry.chartLabel')}
         aria-describedby={table.rows.length ? 'telemetry-table-caption' : undefined}
       ></div>
-      {#if chartError}<p role="alert">Impossibile caricare il grafico: usa la tabella.</p>{/if}
+      {#if chartError}<p role="alert">{t('telemetry.chartError')}</p>{/if}
     </section>
 
     <section class="panel" aria-labelledby="table-h">
-      <h2 id="table-h">Ultimi campioni</h2>
+      <h2 id="table-h">{t('telemetry.recent')}</h2>
       {#if table.rows.length === 0}
-        <p class="muted">Nessun campione ricevuto. La tabella si riempie appena arriva il primo dato.</p>
+        <p class="muted">{t('telemetry.noSamples')}</p>
       {:else}
         <div class="table-scroll">
           <table>
             <caption id="telemetry-table-caption"
-              >{table.caption}. Equivalente testuale del grafico: potenza in W e margine di link in dB.</caption
+              >{table.caption}</caption
             >
             <thead>
               <tr>{#each table.headers as h (h)}<th scope="col">{h}</th>{/each}</tr>

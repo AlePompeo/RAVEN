@@ -2,7 +2,7 @@
 // Key figures of Sun and Earth, countdowns to sunset / Earthset and per-lunar-day figures, derived from the engine steps.
 // Unknown stays unknown: an unknown step ends a continuous run, is never counted as dark or hidden, and is reported apart.
 import type { RavenEvaluation } from '../../shell/ravenApi';
-import { earthVisibility, firstChange } from './journey';
+import { earthVisibility, nextChange } from './journey';
 
 export const SYNODIC_DAYS = 29.530588;
 
@@ -54,15 +54,16 @@ export function siteStats(e: RavenEvaluation): SiteStats | null {
   };
 }
 
-export interface Countdown { visible: boolean | null; hours: number | null }
-/** At step `index`: is the Sun / Earth up, and in how many hours does that change (null: no change in the window or unknown). */
+export interface Countdown { visible: boolean | null; hours: number | null; status: 'change' | 'unknown' | 'end' }
+/** A missing sample prevents a claim that no change occurs in the window. */
 export function countdownAt(e: RavenEvaluation, index: number): { sun: Countdown; earth: Countdown } | null {
   const s = e.steps;
   if (!s || index < 0 || index >= s.lit.length) return null;
   const h = e.window.step_min / 60;
   const one = (v: readonly (boolean | null)[]): Countdown => {
-    const next = firstChange(v, index);
-    return { visible: v[index] ?? null, hours: next === null ? null : (next - index) * h };
+    const next = nextChange(v, index);
+    return { visible: v[index] ?? null, status: next.kind,
+      hours: next.kind === 'change' ? (next.index - index) * h : null };
   };
   return { sun: one(s.lit), earth: one(earthVisibility(e)) };
 }
