@@ -5,7 +5,8 @@ const page: PageModule = {
   path: '/explore',
   title: 'Explore',
   navLabel: 'Explore',
-  order: 10,
+  navGroup: 'legal',
+  order: 89,
   load: () => import('./Explore.svelte'),
 };
 export default page;

@@ -10,7 +10,7 @@
 <script lang="ts">
   import ModelStamp from '../../shell/ModelStamp.svelte';
   import { onDestroy, onMount, untrack } from 'svelte';
-  import { t } from '../../i18n/i18n.svelte';
+  import { formatNumber, t, type MessageKey } from '../../i18n/i18n.svelte';
   import SubNav from '../../components/ui/SubNav.svelte';
   import SceneSettings from '../../components/ui/SceneSettings.svelte';
   import Badge from '../grazinglink/Badge.svelte';
@@ -49,101 +49,159 @@
     type LinkOutput,
   } from './linkModel';
   import { inputFromScene, syntheticScene } from './simScene';
-  import { advanceMission, exportCsv, exportJson, fmt, newMission, parseSimQuery, PRESETS, sentence, STR as S, writeSimQuery, type PresetId } from './simState';
+  import { advanceMission, exportCsv, exportJson, fmt, newMission, parseSimQuery, PRESETS, sentence, STR as S_BASE, writeSimQuery, type PresetId } from './simState';
 
   let { hideReal = false, embedded = false, forceReal = false, hideRealToggle = false }: {
     hideReal?: boolean; embedded?: boolean; forceReal?: boolean; hideRealToggle?: boolean;
   } = $props();
 
-  const STR = {
-    title: 'Simulatore',
-    learn: 'il lander, il crinale davanti a lui e la Terra bassa. Muovi i controlli: la scena, l’indicatore, il grafico e la mappa cambiano subito.',
-    didactic: 'Scenario didattico (non è un sito reale)',
-    realSite: (n: string) => `Sito reale: ${n} (terreno LOLA)`,
-    useReal: 'Usa un sito reale',
-    useRealHint: 'Solo i siti coperti dal DEM LOLA. La scena e il margine arrivano dal motore; i controlli regolano antenna, dati al secondo e tempo.',
-    site: 'Sito',
-    time: 'Quando (ore dall’inizio)',
-    timeText: (d: string) => d,
-    controls: 'Controlli',
-    presets: 'Prova subito',
-    el: 'Quanto è alta la Terra nel cielo',
-    elAdv: 'Elevazione della Terra',
-    ridge: 'Quanto è alto il crinale',
-    ridgeAdv: 'Quota della cima del crinale',
-    radius: 'Quanto è arrotondata la cima',
-    radiusAdv: 'Raggio di curvatura della cresta',
-    dia: 'Quanto è grande l’antenna',
-    diaAdv: 'Diametro della parabola del rover',
-    rate: 'Quanti dati al secondo',
-    rateAdv: 'Bit-rate',
+  const STR = $derived({
+    title: t('sim.ui.title'),
+    learn: t('sim.ui.learn'),
+    didactic: t('sim.ui.didactic'),
+    realSite: (site: string) => t('sim.ui.realSite', { site }),
+    useReal: t('sim.ui.useReal'),
+    useRealHint: t('sim.ui.useRealHint'),
+    site: t('sim.ui.site'),
+    time: t('sim.ui.time'),
+    timeText: (date: string) => date,
+    controls: t('sim.ui.controls'),
+    presets: t('sim.ui.presets'),
+    el: t('sim.ui.el'),
+    elAdv: t('sim.ui.elAdv'),
+    ridge: t('sim.ui.ridge'),
+    ridgeAdv: t('sim.ui.ridgeAdv'),
+    radius: t('sim.ui.radius'),
+    radiusAdv: t('sim.ui.radiusAdv'),
+    dia: t('sim.ui.dia'),
+    diaAdv: t('sim.ui.diaAdv'),
+    rate: t('sim.ui.rate'),
+    rateAdv: t('sim.ui.rateAdv'),
     tips: {
-      el: 'Elevazione: quanti gradi sopra l’orizzonte vedi la Terra. Al polo Sud è sempre bassa, pochi gradi.',
-      ridge: 'Crinale: la cresta di terreno tra il lander e la Terra. Se copre la Terra il segnale si piega attorno alla cima (diffrazione).',
-      radius: 'Una cima arrotondata piega il segnale un po’ peggio di uno spigolo vivo (formula ITU-R P.526-9, non misurata).',
-      dia: 'Un’antenna più grande raccoglie più segnale, ma il suo fascio è più stretto e va puntato meglio.',
-      rate: 'Più dati al secondo chiedono più segnale: 10 volte i dati costano 10 dB di margine.',
-      margin: 'Margine di link: quanto segnale avanza rispetto al minimo. Sopra 0 dB il collegamento regge. dB: +10 dB vuol dire 10 volte di più.',
-      fresnel: 'Zona di Fresnel: il “tubo” attorno alla linea di vista che il segnale usa davvero; se il crinale lo tocca, il segnale si indebolisce.',
+      el: t('sim.ui.tip.el'),
+      ridge: t('sim.ui.tip.ridge'),
+      radius: t('sim.ui.tip.radius'),
+      dia: t('sim.ui.tip.dia'),
+      rate: t('sim.ui.tip.rate'),
+      margin: t('sim.ui.tip.margin'),
+      fresnel: t('sim.ui.tip.fresnel'),
     },
     adv: {
-      freq: 'Frequenza',
-      d1: 'Distanza del crinale',
-      mast: 'Altezza del palo dell’antenna',
-      perr: 'Errore di puntamento',
-      ptx: 'Potenza trasmessa',
-      tsys: 'Temperatura di sistema Tsys',
-      ebn0: 'Eb/N0 richiesto',
-      loss: 'Perdite varie',
-      eta: 'Efficienza d’antenna η',
-      dist: 'Distanza Terra-Luna',
-      station: 'Stazione di terra',
-      corr: 'Correzione della cresta arrotondata (ITU-R P.526-9, non misurata)',
-      mp: 'Multipath sul regolite (due raggi)',
-      eps: 'εr′ del regolite',
-      epsi: 'εr″ del regolite',
-      sig: 'Rugosità rms σ',
-      vex: 'Esagerazione verticale (solo disegno)',
-      realOnly: 'Con un sito reale il crinale, la distanza e il raggio vengono dal terreno: qui si regolano antenna, palo, stazione, dati al secondo e tempo.',
+      freq: t('sim.ui.adv.freq'),
+      d1: t('sim.ui.adv.d1'),
+      mast: t('sim.ui.adv.mast'),
+      perr: t('sim.ui.adv.perr'),
+      ptx: t('sim.ui.adv.ptx'),
+      tsys: t('sim.ui.adv.tsys'),
+      ebn0: t('sim.ui.adv.ebn0'),
+      loss: t('sim.ui.adv.loss'),
+      eta: t('sim.ui.adv.eta'),
+      dist: t('sim.ui.adv.dist'),
+      station: t('sim.ui.adv.station'),
+      corr: t('sim.ui.adv.corr'),
+      mp: t('sim.ui.adv.mp'),
+      eps: t('sim.ui.adv.eps'),
+      epsi: t('sim.ui.adv.epsi'),
+      sig: t('sim.ui.adv.sig'),
+      vex: t('sim.ui.adv.vex'),
+      realOnly: t('sim.ui.adv.realOnly'),
     },
-    params: 'Parametri',
-    variants: 'Confronto tra varianti (stessi ingressi)',
+    params: t('sim.ui.params'),
+    variants: t('sim.ui.variants'),
     variantName: {
-      knife: 'Bordo a lama (JPL 42-226 eq. 38)',
-      rounded: 'Cresta arrotondata (lama + ITU-R P.526-9 T(m,n))',
-      rounded_splitstep: 'Cresta arrotondata (lama + tabella split-step, confronto)',
-      multipath: 'Con multipath (due raggi, circolare)',
-      antenna_script: 'Antenna dello script (30000/HPBW², 12·(err/HPBW)²)',
-      antenna_corrected: 'Antenna corretta (apertura CB79, gaussiana 12,04)',
+      knife: t('sim.ui.variant.knife'),
+      rounded: t('sim.ui.variant.rounded'),
+      rounded_splitstep: t('sim.ui.variant.roundedSplitstep'),
+      multipath: t('sim.ui.variant.multipath'),
+      antenna_script: t('sim.ui.variant.antennaScript'),
+      antenna_corrected: t('sim.ui.variant.antennaCorrected'),
     },
-    uncertainty: 'Incertezze',
+    uncertainty: t('sim.ui.uncertainty'),
     unc: {
-      corr: (v: string) => `correzione della cresta: ± ${v} dB (scarto ITU − split-step, oscillazioni o bordi della tabella)`,
-      dist: (a: string, b: string) => `distanza Terra-Luna tra perigeo e apogeo (363 300–405 500 km): margine da ${a} a ${b} dB`,
-      sigma: (v: string) => `errore non modellato del compensatore: σ = ${v} dB (I)`,
+      corr: (value: string) => t('sim.ui.unc.correction', { value }),
+      dist: (min: string, max: string) => t('sim.ui.unc.distance', { min, max }),
+      sigma: (value: string) => t('sim.ui.unc.sigma', { value }),
     },
-    numbers: 'Numeri',
-    export: 'Esporta',
-    json: 'Scarica JSON',
-    csv: 'Scarica CSV',
-    flags: 'Controlli di validità',
-    view: 'Controlli della vista',
-    modeLabel: { webgl: 'Rendering WebGL', canvas2d: 'Modalità compatibile (senza WebGL): sezione laterale', none: 'Grafica non disponibile' } as Record<string, string>,
-    stageAria: 'Scena 3D del lander guidata dai controlli. Frecce per ruotare, più e meno per ingrandire, 1, 2, 3 per le viste. Gli stessi numeri sono nell’indicatore e nel testo.',
-    stageAria2d: 'Sezione laterale del terreno, della linea di vista e della zona di Fresnel. Gli stessi numeri sono nell’indicatore e nel testo.',
-    viewError: 'Impossibile caricare la visualizzazione 3D: usa l’indicatore, il grafico e la mappa.',
-    loading: 'Calcolo della scena reale…',
-    sitesError: 'Impossibile caricare l’elenco dei siti reali.',
-    tableMissing: 'Tabella della correzione non disponibile: la correzione della cresta è omessa.',
-    realChartNote: 'Con un sito reale la curva usa il crinale dominante di questo istante come ostacolo singolo su terreno piano: è un’approssimazione, il margine dell’indicatore è quello del motore.',
-    realMapNote: 'La mappa di validità esplora lo scenario didattico: con un sito reale il crinale viene dal terreno.',
-    restart: 'Ricomincia la missione',
-    expect: 'Cosa aspettarti',
-    exag: (v: number) => `Rilievo esagerato ×${v} in verticale; tubo di Fresnel ×20 (solo disegno)`,
-    glossary: 'Che cosa vuol dire: margine, dB, zona di Fresnel',
-    stepDone: (n: number) => `Passo ${n} completato.`,
-    applied: 'Preset applicato',
-  } as const;
+    numbers: t('sim.ui.numbers'),
+    export: t('sim.ui.export'),
+    json: t('sim.ui.json'),
+    csv: t('sim.ui.csv'),
+    flags: t('sim.ui.flags'),
+    view: t('sim.ui.view'),
+    modeLabel: {
+      webgl: t('sim.ui.mode.webgl'),
+      canvas2d: t('sim.ui.mode.canvas'),
+      none: t('sim.ui.mode.none'),
+    } as Record<string, string>,
+    stageAria: t('sim.ui.stageAria'),
+    stageAria2d: t('sim.ui.stageAria2d'),
+    viewError: t('sim.ui.viewError'),
+    loading: t('sim.ui.loading'),
+    sitesError: t('sim.ui.sitesError'),
+    tableMissing: t('sim.ui.tableMissing'),
+    realChartNote: t('sim.ui.realChartNote'),
+    realMapNote: t('sim.ui.realMapNote'),
+    restart: t('sim.ui.restart'),
+    expect: t('sim.ui.expect'),
+    exag: (factor: number) => t('sim.ui.exag', { factor }),
+    glossary: t('sim.ui.glossary'),
+    stepDone: (step: number) => t('sim.ui.stepDone', { step }),
+    applied: t('sim.ui.applied'),
+  });
+  const S = $derived({
+    ...S_BASE,
+    rate: (bps: number, format = (value: number, digits = 0) => formatNumber(value, { maximumFractionDigits: digits })) =>
+      bps >= 1e6 ? `${format(bps / 1e6)} Mbps` : `${format(bps / 1e3)} kbps`,
+    sentence: {
+      below: t('sim.state.sentence.below'),
+      open: (margin: string, rate: string) => t('sim.state.sentence.open', { margin, rate }),
+      transition: (margin: string, rate: string) => t('sim.state.sentence.transition', { margin, rate }),
+      blockedSome: (margin: string, rate: string, maximum: string) => t('sim.state.sentence.blockedSome', { margin, rate, maximum }),
+      blockedNone: (margin: string) => t('sim.state.sentence.blockedNone', { margin }),
+    },
+    state: {
+      open: { ...S_BASE.state.open, word: t('sim.state.open') },
+      transition: { ...S_BASE.state.transition, word: t('sim.state.transition') },
+      blocked: { ...S_BASE.state.blocked, word: t('sim.state.blocked') },
+    },
+    validity: {
+      reliable: { ...S_BASE.validity.reliable, word: t('sim.state.validity.reliable'), hint: t('sim.state.validity.reliableHint') },
+      uncertain: { ...S_BASE.validity.uncertain, word: t('sim.state.validity.uncertain'), hint: t('sim.state.validity.uncertainHint') },
+      outside: { ...S_BASE.validity.outside, word: t('sim.state.validity.outside'), hint: t('sim.state.validity.outsideHint') },
+    },
+    flag: {
+      invalid_input: t('sim.state.flag.invalidInput'),
+      earth_below_horizon: t('sim.state.flag.earthBelowHorizon'),
+      paraxial: t('sim.state.flag.paraxial'),
+      nu_outside_table: t('sim.state.flag.nuOutsideTable'),
+      fresnel_oscillation: t('sim.state.flag.fresnelOscillation'),
+      d1_outside_table: t('sim.state.flag.d1OutsideTable'),
+      radius_unresolved: t('sim.state.flag.radiusUnresolved'),
+      reflection_beyond_ridge: t('sim.state.flag.reflectionBeyondRidge'),
+      correction_unavailable: t('sim.state.flag.correctionUnavailable'),
+    },
+    flagOk: t('sim.state.flagOk'),
+    flagNa: t('sim.state.flagNa'),
+    honesty: t('sim.state.honesty'),
+    presets: {
+      high: t('sim.state.preset.high'),
+      grazing: t('sim.state.preset.grazing'),
+      blocking: t('sim.state.preset.blocking'),
+      small: t('sim.state.preset.small'),
+    },
+    mission: {
+      ...S_BASE.mission,
+      title: t('sim.state.mission.title'),
+      done: t('sim.state.mission.done'),
+      todo: t('sim.state.mission.todo'),
+      all: t('sim.state.mission.all'),
+      steps: S_BASE.mission.steps.map((step) => ({
+        ...step,
+        task: t(`sim.state.mission.${step.id}.task` as MessageKey),
+        expect: t(`sim.state.mission.${step.id}.expect` as MessageKey),
+      })),
+    },
+  });
 
   const quality = detectQuality();
   const store = scenarioStore();
@@ -201,7 +259,8 @@
     byRate.forEach((v, i) => v >= 0 && (max = Math.max(max, RATES_BPS[i]!)));
     return { ...realOut, marginDb: m, state: realScene.link.state, marginByRateDb: byRate, maxRateBps: max, input: { ...realOut.input, rateBps: realScene.link.rateBps } };
   });
-  const said = $derived(sentence(shown));
+  const said = $derived(sentence(shown, S.sentence, (value, digits) =>
+    formatNumber(value, { minimumFractionDigits: digits, maximumFractionDigits: digits })));
   const reasons = $derived(shown.validity.reasons.map((c) => S.flag[c]));
   const modelInput = $derived(realOut ? realOut.input : out.input);
   const chart = $derived(marginChart(modelInput, table));
@@ -530,7 +589,7 @@
   <div class="container container--wide">
     <div class="grid scene-layout">
       <section class="figure tone-dark" class:cinematic={cinematic && !sectionMode} aria-labelledby="sim-fig-h">
-        <h2 id="sim-fig-h" class="visually-hidden">{sectionMode ? 'Sezione laterale della scena' : 'Scena 3D'}</h2>
+        <h2 id="sim-fig-h" class="visually-hidden">{sectionMode ? t('sim.ui.figureSection') : t('sim.ui.figureScene')}</h2>
         <div class="stage-frame">
         <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
         <div
@@ -558,10 +617,10 @@
             <div class="views" role="group" aria-label={STR.view}>
               {#each VIEWS as p (p.id)}<button type="button" aria-pressed={view === p.id} onclick={() => useView(p.id)}>{p.label}</button>{/each}
               <button type="button" aria-pressed={cinematic} onclick={toggleCinematic}>{t('lander.cinematic')}</button>
-              <button type="button" aria-label="Ruota a sinistra" onclick={() => rotate(-STEP, 0)}>◀</button>
-              <button type="button" aria-label="Ruota a destra" onclick={() => rotate(STEP, 0)}>▶</button>
-              <button type="button" aria-label="Ingrandisci" onclick={() => zoom(1.25)}>+</button>
-              <button type="button" aria-label="Riduci" onclick={() => zoom(1 / 1.25)}>−</button>
+              <button type="button" aria-label={t('sim.ui.rotateLeft')} onclick={() => rotate(-STEP, 0)}>◀</button>
+              <button type="button" aria-label={t('sim.ui.rotateRight')} onclick={() => rotate(STEP, 0)}>▶</button>
+              <button type="button" aria-label={t('sim.ui.zoomIn')} onclick={() => zoom(1.25)}>+</button>
+              <button type="button" aria-label={t('sim.ui.zoomOut')} onclick={() => zoom(1 / 1.25)}>−</button>
             </div>
           {/if}
         </div>
@@ -609,7 +668,7 @@
             <NumSlider id="sim-ridge" label={adv ? STR.ridgeAdv : STR.ridge} bind:value={inp.ridgeHeightM} min={0} max={150} step={0.5} unit="m" digits={1} tip={STR.tips.ridge} tag={adv ? tag('ridge').status : ''} source={adv ? tag('ridge').source : ''} testid="ctl-ridge" />
             <NumSlider id="sim-radius" label={adv ? STR.radiusAdv : STR.radius} bind:value={inp.ridgeRadiusM} min={0} max={adv ? 1000 : 400} step={5} unit="m" digits={0} tip={STR.tips.radius} tag={adv ? tag('radius').status : ''} source={adv ? tag('radius').source : ''} testid="ctl-radius" />
           {/if}
-          <NumSlider id="sim-dia" label={adv ? STR.diaAdv : STR.dia} bind:value={inp.diameterM} min={0.02} max={adv ? 3 : 1} step={0.005} unit="m" digits={3} tip={STR.tips.dia} tag={adv ? tag('dia').status : ''} source={adv ? `guadagno ${f2(shown.gainDbi)} dBi con η ${fmt(inp.eta, 2)}; ${tag('dia').source}` : ''} testid="ctl-dia" />
+          <NumSlider id="sim-dia" label={adv ? STR.diaAdv : STR.dia} bind:value={inp.diameterM} min={0.02} max={adv ? 3 : 1} step={0.005} unit="m" digits={3} tip={STR.tips.dia} tag={adv ? tag('dia').status : ''} source={adv ? t('sim.ui.sourceGain', { gain: f2(shown.gainDbi), efficiency: fmt(inp.eta, 2), source: tag('dia').source }) : ''} testid="ctl-dia" />
           {#if real && scen.gain !== null && sceneGain === scen.gain}<p>{t('planner.inheritedGain', { gain: scen.gain })}</p>{/if}
           <NumSlider id="sim-rate" label={adv ? STR.rateAdv : STR.rate} bind:value={rateIdx} min={0} max={RATES_BPS.length - 1} step={1} text={rateText} tip={STR.tips.rate} tag={adv ? tag('rate').status : ''} source={adv ? tag('rate').source : ''} testid="ctl-rate" />
 
@@ -634,7 +693,7 @@
               <label for="sim-station">{STR.adv.station} {#if st}<Badge status={st.gain_tag} />{/if}</label>
               <select id="sim-station" bind:value={inp.station} data-testid="ctl-station">
                 <option value="dsn34">DSN 34 m (68 dBi)</option>
-                <option value="dsn18">Stazione 18 m, ipotesi (62,5 dBi)</option>
+                <option value="dsn18">{t('sim.ui.station18')}</option>
               </select>
               {#if st}<span class="src">{st.gain_source}</span>{/if}
             </p>
@@ -667,7 +726,7 @@
             </p>
             <CustomSiteControl onadd={(id) => { siteId = id; }} />
             <NumSlider id="sim-hours" label={STR.time} bind:value={hours} min={0} max={720} step={1} text={timeText} testid="ctl-hours" />
-            <p class="small" role="status" data-testid="real-status">{realErr ? '' : realBusy || !realScene ? STR.loading : realScene.link.margin === null ? t('lander.rfOutsideModel') : `${realScene.tUtc.replace('T', ' ').replace('Z', ' UTC')}: margine del motore ${f2(realScene.link.margin)} dB.`}</p>
+            <p class="small" role="status" data-testid="real-status">{realErr ? '' : realBusy || !realScene ? STR.loading : realScene.link.margin === null ? t('lander.rfOutsideModel') : t('sim.ui.realMargin', { time: realScene.tUtc.replace('T', ' ').replace('Z', ' UTC'), margin: f2(realScene.link.margin) })}</p>
             {#if realErr}<p role="alert" data-testid="real-error">{realErr}</p>{/if}
           {/if}
         </div>{/if}
@@ -720,7 +779,7 @@
           <h2 id="var-h">{STR.variants}</h2>
           <div class="tw">
             <table data-testid="variants">
-              <thead><tr><th scope="col">Variante</th><th scope="col">Margine (dB)</th><th scope="col">Stato</th></tr></thead>
+              <thead><tr><th scope="col">{t('sim.ui.table.variant')}</th><th scope="col">{t('sim.ui.table.margin')}</th><th scope="col">{t('sim.ui.table.state')}</th></tr></thead>
               <tbody>
                 {#each vars as v (v.id)}
                   <tr><th scope="row">{STR.variantName[v.id]}</th><td dir="ltr">{f2(v.marginDb)}{v.uncertaintyDb !== undefined && v.uncertaintyDb > 0 ? ` ± ${f2(v.uncertaintyDb)}` : ''}</td><td>{S.state[v.state].symbol} {S.state[v.state].word}</td></tr>
@@ -741,27 +800,27 @@
           <h2 id="num-h">{STR.numbers}</h2>
           <div class="tw">
             <table class="nums" data-testid="numbers">
-              <thead><tr><th scope="col">Grandezza</th><th scope="col">Valore</th><th scope="col">Tag</th></tr></thead>
+              <thead><tr><th scope="col">{t('sim.ui.table.quantity')}</th><th scope="col">{t('sim.ui.table.value')}</th><th scope="col">{t('sim.ui.table.tag')}</th></tr></thead>
               <tbody>
                 <tr><th scope="row">λ</th><td dir="ltr">{fmt(shown.wavelengthM * 100, 3)} cm</td><td><Badge status="D" /></td></tr>
-                <tr><th scope="row">Cima vista dall’antenna</th><td dir="ltr">{f2(shown.tipElevationDeg)}° ({f2(shown.angleAboveLosDeg)}° sulla linea di vista)</td><td><Badge status="D" /></td></tr>
-                <tr><th scope="row">h sopra la linea di vista</th><td dir="ltr">{f2(shown.hAboveLosM)} m</td><td><Badge status="D" /></td></tr>
-                <tr><th scope="row">d1 lungo la linea di vista</th><td dir="ltr">{fmt(shown.d1LosM, 0)} m</td><td><Badge status="D" /></td></tr>
-                <tr><th scope="row">Raggio della 1ª zona di Fresnel al crinale</th><td dir="ltr">{f2(shown.fresnelR1M)} m</td><td><Badge status="V" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.crestElevation')}</th><td dir="ltr">{f2(shown.tipElevationDeg)}° ({f2(shown.angleAboveLosDeg)}° {t('sim.ui.quantity.aboveLineOfSight')})</td><td><Badge status="D" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.heightAboveLineOfSight')}</th><td dir="ltr">{f2(shown.hAboveLosM)} m</td><td><Badge status="D" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.ridgeDistanceLineOfSight')}</th><td dir="ltr">{fmt(shown.d1LosM, 0)} m</td><td><Badge status="D" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.fresnelRadius')}</th><td dir="ltr">{f2(shown.fresnelR1M)} m</td><td><Badge status="V" /></td></tr>
                 <tr><th scope="row">ν</th><td dir="ltr" data-testid="num-nu">{fmt(shown.nu, 3)}</td><td><Badge status="V" /></td></tr>
-                <tr><th scope="row">Bordo a lama J(ν)</th><td dir="ltr">{f2(shown.knifeEdgeDb)} dB</td><td><Badge status="V" /></td></tr>
-                <tr><th scope="row">Approssimazione ITU (non verificata)</th><td dir="ltr">{f2(shown.ituDb)} dB</td><td><Badge status="I" /></td></tr>
-                <tr><th scope="row">Correzione della cresta</th><td dir="ltr">{shown.correctionStatus === 'off' ? 'spenta' : `${f2(shown.correctionDb)} ± ${f2(shown.correctionUncertaintyDb)} dB (ITU)${shown.correctionStatus === 'itu' ? `; split-step ${f2(shown.correctionSplitStepDb)} dB${shown.correctionClamped ? ' (saturata)' : ''}` : '; confronto non disponibile'}`}</td><td><Badge status="I" /></td></tr>
-                <tr><th scope="row">Spazio libero</th><td dir="ltr">{f2(shown.fsplDb)} dB</td><td><Badge status="V" /></td></tr>
-                <tr><th scope="row">Guadagno del rover</th><td dir="ltr">{f2(shown.gainDbi)} dBi (grezzo 30000/HPBW²: {f2(shown.gainCrudeDbi)})</td><td><Badge status="V" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.knifeEdge')}</th><td dir="ltr">{f2(shown.knifeEdgeDb)} dB</td><td><Badge status="V" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.ituApproximation')}</th><td dir="ltr">{f2(shown.ituDb)} dB</td><td><Badge status="I" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.crestCorrection')}</th><td dir="ltr">{shown.correctionStatus === 'off' ? t('sim.ui.off') : `${f2(shown.correctionDb)} ± ${f2(shown.correctionUncertaintyDb)} dB (ITU)${shown.correctionStatus === 'itu' ? `; split-step ${f2(shown.correctionSplitStepDb)} dB${shown.correctionClamped ? ` (${t('sim.ui.clamped')})` : ''}` : `; ${t('sim.ui.comparisonUnavailable')}`}`}</td><td><Badge status="I" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.freeSpace')}</th><td dir="ltr">{f2(shown.fsplDb)} dB</td><td><Badge status="V" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.roverGain')}</th><td dir="ltr">{f2(shown.gainDbi)} dBi ({t('sim.ui.crude')}: 30000/HPBW²: {f2(shown.gainCrudeDbi)})</td><td><Badge status="V" /></td></tr>
                 <tr><th scope="row">HPBW</th><td dir="ltr">{f2(shown.hpbwScriptDeg)}° (70 λ/D) / {f2(shown.hpbwUniformDeg)}° (uniforme)</td><td><Badge status="I" /></td></tr>
-                <tr><th scope="row">Perdita di puntamento</th><td dir="ltr">{fmt(shown.pointingLossDb, 3)} dB (script {fmt(shown.pointingScriptDb, 3)}, Airy {fmt(shown.pointingAiryDb, 3)})</td><td><Badge status="D" /></td></tr>
-                <tr><th scope="row">Multipath</th><td dir="ltr">{shown.multipathApplicable ? `${f2(shown.multipathGainDb)} dB` : 'non applicato'}</td><td><Badge status="D" /></td></tr>
-                <tr><th scope="row">Stazione</th><td dir="ltr">{fmt(shown.stationGainDbi, 1)} dBi</td><td><Badge status="I" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.pointingLoss')}</th><td dir="ltr">{fmt(shown.pointingLossDb, 3)} dB ({t('sim.ui.script')} {fmt(shown.pointingScriptDb, 3)}, Airy {fmt(shown.pointingAiryDb, 3)})</td><td><Badge status="D" /></td></tr>
+                <tr><th scope="row">Multipath</th><td dir="ltr">{shown.multipathApplicable ? `${f2(shown.multipathGainDb)} dB` : t('sim.ui.notApplied')}</td><td><Badge status="D" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.adv.station')}</th><td dir="ltr">{fmt(shown.stationGainDbi, 1)} dBi</td><td><Badge status="I" /></td></tr>
                 <tr><th scope="row">N0</th><td dir="ltr">{f2(shown.n0Dbw)} dBW/Hz</td><td><Badge status="D" /></td></tr>
                 <tr><th scope="row">C/N0</th><td dir="ltr">{f2(shown.cn0DbHz)} dB-Hz</td><td><Badge status="D" /></td></tr>
-                <tr><th scope="row">Margine</th><td dir="ltr" data-testid="num-margin">{f2(shown.marginDb)} dB</td><td><Badge status="D" /></td></tr>
-                <tr><th scope="row">Bit-rate massimo sostenibile</th><td dir="ltr">{shown.maxRateBps > 0 ? S.rate(shown.maxRateBps) : 'nessuno'}</td><td><Badge status="D" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.margin')}</th><td dir="ltr" data-testid="num-margin">{f2(shown.marginDb)} dB</td><td><Badge status="D" /></td></tr>
+                <tr><th scope="row">{t('sim.ui.quantity.maxSustainableRate')}</th><td dir="ltr">{shown.maxRateBps > 0 ? S.rate(shown.maxRateBps) : t('sim.ui.none')}</td><td><Badge status="D" /></td></tr>
               </tbody>
             </table>
           </div>

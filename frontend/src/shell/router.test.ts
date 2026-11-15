@@ -112,12 +112,12 @@ describe('registro della navigazione', () => {
       ['/', 'Home'],
       ['/mission-planner', 'Mission Planner'],
       ['/dashboard', 'Dashboard'],
-      ['/explore', 'Explore'],
       ['/learn', 'Learn'],
       ['/pricing', 'Piani'],
       ['/contacts', 'Contatti'],
     ]);
-    expect(navPages(appRouter.pages(), 'legal').map(label)).toEqual(['About', 'Modello e validazione', 'Licenze', 'Privacy', 'Cookie', "Condizioni d'uso"]);
+    expect(navPages(appRouter.pages(), 'legal').map(label)).toEqual(['About', 'Explore', 'Licenze', 'Privacy', 'Cookie', "Condizioni d'uso"]);
+    expect(appRouter.resolve('/model')?.path).toBe('/model');
     expect(appRouter.resolve('/roadmap')?.path).toBe('/404');
   });
   it('gli strumenti restano rotte vere sotto Explore, la chat sotto Learn', () => {

@@ -168,8 +168,8 @@ timeline
     title RAVEN Strategic Development Roadmap
     Phase 1 (Completed) : NASA Space Apps Core : 8-Stage Physical Engine : 51 Polar Sites + Custom Coordinates : Local Offline SLM (RAVEN SI) : PDF Dossier Generator
     Phase 2 (Near-Term) : Multi-Hop Orbital Relays : LunaNet & ESA Moonlight Integration : Expanded DEM Raytracing to 75°S : Sub-meter Microtopography
-    Phase 3 (Mid-Term) : Autonomous Traverse Planner : Slope Hazard Analysis for Mobile Rovers : Continuous RF & Sun Tethering : Dynamic Thermal Radiator Model
-    Phase 4 (Long-Term) : CCSDS Space Packet Ingestion : Hardware-in-the-Loop (HIL) Flight Model Coupling : Distributed Swarm Mission Coordination
+    Phase 3 (Mid-Term) : NASA Moon Trek WMTS Layers in 2D/3D : JPL Horizons Online Mode with SPICE Fallback : Live DSN Now Widget in S6 : Same-Site Date Comparison & Landing Countdown : Historic and International Sites
+    Phase 4 (Long-Term) : Launch Window Optimizer Heatmap : Animation Player & GIF/MP4 Export : DSN Pass Plan Export (JSON/CSV) : DONKI Space-Weather Warnings in Report
 ```
 
 * **Phase 1 — Core Baseline (Current Release):**
@@ -179,12 +179,21 @@ timeline
 * **Phase 2 — Multi-Hop Relays & Lunar Constellations:**
   - Support for orbital communication relays (**LunaNet** architecture and **ESA Moonlight** constellation) when direct-to-Earth line of sight is obstructed.
   - Sub-meter microtopographic hazard ingestion for landing precision.
-* **Phase 3 — Autonomous Rover Traverse Navigation:**
-  - Dynamic pathfinding for mobile surface exploration vehicles traversing from sunlit ridges into Permanently Shadowed Regions (PSRs).
-  - Multi-variable cost-function optimization combining slope slip risk, solar recharge windows, and RF tethering.
-* **Phase 4 — Flight Hardware In-The-Loop (HIL) & Real Telemetry:**
-  - Native integration with CCSDS space telecommand and telemetry packet streams.
-  - Embedded micro-controller simulation (ESP32 HAL) for testing lander guidance, navigation, and control (GNC).
+- **Phase 3 — NASA Data Integration & Challenge Completion:**
+  - **Moon Trek WMTS layers:** optional overlays in the 2D and 3D viewers (LRO Diviner temperature, LROC NAC imagery, PSR maps), streamed as tiles instead of stored locally.
+  - **JPL Horizons hybrid mode:** when online, Horizons API ephemerides are used (higher precision, no API key). When offline, RAVEN falls back to the bundled SPICE DE440 kernels. The active source is shown in the UI.
+  - **Signal gaps from other spacecraft:** Horizons state vectors of active probes (e.g. LRO, CAPSTONE, Danuri) are used to flag windows where a satellite crosses the Earth line of sight.
+  - **Live DSN Now badge in stage S6:** shows which Goldstone/Madrid/Canberra antennas are active (feed from eyes.nasa.gov/dsn).
+  - **One-click "compare dates at same site":** e.g. the same site in April vs June vs October, highlighting seasonal sun elevation and libration effects.
+  - **Operational countdown widget:** time remaining to local sunset/Earthset from a user-specified landing time.
+  - **Exportable UTC window table:** start/end timestamps of each contact and light window.
+  - **Historic and international sites:** Apollo 11/17, Chang'e 4/6, Chandrayaan-3, SLIM, CLPS (IM-1, Griffin), for comparison with polar sites.
+
+- **Phase 4 — Mission Planning Platform:**
+  - **Launch Window Optimizer:** 6–12 month range for one site, shown as an interactive heatmap (days vs hours of day).
+  - **Animation player:** Play/Pause/Step with 1x/10x/100x speed over the 29.5-day cycle, on both 3D and 2D views, with GIF/MP4 or frame-sequence export.
+  - **DSN pass plan export:** JSON/CSV with AOS, LOS, solar culmination and sunrise/sunset events.
+  - **Mission safety layer:** NASA DONKI (flares, CMEs, SEP storms) as an optional warning in the final PDF report for a given window, flagging radiation risk to electronics and radio attenuation.
 
 ---
 

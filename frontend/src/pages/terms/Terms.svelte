@@ -14,7 +14,7 @@
       <h2>{t(`trust.terms.${section}.title`)}</h2>
       <p>{t(`trust.terms.${section}.body`)}</p>
     {/each}
-    <p><a href={link('/model')}>{t('title.model')}</a> · <a href={link('/licenses')}>{t('title.licenses')}</a></p>
+    <p><a href={link('/licenses')}>{t('title.licenses')}</a></p>
     <p><a href={link('/privacy')}>{t('title.privacy')}</a> · <a href={link('/contacts')}>{t('trust.support.link')}</a></p>
   </div>
 </div>

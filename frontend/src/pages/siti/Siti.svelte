@@ -5,12 +5,11 @@
   import type { HubTab } from '../../shell/hub';
   import { t } from '../../i18n/i18n.svelte';
 
-  /** Stringhe della pagina (chiavi stabili, i18n in arrivo). */
-  const STR = {
-    title: 'Siti',
-    tabs: 'Viste dei siti',
-    failed: 'Impossibile caricare la scheda. Controlla la connessione e ricarica la pagina.',
-  } as const;
+  const STR = $derived({
+    title: t('sites.pageTitle'),
+    tabs: t('sites.pageTabs'),
+    failed: t('sites.pageFailed'),
+  });
 
   const tabs: HubTab[] = $derived([
     { id: 'insieme', label: t('sites.combined'), title: t('sites.combined'), header: true, learn: t('sites.combinedHelp'), load: () => import('./SitiCombined.svelte') },

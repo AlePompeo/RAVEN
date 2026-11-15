@@ -5,22 +5,22 @@
 <script lang="ts">
   import Hub from '../../shell/Hub.svelte';
   import type { HubTab } from '../../shell/hub';
+  import { t } from '../../i18n/i18n.svelte';
 
-  /** Stringhe della pagina (chiavi stabili, i18n in arrivo). */
-  const STR = {
-    title: 'Simula',
-    tabs: 'Viste della simulazione',
-    scena: 'Scena',
-    scenaTitle: 'Simulatore',
-    onda: 'L’onda',
-    ondaTitle: 'Onda 3D',
-    failed: 'Impossibile caricare la scheda. Controlla la connessione e ricarica la pagina.',
-  } as const;
+  const STR = $derived({
+    title: t('simula.page.title'),
+    tabs: t('simula.page.tabs'),
+    scena: t('simula.page.scene'),
+    scenaTitle: t('simula.page.sceneTitle'),
+    onda: t('simula.page.wave'),
+    ondaTitle: t('simula.page.waveTitle'),
+    failed: t('simula.page.failed'),
+  });
 
-  const tabs: HubTab[] = [
+  const tabs: HubTab[] = $derived([
     { id: 'scena', label: STR.scena, title: STR.scenaTitle, load: () => import('./UnifiedScene.svelte') },
     { id: 'onda', label: STR.onda, title: STR.ondaTitle, load: () => import('../wave/Wave.svelte') },
-  ];
+  ]);
 </script>
 
 <Hub title={STR.title} label={STR.tabs} {tabs} loading={STR.failed} />

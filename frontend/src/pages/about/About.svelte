@@ -108,11 +108,9 @@
           <dd>{t(`disclosure.source.${source.id}`)}</dd>
         {/each}
       </dl>
-      <p><a href={withBase('/model', BASE)}>{t('disclosure.evidenceLink')}</a></p>
     </section>
 
     <nav class="links" aria-label={t('about.linksLabel')}>
-      <a href={withBase('/model', BASE)}>{t('about.modelLink')}</a>
       <a href={withBase('/contacts', BASE)}>{t('about.contactsLink')}</a>
       <a href={withBase('/licenses', BASE)}>{t('about.licensesLink')}</a>
     </nav>

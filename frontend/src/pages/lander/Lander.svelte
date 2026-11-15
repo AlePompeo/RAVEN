@@ -30,7 +30,6 @@
     FALLBACK_SUN,
     MAST_RANGE,
     pointing,
-    rateText,
     ridgeObstruction,
     sceneJson,
     SceneClient,
@@ -44,7 +43,7 @@
   } from './model';
   import { buildTerrain, clampCam, orbit, PRESETS, presetCamera, zoomBy, type LanderViewState, type Preset } from './view';
   import { modeNow } from '../../shell/modeState.svelte';
-  import { t } from '../../i18n/i18n.svelte';
+  import { formatNumber, t } from '../../i18n/i18n.svelte';
   import { customSites as customStore, isCustomId, type CustomSiteDef } from '../../shell/customSites';
   import CustomSiteControl from '../../shell/CustomSiteControl.svelte';
 
@@ -70,10 +69,10 @@
   const controlled = $derived(plannerSite !== null && plannerMs !== null);
 
   const TABS = [
-    { id: 'numbers', label: 'Numeri' },
-    { id: 'section', label: 'Sezione laterale' },
-    { id: 'text', label: 'Descrizione testuale' },
-    { id: 'limits', label: 'Limiti dichiarati' },
+    { id: 'numbers', label: t('lander.tab.numbers') },
+    { id: 'section', label: t('lander.tab.section') },
+    { id: 'text', label: t('lander.tab.text') },
+    { id: 'limits', label: t('lander.tab.limits') },
   ] as const;
   type TabId = (typeof TABS)[number]['id'];
   const STEP = 8 * (Math.PI / 180);
@@ -333,7 +332,7 @@
     void (async () => {
       const r = await raven.sites();
       if (!r.ok) {
-        listError = 'Impossibile caricare l’elenco dei siti.';
+        listError = t('lander.listUnavailable');
         loading = false;
         if (controlled) plannerSceneState?.(null, false);
         return;
@@ -352,7 +351,7 @@
       }
     })();
     if (host) {
-      handle = mountViewport(landerViewportFactory((m) => (mode = m)), host, () => (viewError = 'Impossibile caricare la visualizzazione 3D. Usa la sezione laterale e il testo.'));
+      handle = mountViewport(landerViewportFactory((m) => (mode = m)), host, () => (viewError = t('lander.viewUnavailable')));
       handle.update(vs);
     }
     return () => {
@@ -475,16 +474,20 @@
    * nomi semplici e le schede "Cosa succede" e "Cosa non è modellato"; guadagno, errore di puntamento, esagerazioni,
    * numeri ed esportazione sono in Avanzato (i valori restano quelli scelti). Chiavi stabili (i18n in arrivo).
    */
-  const STR = {
-    learn: 'il lander al polo Sud, il crinale davanti a lui e la Terra bassa sull’orizzonte. Il tubo colorato è lo spazio che il segnale radio usa: verde passa, ambra passa piegato, rosso non passa.',
-    introSimple:
-      'Il tubo che parte dall’antenna è la strada del segnale verso la Terra. Se il crinale lo tocca il segnale si indebolisce; se lo copre troppo non arriva. Il colore e la frase dicono come va.',
-    site: 'Dove (sito al polo Sud)',
-    station: 'Antenna sulla Terra',
-    rate: 'Quanti dati al secondo',
-    mast: 'Quanto è alto il palo dell’antenna',
-    tabs: { numbers: 'Numeri', section: 'Sezione laterale', text: 'Cosa succede', limits: 'Cosa non è modellato' } as Record<TabId, string>,
-  } as const;
+  const STR = $derived({
+    learn: t('lander.learn'),
+    introSimple: t('lander.introSimple'),
+    site: t('lander.site'),
+    station: t('lander.station'),
+    rate: t('lander.rate'),
+    mast: t('lander.mast'),
+    tabs: {
+      numbers: t('lander.tab.numbers'),
+      section: t('lander.tab.section'),
+      text: t('lander.tab.textSimple'),
+      limits: t('lander.tab.limitsSimple'),
+    } as Record<TabId, string>,
+  });
   const LEARN_TABS: readonly TabId[] = ['text', 'limits'];
   const adv = $derived(modeNow.advanced);
   const visibleTabs = $derived(TABS.filter((t) => !(sectionMode && t.id === 'section') && (adv || LEARN_TABS.includes(t.id))));
@@ -506,9 +509,34 @@
     downloadText(`scena-lander-${siteId}.json`, 'application/json', sceneJson(data, { pointingErrorDeg: errorDeg, verticalExaggeration: vExag, tubeScale, sunReal, sunElevationDeg: sun.elDeg }));
   }
 
-  const f = (v: number | null, d = 2) => v === null ? '?' : v.toFixed(d).replace('.', ',');
+  const f = (v: number | null, d = 2) => v === null ? '?' : formatNumber(v, { maximumFractionDigits: d });
   const sgn = (v: number, d = 2) => `${v >= 0 ? '+' : '−'}${f(Math.abs(v), d)}`;
-  const MODE_LABEL: Record<string, string> = { webgl: 'Rendering WebGL', canvas2d: 'Modalità compatibile (senza WebGL): sezione laterale', none: 'Grafica non disponibile' };
+  const rateText = (bps: number) => bps >= 1e6
+    ? `${formatNumber(bps / 1e6, { maximumFractionDigits: bps % 1e6 ? 1 : 0 })} Mbit/s`
+    : `${formatNumber(bps / 1e3, { maximumFractionDigits: 0 })} kbit/s`;
+  const localizedState = (state: string) =>
+    state === 'open' ? t('lander.state.open')
+      : state === 'transition' ? t('lander.state.transition')
+      : state === 'blocked' ? t('lander.state.blocked')
+      : t('lander.state.unknown');
+  const localizedStateHelp = (state: string) =>
+    state === 'open' ? t('lander.state.openHelp')
+      : state === 'transition' ? t('lander.state.transitionHelp')
+      : state === 'blocked' ? t('lander.state.blockedHelp')
+      : t('lander.state.unknownHelp');
+  const sceneProblem = (error: SceneError) => {
+    switch (error.kind) {
+      case 'range': return t('lander.error.range');
+      case 'coverage': return t('lander.error.coverage');
+      case 'unavailable': return t('lander.error.unavailable');
+      case 'busy': return t('lander.error.busy');
+      case 'network': return t('lander.error.network');
+      case 'invalid': return t('lander.error.invalid');
+      case 'outside_model': return t('lander.rfOutsideModel');
+    }
+  };
+  const presetLabel = (id: Preset) => t(`lander.preset.${id}` as 'lander.preset.lander' | 'lander.preset.side' | 'lander.preset.top');
+  const modeLabel = $derived(mode === 'webgl' ? t('lander.mode.webgl') : mode === 'canvas2d' ? t('lander.mode.canvas2d') : mode === 'none' ? t('lander.mode.none') : '');
 </script>
 
 {#if !embedded}<SubNav title="Scena lander" learn={STR.learn} />{/if}
@@ -516,7 +544,7 @@
 <div class="workspace tile tile--alt">
   <div class="container container--wide">
     {#snippet setup()}
-    <Callout title="Il lander, il crinale e la Terra radente" id="intro">
+    <Callout title={t('lander.introTitle')} id="intro">
       {#if !adv}<p>{STR.introSimple}</p>{:else}
       <p>
         Dal polo Sud la Terra sta pochi gradi sopra l’orizzonte: l’antenna del rover guarda quasi radente al suolo e il crinale davanti a lei può tagliare la
@@ -594,19 +622,19 @@
     </form>
 
     <p class="status" role="status" data-testid="lander-status">
-      {#if busy || loading}{data ? 'Aggiornamento della scena…' : 'Calcolo della scena…'}{:else if data}Scena aggiornata: {siteName}, {data.tUtc.replace('T', ' ').replace('Z', ' UTC')}.{/if}
+      {#if busy || loading}{data ? t('lander.sceneUpdating') : t('lander.calculatingScene')}{:else if data}{t('lander.sceneUpdated', { site: siteName, time: data.tUtc.replace('T', ' ').replace('Z', '') })}{/if}
     </p>
     {#if listError}<p role="alert" class="notice" data-testid="lander-error">{listError}</p>{/if}
     {#if problem}
       <div role="alert" class="notice" data-kind={problem.kind} data-testid="lander-error">
-        <p>{problem.kind === 'outside_model' ? t('lander.rfOutsideModel') : problem.message}</p>
+        <p>{sceneProblem(problem)}</p>
       </div>
     {/if}
     {/snippet}
 
     <div class="scene-layout">
     <section class="figure tone-dark" class:cinematic={cinematic && !sectionMode} aria-labelledby="fig-h">
-      <h2 id="fig-h" class="visually-hidden">{sectionMode ? 'Sezione laterale della scena' : 'Scena 3D del lander'}</h2>
+      <h2 id="fig-h" class="visually-hidden">{sectionMode ? t('lander.sideSectionOfScene') : t('lander.scene3d')}</h2>
       <div class="stage-frame">
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
       <div
@@ -615,10 +643,10 @@
         id="lander-stage"
         role="group"
         tabindex="0"
-        aria-roledescription={sectionMode ? 'sezione' : 'grafico 3D'}
+        aria-roledescription={sectionMode ? t('lander.sideSection') : t('lander.chart3d')}
         aria-label={sectionMode
-          ? 'Sezione laterale del terreno, della linea di vista, della zona di Fresnel e del fascio. Il testo equivalente è nella scheda Descrizione testuale.'
-          : 'Scena 3D del lander. Trascina o usa le frecce per ruotare e inclinare, più e meno per ingrandire, 1, 2, 3 per le viste. Il testo equivalente è nella scheda Descrizione testuale.'}
+          ? t('lander.stageSectionLabel')
+          : t('lander.stageSceneLabel')}
         aria-describedby="lander-help"
         aria-busy={loading || busy}
         data-spatial-skip
@@ -632,26 +660,26 @@
         onwheel={onWheel}
       ></div>
       <p id="lander-help" class="visually-hidden">
-        Con il focus sul grafico: frecce per ruotare e inclinare, più e meno per ingrandire, 1 dal lander, 2 laterale, 3 dall’alto, zero per ripristinare la vista scelta.
+        {t('lander.stageHelp')}
       </p>
       {#if controlled && !data}
-        <p class="stage-note stage-cover" role="status">{problem ? 'Scena non disponibile.' : 'Calcolo della scena…'}</p>
+        <p class="stage-note stage-cover" role="status">{problem ? t('lander.stageUnavailable') : t('lander.calculatingScene')}</p>
       {:else if !data && (loading || busy)}
-        <p class="stage-note" aria-hidden="true">Calcolo della scena…</p>
+        <p class="stage-note" aria-hidden="true">{t('lander.calculatingScene')}</p>
       {/if}
       <div class="hud">
         {#if !sectionMode}
-          <div class="view-controls" role="group" aria-label="Controlli della vista">
+          <div class="view-controls" role="group" aria-label={t('lander.viewControls')}>
             {#each PRESETS as p (p.id)}
-              <button type="button" aria-pressed={preset === p.id} onclick={() => usePreset(p.id)}>{p.label}</button>
+              <button type="button" aria-pressed={preset === p.id} onclick={() => usePreset(p.id)}>{presetLabel(p.id)}</button>
             {/each}
             <button type="button" aria-pressed={cinematic} onclick={toggleCinematic}>{t('lander.cinematic')}</button>
-            <button type="button" aria-label="Ruota a sinistra" onclick={() => rotate(-STEP, 0)}>◀</button>
-            <button type="button" aria-label="Ruota a destra" onclick={() => rotate(STEP, 0)}>▶</button>
-            <button type="button" aria-label="Inclina verso l’alto" onclick={() => rotate(0, STEP)}>▲</button>
-            <button type="button" aria-label="Inclina verso il basso" onclick={() => rotate(0, -STEP)}>▼</button>
-            <button type="button" aria-label="Ingrandisci" onclick={() => zoom(1.25)}>+</button>
-            <button type="button" aria-label="Riduci" onclick={() => zoom(1 / 1.25)}>−</button>
+            <button type="button" aria-label={t('lander.rotateLeft')} onclick={() => rotate(-STEP, 0)}>◀</button>
+            <button type="button" aria-label={t('lander.rotateRight')} onclick={() => rotate(STEP, 0)}>▶</button>
+            <button type="button" aria-label={t('lander.tiltUp')} onclick={() => rotate(0, STEP)}>▲</button>
+            <button type="button" aria-label={t('lander.tiltDown')} onclick={() => rotate(0, -STEP)}>▼</button>
+            <button type="button" aria-label={t('lander.zoomIn')} onclick={() => zoom(1.25)}>+</button>
+            <button type="button" aria-label={t('lander.zoomOut')} onclick={() => zoom(1 / 1.25)}>−</button>
           </div>
         {/if}
       </div>
@@ -659,11 +687,11 @@
       {#if data && info}
         <div class="hud-state" data-testid="hud-state" data-state={data.link.state}>
           <span class="dot" style:background={info.color} aria-hidden="true"></span>
-          <strong>{info.symbol} {info.label}</strong>
-          <span class="num">margine {f(data.link.margin, 1)} dB a {rateText(data.link.rateBps)}</span>
+          <strong>{info.symbol} {localizedState(info.state)}</strong>
+          <span class="num">{t('lander.rateAt', { margin: t('lander.margin'), value: f(data.link.margin, 1), rate: rateText(data.link.rateBps) })}</span>
         </div>
       {/if}
-      <span class="mode" data-testid="lander-mode" role="status" data-mode={mode ?? ''}>{mode ? (MODE_LABEL[mode] ?? '') : ''}</span>
+      <span class="mode" data-testid="lander-mode" role="status" data-mode={mode ?? ''}>{modeLabel}</span>
     </section>
     {#if controlled}
       {#if plannerSettings}<SceneSettings>{@render plannerSettings()}</SceneSettings>{/if}
@@ -679,21 +707,21 @@
       {#if startMs !== null}
         <SkyTime body="moon" onlight={onLight} initialMs={startMs} ontime={onTime} />
       {:else}
-        <p class="small muted" role="status">Scelta dell’istante con il Sole vero...</p>
+        <p class="small muted" role="status">{t('lander.selectingTrueSunInstant')}</p>
       {/if}
     </div>
     </SceneSettings>
     {/if}
     </div>
     {#if controlled && listError}<p role="alert">{listError}</p>{/if}
-    {#if controlled && problem}<p role="alert">{problem.message}</p>{/if}
+    {#if controlled && problem}<p role="alert">{sceneProblem(problem)}</p>{/if}
     {#if controlled && data}
       <p role="status" data-testid="planner-scene-status">
         {#if previousScene}{t('lander.previousScene')} {/if}
-        Scena RAVEN: {renderedSiteName}, {data.tUtc.replace('T', ' ').replace('Z', ' UTC')}.
+        {t('lander.sceneUpdated', { site: renderedSiteName, time: data.tUtc.replace('T', ' ').replace('Z', '') })}
       </p>
     {/if}
-    {#if controlled && !light}<p role="status">Luce solare in aggiornamento o non disponibile.</p>{/if}
+    {#if controlled && !light}<p role="status">{t('lander.lightUpdating')}</p>{/if}
     {#if viewError}<p role="alert">{viewError}</p>{/if}
     {#if mode === 'webgl'}
 {#if !compact}      <p class="small muted" data-testid="lander-visual-credit">{t('lander.visualCredit')} {t(data?.sky ? 'lander.skyOriented' : 'lander.skyIllustrative')} {t('lander.terrainVisual')}</p>{/if}
@@ -719,12 +747,12 @@
       {#if data}Il terreno sotto l’orizzonte del Sole è scuro. Le ombre sono quelle del campo di quote campionato a {f(data.terrain.patch?.spacingM ?? 0, 0)} m.{/if}
     </p>{/if}
 
-    <div class="legend" aria-label="Legenda della scena">
+    <div class="legend" aria-label={t('lander.legend')}>
       <ul class="key-list small">
-        <li><span class="sw cyan" aria-hidden="true"></span>profilo lungo l’azimut della Terra</li>
-        <li><span class="sw white" aria-hidden="true"></span>linea di vista verso la Terra</li>
-        <li><span class="sw amber" aria-hidden="true"></span>crinale dominante</li>
-        <li><span class="sw green" aria-hidden="true"></span>tubo/fascio: verde aperto, ambra transizione, rosso bloccato (sempre anche in testo)</li>
+        <li><span class="sw cyan" aria-hidden="true"></span>{t('lander.legend.profile')}</li>
+        <li><span class="sw white" aria-hidden="true"></span>{t('lander.legend.lineOfSight')}</li>
+        <li><span class="sw amber" aria-hidden="true"></span>{t('lander.legend.ridge')}</li>
+        <li><span class="sw green" aria-hidden="true"></span>{t('lander.legend.beam')}</li>
       </ul>
 {#if !compact}      <p class="small muted">
         {#if cinematic}{t('lander.overlaysHidden')} {/if}
@@ -736,16 +764,16 @@
     <section class="panel" aria-labelledby="res-h">
       <h2 id="res-h">Dettagli della scena</h2>
       <div class="tablist" role="tablist" aria-label="Dettagli della scena" tabindex="-1">
-        {#each visibleTabs as t (t.id)}
-          <button type="button" role="tab" id="ltab-{t.id}" aria-selected={shown === t.id} aria-controls="lpanel-{t.id}" tabindex={shown === t.id ? 0 : -1} onclick={() => (tab = t.id)} onkeydown={onTabKey}>{adv ? t.label : STR.tabs[t.id]}</button>
+        {#each visibleTabs as tabItem (tabItem.id)}
+          <button type="button" role="tab" id="ltab-{tabItem.id}" aria-selected={shown === tabItem.id} aria-controls="lpanel-{tabItem.id}" tabindex={shown === tabItem.id ? 0 : -1} onclick={() => (tab = tabItem.id)} onkeydown={onTabKey}>{tabItem.label}</button>
         {/each}
       </div>
-      {#each TABS as t (t.id)}
-        <div role="tabpanel" id="lpanel-{t.id}" aria-labelledby="ltab-{t.id}" hidden={shown !== t.id} tabindex="0" class="tabpanel">
-          {#if shown === t.id}
+      {#each TABS as tabItem (tabItem.id)}
+        <div role="tabpanel" id="lpanel-{tabItem.id}" aria-labelledby="ltab-{tabItem.id}" hidden={shown !== tabItem.id} tabindex="0" class="tabpanel">
+          {#if shown === tabItem.id}
             {#if !data}
               <p class="muted">Nessuna scena: attendi il calcolo o scegli un sito coperto dal DEM.</p>
-            {:else if t.id === 'numbers'}
+            {:else if tabItem.id === 'numbers'}
               <dl class="meta" data-testid="lander-hud">
                 <dt>Terra</dt>
                 <dd data-testid="hud-earth">elevazione {f(data.earth.elDeg, 2)}°, azimut {f(data.earth.azDeg, 1)}°, distanza {Math.round(data.earth.rangeKm).toLocaleString('it-IT')} km <Badge status="D" /></dd>
@@ -760,21 +788,21 @@
                 <dd data-testid="hud-multipath">{data.diffraction.multipathApplicable ? `${sgn(data.diffraction.multipathGainDb ?? 0)} dB` : `non applicabile${data.diffraction.multipathReason ? `: ${data.diffraction.multipathReason}` : ''}`} <Badge status="D" /></dd>
                 <dt>Perdita totale</dt><dd data-testid="hud-total">{f(data.diffraction.totalLossDb, 2)} dB (lama + correzione − multipath)</dd>
                 <dt>Margine di link</dt>
-                <dd data-testid="hud-margin">{f(data.link.margin, 2)} dB a {rateText(data.link.rateBps)}: <strong>{info?.symbol} {info?.label}</strong> <span class="small muted">({info?.help})</span> <Badge status="I" /></dd>
+                <dd data-testid="hud-margin">{t('lander.marginAtRate', { value: f(data.link.margin, 2), rate: rateText(data.link.rateBps) })} <strong>{info?.symbol} {localizedState(data.link.state)}</strong> <span class="small muted">({localizedStateHelp(data.link.state)})</span> <Badge status="I" /></dd>
                 <dt>Antenna</dt>
                 <dd data-testid="hud-antenna">guadagno {f(data.antenna.gainDbi, 1)} dBi, diametro {f(data.antenna.diameterM, 2)} m, HPBW {f(data.antenna.hpbwDeg, 1)}°; palo {f(data.antenna.mastM, 1)} m <Badge status={data.antenna.mastTag} /></dd>
                 <dt>Puntamento</dt>
-                <dd data-testid="hud-pointing">errore {f(errorDeg, 1)}°: perdita {f(pt?.lossDb ?? 0, 2)} dB, fascio {pt?.beyond ? 'OLTRE HPBW/2 (rosso)' : 'entro HPBW/2 (verde)'}; margine con puntamento {f(pt?.marginDb ?? null, 2)} dB, stato {ptInfo?.label.toLowerCase()}</dd>
+                <dd data-testid="hud-pointing">{t('lander.pointingError', { error: f(errorDeg, 1) })}: {t('lander.loss')} {f(pt?.lossDb ?? 0, 2)} dB, {pt?.beyond ? t('lander.beamBeyond') : t('lander.beamWithin')}; {t('lander.pointingMargin')} {f(pt?.marginDb ?? null, 2)} dB, {t('lander.stateLabel')} {pt ? localizedState(pt.state).toLowerCase() : ''}</dd>
                 <dt>Terreno</dt>
                 <dd>{data.terrain.label}{data.terrain.synthetic ? ' — profilo sintetico di prova' : ''}; {data.terrain.patch ? `campo ${f(data.terrain.patch.sizeM / 1000, 1)} km, ${data.terrain.patch.n}×${data.terrain.patch.n} punti a ${f(data.terrain.patch.spacingM, 0)} m (prodotto a ${data.terrain.patch.nativeResolutionM} m)` : 'solo profilo'}; raggio cresta {data.terrain.radiusResolved ? 'risolto' : 'non risolto'}</dd>
               </dl>
               <p class="export">
                 <button type="button" onclick={exportJson} data-testid="export-json">Scarica i numeri della scena (JSON)</button>
               </p>
-            {:else if t.id === 'section'}
+            {:else if tabItem.id === 'section'}
               <p class="small muted">Sezione verticale lungo l’azimut della Terra: la banda è la prima zona di Fresnel, il terreno la copre dove il crinale la interseca. La scala verticale è esagerata (indicata nel grafico).</p>
               <div class="section-box" bind:this={secHost} data-testid="section-canvas" role="img" aria-label="Sezione laterale con profilo del terreno, crinale, linea di vista, zona di Fresnel, antenna, fascio e direzione della Terra. I numeri sono nella scheda Numeri e nella descrizione testuale."></div>
-            {:else if t.id === 'text'}
+            {:else if tabItem.id === 'text'}
               <p data-testid="lander-text">{text}</p>
             {:else}
               <ul class="limits" data-testid="lander-limits">
@@ -793,9 +821,9 @@
     {#if compact}
       {#if !sectionMode && data}
         <section class="panel" aria-labelledby="sec-h" data-testid="lander-section-panel">
-          <h2 id="sec-h">Sezione laterale</h2>
+          <h2 id="sec-h">{t('lander.sectionPanel')}</h2>
           <div class="section-box" bind:this={secHost} data-testid="section-canvas" role="img"
-            aria-label="Sezione laterale con profilo del terreno, crinale, linea di vista, zona di Fresnel, antenna, fascio e direzione della Terra."></div>
+            aria-label={t('lander.compactSectionLabel')}></div>
         </section>
       {/if}
     {:else}{@render sceneDetails()}{/if}

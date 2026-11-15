@@ -24,7 +24,6 @@
     clampPitch,
     clampZoom,
     DEFAULT_SCENE,
-    describeScene,
     projectLatLon,
     rotationRows,
     wrapYaw,
@@ -36,7 +35,7 @@
     type SceneState,
   } from '../../viewports/scene';
   import { ASSETS } from '../../viewports/bodies/assets';
-  import { assetsFor, BODIES, KIND_LABEL, starsAsset, type Place, type PlaceKind } from '../../viewports/bodies/registry';
+  import { assetsFor, BODIES, starsAsset, type Place, type PlaceKind } from '../../viewports/bodies/registry';
   import { preloadIdle } from '../../viewports/textures';
   import { formatNumber, subscribeTelemetry, utcClock, type TelemetrySnapshot } from '../../shell/telemetryStore';
   import { readBody, VIEWER_BODIES, writeBody } from './bodyState';
@@ -45,18 +44,13 @@
   import { getContext } from 'svelte';
   import { HUB_KEY } from '../../shell/hub';
   import { modeNow } from '../../shell/modeState.svelte';
+  import { t, type MessageKey } from '../../i18n/i18n.svelte';
   import type { Light, SkyBody } from './skyLight';
   import {
-    earthAngleText,
-    fsplDeltaText,
     highlightedComplex,
     localDirToBody,
-    moonSeenText,
     placeState,
-    rangeText,
     SnapshotClient,
-    STATE_HELP,
-    STATE_LABEL,
     type LinkState,
     type SnapComplex,
     type Snapshot,
@@ -72,6 +66,57 @@
     below?: Snippet;
   } = $props();
   const STEP = 10;
+  const stateLabelKeys: Record<LinkState, MessageKey> = {
+    open: 'viewer.state.open',
+    transition: 'viewer.state.transition',
+    blocked: 'viewer.state.blocked',
+    out_of_coverage: 'viewer.state.outOfCoverage',
+    unavailable: 'viewer.state.unavailable',
+    needs_download: 'viewer.state.needsDownload',
+    unknown: 'viewer.state.unknown',
+  };
+  const stateHelpKeys: Partial<Record<LinkState, MessageKey>> = {
+    open: 'viewer.help.open',
+    transition: 'viewer.help.transition',
+    blocked: 'viewer.help.blocked',
+    out_of_coverage: 'viewer.help.outOfCoverage',
+    unavailable: 'viewer.help.unavailable',
+    needs_download: 'viewer.help.needsDownload',
+    unknown: 'viewer.help.unknown',
+  };
+  const stateLabel = (state: LinkState) => t(stateLabelKeys[state]);
+  const stateHelp = (state: LinkState) => t(stateHelpKeys[state] ?? 'viewer.linkStateUnavailable');
+  const kindLabel = (kind: PlaceKind) => t(`viewer.kind.${kind}` as MessageKey);
+  const placeName = (place: Place) =>
+    place.id === 'nobile-rim' ? t('viewer.place.nobileRim')
+      : place.id === 'de-gerlache' ? t('viewer.place.deGerlacheRim')
+      : place.name;
+  const placeNoteKeys: Record<string, MessageKey> = {
+    'luglio 1969': 'viewer.note.jul1969',
+    'novembre 1969': 'viewer.note.nov1969',
+    'febbraio 1971': 'viewer.note.feb1971',
+    'luglio 1971': 'viewer.note.jul1971',
+    'aprile 1972': 'viewer.note.apr1972',
+    'dicembre 1972': 'viewer.note.dec1972',
+    'Statio Tianhe, lato nascosto': 'viewer.note.tianhe',
+    'Statio Shiv Shakti': 'viewer.note.shivShakti',
+    'atterraggio morbido robotico': 'viewer.note.roboticLanding',
+    'cratere polare (centro della feature)': 'viewer.note.polarCrater',
+    'massiccio polare, regione candidata Artemis III (centro della feature)': 'viewer.note.polarMassifCandidate',
+    'cratere polare, regione candidata Artemis III (centro della feature)': 'viewer.note.polarCraterCandidate',
+    'bordo di cratere polare, regione candidata Artemis III (centro della feature)': 'viewer.note.polarRimCandidate',
+    'cratere vicino al polo sud, regione candidata Artemis III (centro della feature)': 'viewer.note.southPoleCraterCandidate',
+    'sito di atterraggio, centro della stazione': 'viewer.note.change6',
+    'cratere di 85 km': 'viewer.note.crater85',
+    'cratere di 96 km': 'viewer.note.crater96',
+    'vulcano a scudo': 'viewer.note.shieldVolcano',
+    'sistema di canyon': 'viewer.note.canyonSystem',
+    'cratere del rover Perseverance (centro del cratere)': 'viewer.note.perseveranceCrater',
+    'cratere del rover Curiosity (centro del cratere)': 'viewer.note.curiosityCrater',
+    'bacino da impatto': 'viewer.note.impactBasin',
+  };
+  const placeNote = (place: Place) =>
+    place.note ? (placeNoteKeys[place.note] ? t(placeNoteKeys[place.note]!) : place.note) : '';
   const DRAG_DEG_PER_PX = 0.35;
   const mql = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
   let motionAllowed = $state(!(mql?.matches ?? false));
@@ -112,10 +157,7 @@
     onError: (e) => {
       // mai mostrare lo stato di un altro istante come se fosse questo
       snap = null;
-      snapProblem =
-        e.kind === 'range'
-          ? 'Istante o parametri non validi per il servizio: nessuno stato del link.'
-          : 'Analisi del link non disponibile in questo momento: nessuno stato del link.';
+      snapProblem = t(e.kind === 'range' ? 'viewer.telemetryRangeError' : 'viewer.telemetryUnavailable');
     },
     onBusy: (b) => (snapBusy = b),
   });
@@ -155,13 +197,10 @@
   let error = $state<string | null>(null);
   let mode = $state<ViewportMode | null>(null);
   const modeLabel = $derived(
-    mode === 'webgl'
-      ? 'Accelerazione WebGL attiva'
-      : mode === 'canvas2d'
-        ? 'Modalità compatibile (senza WebGL)'
-        : mode === 'none'
-          ? 'Grafica non disponibile: usa la descrizione testuale'
-          : '',
+    mode === 'webgl' ? t('viewer.mode.webgl')
+      : mode === 'canvas2d' ? t('viewer.mode.canvas')
+      : mode === 'none' ? t('viewer.mode.none')
+      : '',
   );
   let handle: ViewportHandle | null = null;
 
@@ -177,7 +216,7 @@
           kind: 'station' as const,
           lat: c.lat,
           lon: c.lon,
-          note: 'complesso della Deep Space Network',
+          note: t('viewer.dsnComplexes'),
           source: snap!.source.document,
         }))
       : [],
@@ -187,14 +226,14 @@
   onMount(() => customStore.subscribe((l) => { customList = l; }));
   const customPlaces = $derived<Place[]>(customList.map((c) => ({
     id: c.id, name: c.name, kind: 'custom', lat: c.lat_deg, lon: c.lon_deg_east, siteId: c.id,
-    note: 'sito personalizzato: coordinate dell\'utente, non verificate', source: 'utente',
+    note: t('viewer.customSiteNote'), source: t('viewer.userSource'),
   })));
   const allPlaces = $derived<Place[]>(body === 'earth' ? stationPlaces : [...def.places, ...(body === 'moon' ? customPlaces : [])]);
   const complexOf = (p: Place): SnapComplex | null => snap?.complexes.find((c) => c.complex.toLowerCase() === p.id) ?? null;
   const bestComplex = $derived(snap ? highlightedComplex(snap) : null);
   const kinds = $derived([...new Set(allPlaces.map((p) => p.kind))]);
   const shown = $derived(
-    allPlaces.filter((p) => (kind === 'all' || p.kind === kind) && (!query.trim() || norm(`${p.name} ${p.note ?? ''}`).includes(norm(query.trim())))),
+    allPlaces.filter((p) => (kind === 'all' || p.kind === kind) && (!query.trim() || norm(`${placeName(p)} ${placeNote(p)}`).includes(norm(query.trim())))),
   );
   /** Stato mostrato per un marcatore: colore e testo (il testo c'e' sempre). */
   function markerInfo(p: Place): { state: string; text: string } {
@@ -202,15 +241,15 @@
       const c = complexOf(p);
       if (!c) return { state: 'none', text: '' };
       return c.complex === bestComplex
-        ? { state: 'sees-best', text: 'vede la Luna' }
+        ? { state: 'sees-best', text: t('viewer.seesMoon') }
         : c.sees
-          ? { state: 'sees', text: 'vede la Luna' }
-          : { state: 'nomoon', text: 'Luna non visibile' };
+          ? { state: 'sees', text: t('viewer.seesMoon') }
+          : { state: 'nomoon', text: t('viewer.moonNotVisible') };
     }
     if (!p.siteId && p.kind !== 'polar') return { state: 'none', text: '' };
-    if (!snap && snapProblem && p.lat <= -85) return { state: 'unavailable', text: 'stato non disponibile' };
+    if (!snap && snapProblem && p.lat <= -85) return { state: 'unavailable', text: t('viewer.linkStateUnavailable') };
     const l = placeState(p.siteId, p.lat, snap);
-    return { state: l.state, text: l.label };
+    return { state: l.state, text: l.state === 'pending' ? t('viewer.state.pending') : stateLabel(l.state) };
   }
   const markers = $derived(
     frame
@@ -228,7 +267,7 @@
     const boxes: { x: number; y: number; w: number }[] = [];
     const out = new Set<string>();
     for (const m of [...markers].sort((a, b) => (a.p.id === selected ? -1 : b.p.id === selected ? 1 : 0))) {
-      const w = 22 + (m.p.name.length + (m.info.text ? m.info.text.length + 3 : 0)) * 7;
+      const w = 22 + (placeName(m.p).length + (m.info.text ? m.info.text.length + 3 : 0)) * 7;
       const box = { x: m.at.x + 12, y: m.at.y - 11, w };
       if (boxes.some((b) => box.x < b.x + b.w && b.x < box.x + box.w && Math.abs(box.y - b.y) < 22)) continue;
       boxes.push(box);
@@ -252,7 +291,41 @@
     earth: body === 'moon' ? (selSite ? { az_deg: selSite.earthAz, el_deg: selSite.earthEl } : telemetry.last?.earth) : undefined,
     frame,
   });
-  const description = $derived(describeScene(scene, motionAllowed));
+  const bodyName = (id: BodyId) => t(`viewer.scene.body.${id}` as MessageKey);
+  const sceneLine = (label: 'light' | 'earth', direction: { az_deg: number; el_deg: number } | undefined) =>
+    direction
+      ? t(`viewer.scene.${label}` as MessageKey, {
+          azimuth: formatNumber(direction.az_deg, 0),
+          elevation: formatNumber(direction.el_deg, 0),
+          below: direction.el_deg < 0 ? t('viewer.belowHorizon') : '',
+        })
+      : t('viewer.scene.unavailable', { name: t(label === 'light' ? 'viewer.scene.body.sun' : 'viewer.scene.body.earth') });
+  const description = $derived.by(() => {
+    const activeBody = scene.body ?? 'moon';
+    const parts: string[] = [];
+    if (activeBody === 'sun') {
+      parts.push(t('viewer.scene.sunImage'), t('viewer.scene.singleObservation'));
+    } else {
+      parts.push(t('viewer.scene.rotation', {
+        name: bodyName(activeBody),
+        yaw: scene.yaw_deg.toFixed(0),
+        pitch: scene.pitch_deg.toFixed(0),
+      }));
+      parts.push(scene.sunObj ? t('viewer.scene.sunFromEphemeris') : sceneLine('light', scene.sun));
+      if (activeBody === 'moon') parts.push(sceneLine('earth', scene.earth));
+    }
+    parts.push(t(scene.autoRotate && motionAllowed ? 'viewer.scene.autoOn' : 'viewer.scene.autoOff'));
+    return parts.join(' ');
+  });
+  const moonSeen = (c: SnapComplex, minEl: number) => {
+    const elevation = formatNumber(Math.abs(c.moonEl), 0);
+    const minimum = formatNumber(minEl, 0);
+    return c.sees
+      ? t('viewer.moonSeen', { name: c.complex, elevation, minimum })
+      : c.moonEl < 0
+        ? t('viewer.moonBelow', { name: c.complex, elevation })
+        : t('viewer.moonBelowMinimum', { name: c.complex, elevation, minimum });
+  };
 
   /** Linea dal punto verso una direzione locale (azimut, elevazione): proiezione ortografica schematica sul disco. */
   function dirLine(lat: number, lon: number, az: number, el: number) {
@@ -276,13 +349,27 @@
   const dirOverlay = $derived.by(() => {
     if (selSite && current) {
       const l = dirLine(current.lat, current.lon, selSite.earthAz, selSite.earthEl);
-      return l ? { ...l, id: 'earth-line', text: earthAngleText(selSite.earthEl), sub: `azimut ${Math.round(selSite.earthAz)}°` } : null;
+      return l
+        ? {
+            ...l,
+            id: 'earth-line',
+            text: t(selSite.earthEl < 0 ? 'viewer.earthBelow' : 'viewer.earthAbove', { angle: formatNumber(Math.abs(selSite.earthEl), 1) }),
+            sub: t('viewer.azimuth', { azimuth: Math.round(selSite.earthAz) }),
+          }
+        : null;
     }
     if (body === 'earth' && snap) {
       const c = selComplex ?? snap.complexes.find((x) => x.complex === bestComplex) ?? null;
       if (!c || c.moonEl <= 0) return null;
       const l = dirLine(c.lat, c.lon, c.moonAz, c.moonEl);
-      return l ? { ...l, id: 'moon-line', text: `${c.complex}: Luna a ${Math.round(c.moonEl)}° sull’orizzonte`, sub: `azimut ${Math.round(c.moonAz)}°` } : null;
+      return l
+        ? {
+            ...l,
+            id: 'moon-line',
+            text: t('viewer.overlayMoon', { name: c.complex, elevation: Math.round(c.moonEl) }),
+            sub: t('viewer.azimuth', { azimuth: Math.round(c.moonAz) }),
+          }
+        : null;
     }
     return null;
   });
@@ -302,7 +389,7 @@
         body,
         ...(selected ? { place: selected } : {}),
         ...(snap ? { istante_utc: snap.tUtc, distanza_terra_luna_km: Math.round(snap.rangeKm) } : {}),
-        ...(selSite ? { stato_link: STATE_LABEL[selSite.state], elevazione_terra_gradi: Number(selSite.earthEl.toFixed(2)) } : {}),
+        ...(selSite ? { stato_link: stateLabel(selSite.state), elevazione_terra_gradi: Number(selSite.earthEl.toFixed(2)) } : {}),
       },
     });
   });
@@ -322,7 +409,7 @@
     const from = { ...view };
     const dyaw = wrapYaw(target.yaw_deg - from.yaw_deg);
     const dpitch = target.pitch_deg - from.pitch_deg;
-    const done = () => announceNow(`${p.name} al centro: ${latLon(p)}.`);
+    const done = () => announceNow(t('viewer.placeCentered', { name: placeName(p), coordinates: latLon(p) }));
     if (!motionAllowed) {
       view = { ...view, yaw_deg: target.yaw_deg, pitch_deg: target.pitch_deg, autoRotate: false };
       done();
@@ -363,7 +450,7 @@
     kind = 'all';
     view = { yaw_deg: DEFAULT_SCENE.yaw_deg, pitch_deg: DEFAULT_SCENE.pitch_deg, autoRotate: false, zoom: 1 };
     writeBody(id);
-    announceNow(`${BODIES[id].name} selezionata.`.replace('Sole selezionata', 'Sole selezionato'));
+    announceNow(t('viewer.bodySelected', { name: bodyName(id) }));
     if (focus) void tick().then(() => tabs?.querySelector<HTMLElement>(`[data-body="${id}"]`)?.focus());
   }
   function onTabKey(e: KeyboardEvent) {
@@ -426,7 +513,7 @@
       handle = mountViewport(
         selectViewportFactory({ onMode: (m) => (mode = m) }),
         host,
-        () => (error = 'Impossibile caricare la visualizzazione 3D. Usa la descrizione testuale.'),
+        () => (error = t('viewer.graphicsLoadError')),
       );
       handle.update({ ...($state.snapshot(scene) as SceneState), overlay });
     }
@@ -457,7 +544,7 @@
   function announceSoon() {
     clearTimeout(announceTimer);
     announceTimer = setTimeout(() => {
-      announce(`Vista aggiornata: rotazione ${view.yaw_deg.toFixed(0)}°, inclinazione ${view.pitch_deg.toFixed(0)}°.`, liveEl ?? null);
+      announce(t('viewer.viewUpdated', { yaw: view.yaw_deg.toFixed(0), pitch: view.pitch_deg.toFixed(0) }), liveEl ?? null);
     }, 500);
   }
   function rotate(dyaw: number, dpitch: number, speak = true) {
@@ -476,7 +563,7 @@
   }
   function zoomBy(f: number) {
     view = { ...view, zoom: clampZoom(view.zoom * f) };
-    announceNow(`Ingrandimento ${formatNumber(view.zoom, 1)}x.`);
+    announceNow(t('viewer.zoomValue', { value: formatNumber(view.zoom, 1) }));
   }
   async function toggleFullscreen() {
     try {
@@ -491,12 +578,12 @@
 
   type Action = { id: string; label: string; icon: 'left' | 'right' | 'up' | 'down' | 'reset' | 'spin'; run: () => void; pressed?: boolean };
   const actions = $derived<Action[]>([
-    { id: 'left', label: 'Ruota a sinistra', icon: 'left', run: () => rotate(-STEP, 0) },
-    { id: 'right', label: 'Ruota a destra', icon: 'right', run: () => rotate(STEP, 0) },
-    { id: 'up', label: "Inclina verso l'alto", icon: 'up', run: () => rotate(0, -STEP) },
-    { id: 'down', label: 'Inclina verso il basso', icon: 'down', run: () => rotate(0, STEP) },
-    { id: 'reset', label: 'Ripristina vista', icon: 'reset', run: reset },
-    ...(motionAllowed ? [{ id: 'auto', label: 'Rotazione automatica', icon: 'spin' as const, run: toggleAuto, pressed: view.autoRotate }] : []),
+    { id: 'left', label: t('viewer.rotateLeft'), icon: 'left', run: () => rotate(-STEP, 0) },
+    { id: 'right', label: t('viewer.rotateRight'), icon: 'right', run: () => rotate(STEP, 0) },
+    { id: 'up', label: t('viewer.tiltUp'), icon: 'up', run: () => rotate(0, -STEP) },
+    { id: 'down', label: t('viewer.tiltDown'), icon: 'down', run: () => rotate(0, STEP) },
+    { id: 'reset', label: t('viewer.resetView'), icon: 'reset', run: reset },
+    ...(motionAllowed ? [{ id: 'auto', label: t('viewer.autoRotate'), icon: 'spin' as const, run: toggleAuto, pressed: view.autoRotate }] : []),
   ]);
   let active = $state(0);
   let toolbar: HTMLElement | undefined = $state();
@@ -567,9 +654,21 @@
   // distanza Terra-Luna del momento (efemeridi) se l'istantanea c'e'; altrimenti il valore medio con la sua fonte
   const stat = $derived(
     snap
-      ? { value: snap.rangeKm, unit: 'km', digits: 0, label: 'distanza Terra-Luna all’istante scelto' }
+      ? { value: snap.rangeKm, unit: 'km', digits: 0, label: t('viewer.stat.distanceNow') }
       : { ...def.keyStat, digits: def.keyStat.digits ?? 0 },
   );
+  const statLabel = $derived(
+    snap ? stat.label
+      : body === 'moon' ? t('viewer.stat.distanceEarthMoon')
+      : body === 'sun' ? t('viewer.stat.distanceEarth')
+      : t('viewer.stat.distanceSun'),
+  );
+  const statUnit = $derived(stat.unit === 'milioni di km' ? t('viewer.unit.millionKm') : stat.unit);
+  const factLabel = (label: string) => label === 'Raggio medio' ? t('viewer.fact.radius')
+    : label === 'Gravità' ? t('viewer.fact.gravity')
+    : label === 'Rotazione a 16° di latitudine' ? t('viewer.fact.rotationLatitude')
+    : t('viewer.fact.rotation');
+  const shortCredit = $derived(t(`viewer.shortCredit.${body}` as MessageKey));
   const crossLinks = $derived.by(() => {
     const t = sc.t ?? (simMs !== null ? msToT(simMs) : null);
     const site = current?.siteId ?? sc.site;
@@ -587,7 +686,10 @@
   function setRate(e: Event) {
     store.set({ bitrate: Number((e.currentTarget as HTMLSelectElement).value) });
   }
-  const rateText = (r: number) => (r >= 1e6 ? `${r / 1e6} Mbit/s` : `${r / 1e3} kbit/s`).replace('.', ',');
+  const rateText = (r: number) => r >= 1e6
+    ? `${formatNumber(r / 1e6, r % 1e6 ? 1 : 0)} Mbit/s`
+    : `${formatNumber(r / 1e3, 0)} kbit/s`;
+  const fsplDelta = (delta: number) => `${delta < 0 ? '−' : delta > 0 ? '+' : ''}${formatNumber(Math.abs(delta), 2)} dB`;
   const dec1 = (v: number) => formatNumber(v, 1);
 </script>
 
@@ -604,8 +706,8 @@
       id="viewer-stage"
       role="group"
       tabindex="0"
-      aria-roledescription="scena 3D"
-      aria-label={`${def.name}. Trascina o usa le frecce per ruotare, più e meno per ingrandire.`}
+      aria-roledescription={t('viewer.stageRole')}
+      aria-label={t('viewer.stageLabel', { name: bodyName(body) })}
       aria-describedby="stage-help scene-description"
       data-spatial-skip
       onkeydown={onStageKey}
@@ -615,11 +717,11 @@
       onpointercancel={onUp}
     ></div>
     <p id="stage-help" class="visually-hidden">
-      Con il focus sulla scena, le frecce sinistra e destra ruotano il corpo, su e giù lo inclinano; più e meno cambiano l'ingrandimento.
+      {t('viewer.stageHelp')}
     </p>
 
     <!-- marcatori: pulsanti veri sopra il canvas -->
-    <div class="markers" aria-label={`Luoghi visibili su ${def.name}`} role="group">
+    <div class="markers" aria-label={t('viewer.placesVisible', { name: bodyName(body) })} role="group">
       {#each markers as m (m.p.id)}
         <button
           type="button"
@@ -630,12 +732,12 @@
           data-state={m.info.state}
           data-place={m.p.id}
           style={`transform: translate(${m.at.x.toFixed(1)}px, ${m.at.y.toFixed(1)}px)`}
-          aria-label={`${m.p.name}, ${latLon(m.p)}${m.info.text ? `, ${m.info.text}` : ''}`}
+          aria-label={`${placeName(m.p)}, ${latLon(m.p)}${m.info.text ? `, ${m.info.text}` : ''}`}
           aria-pressed={selected === m.p.id}
           onclick={() => goTo(m.p)}
         >
           <span class="marker-dot" aria-hidden="true"></span>
-          <span class="marker-label" aria-hidden="true">{m.p.name}{m.info.text ? ` · ${m.info.text}` : ''}</span>
+          <span class="marker-label" aria-hidden="true">{placeName(m.p)}{m.info.text ? ` · ${m.info.text}` : ''}</span>
         </button>
       {/each}
       {#if dirOverlay && overlayLabel}
@@ -651,16 +753,16 @@
       {/if}
     </div>
     <div class="hud-tools">
-      <div class="round-group" role="group" aria-label="Ingrandimento">
-        <button type="button" class="round" aria-label="Ingrandisci" disabled={view.zoom >= ZOOM_MAX} onclick={() => zoomBy(1.25)}><Icon name="plus" /></button>
-        <button type="button" class="round" aria-label="Riduci" disabled={view.zoom <= ZOOM_MIN} onclick={() => zoomBy(0.8)}><Icon name="minus" /></button>
+      <div class="round-group" role="group" aria-label={t('viewer.zoom')}>
+        <button type="button" class="round" aria-label={t('viewer.zoomIn')} disabled={view.zoom >= ZOOM_MAX} onclick={() => zoomBy(1.25)}><Icon name="plus" /></button>
+        <button type="button" class="round" aria-label={t('viewer.zoomOut')} disabled={view.zoom <= ZOOM_MIN} onclick={() => zoomBy(0.8)}><Icon name="minus" /></button>
       </div>
       {#if canFullscreen}
-        <button type="button" class="round" aria-label={fullscreen ? 'Esci da schermo intero' : 'Schermo intero'} aria-pressed={fullscreen} onclick={toggleFullscreen}>
+        <button type="button" class="round" aria-label={fullscreen ? t('viewer.exitFullscreen') : t('viewer.fullscreen')} aria-pressed={fullscreen} onclick={toggleFullscreen}>
           <Icon name={fullscreen ? 'collapse' : 'expand'} />
         </button>
       {/if}
-      <div class="toolbar" role="toolbar" aria-label="Controlli della vista" aria-orientation="vertical" tabindex="-1" bind:this={toolbar} onkeydown={onToolbarKey} data-spatial-skip>
+      <div class="toolbar" role="toolbar" aria-label={t('viewer.controls')} aria-orientation="vertical" tabindex="-1" bind:this={toolbar} onkeydown={onToolbarKey} data-spatial-skip>
         {#each actions as a, i (a.id)}
           <button type="button" class="round" tabindex={i === currentTool ? 0 : -1} aria-pressed={a.pressed} aria-label={a.label} title={a.label} onfocus={() => (active = i)} onclick={a.run}>
             <Icon name={a.icon} />
@@ -674,14 +776,14 @@
     {#if def.telemetry}
       <div class="live">
         <p class="live-pill" role="status" data-state={live ? 'ok' : telemetry.status?.kind === 'reconnecting' ? 'warn' : 'idle'}>
-          {live ? 'In diretta' : telemetry.status?.kind === 'reconnecting' ? 'Collegamento perso' : 'Telemetria non collegata'}
+          {live ? t('viewer.live') : telemetry.status?.kind === 'reconnecting' ? t('viewer.connectionLost') : t('viewer.telemetryDisconnected')}
         </p>
         <p class="observed num">
-          {telemetry.last ? `Campione delle ${utcClock(telemetry.last.t_utc)} UTC` : 'In attesa del primo campione'}
+          {telemetry.last ? t('viewer.sampleAt', { time: utcClock(telemetry.last.t_utc) }) : t('viewer.waitingSample')}
         </p>
       </div>
     {:else}
-      <p class="observed muted">La telemetria riguarda il sito lunare: scegli la Luna per vederla.</p>
+      <p class="observed muted">{t('viewer.telemetryMoonOnly')}</p>
     {/if}
   </div>
   {@render below?.()}
@@ -689,8 +791,8 @@
     <SceneSettings>
     <div class="hud">
       <header class="hud-title">
-        {#if inHub}<h2 class="hud-h"><span class="body-name">{def.name}</span><span class="visually-hidden"> nel visualizzatore 3D</span></h2>{:else}<h1 class="hud-h"><span class="body-name">{def.name}</span><span class="visually-hidden"> nel visualizzatore 3D</span></h1>{/if}
-        <div class="tabs" role="tablist" aria-label="Corpo celeste" bind:this={tabs} tabindex="-1" onkeydown={onTabKey} data-spatial-skip>
+        {#if inHub}<h2 class="hud-h"><span class="body-name">{bodyName(body)}</span><span class="visually-hidden"> {t('viewer.in3dViewer')}</span></h2>{:else}<h1 class="hud-h"><span class="body-name">{bodyName(body)}</span><span class="visually-hidden"> {t('viewer.in3dViewer')}</span></h1>{/if}
+        <div class="tabs" role="tablist" aria-label={t('viewer.celestialBody')} bind:this={tabs} tabindex="-1" onkeydown={onTabKey} data-spatial-skip>
           {#each VIEWER_BODIES as id (id)}
             <button
               type="button"
@@ -703,7 +805,7 @@
               onclick={() => selectBody(id)}
               onpointerenter={() => preload(id)}
               onfocus={() => preload(id)}
-            >{BODIES[id].name}</button>
+            >{bodyName(id)}</button>
           {/each}
         </div>
       </header>
@@ -711,13 +813,13 @@
       <div class="hud-stat">
         <p class="stat">
           <span class="stat-value num" data-testid="stat-value">{formatNumber(stat.value, stat.digits ?? 0)}</span>
-          <span class="stat-unit">{stat.unit}</span>
+          <span class="stat-unit">{statUnit}</span>
         </p>
         {#if snap}
           <p class="stat-label">{stat.label[0]!.toUpperCase() + stat.label.slice(1)}<span class="stat-source">, efemeridi NAIF DE440</span></p>
-          {#if modeNow.advanced}<p class="stat-delta num" data-testid="fspl-delta">Perdita in spazio libero {fsplDeltaText(snap.fsplDeltaDb)} rispetto a {formatNumber(snap.referenceKm, 0)} km fissi</p>{/if}
+          {#if modeNow.advanced}<p class="stat-delta num" data-testid="fspl-delta">{t('viewer.freeSpaceLoss', { delta: fsplDelta(snap.fsplDeltaDb), range: formatNumber(snap.referenceKm, 0) })}</p>{/if}
         {:else}
-          <p class="stat-label">{stat.label[0]!.toUpperCase() + stat.label.slice(1)}<span class="stat-source">, <a href={def.factsSource} rel="noreferrer">fonte NSSDCA</a></span></p>
+          <p class="stat-label">{statLabel[0]!.toUpperCase() + statLabel.slice(1)}<span class="stat-source">, <a href={def.factsSource} rel="noreferrer">NSSDCA</a></span></p>
         {/if}
       </div>
 
@@ -736,11 +838,11 @@
         }}
       >
         <header class="explore-head">
-          <h2 id="explore-h">Esplora</h2>
+          <h2 id="explore-h">{t('viewer.explore')}</h2>
           {#if narrow}
             <button type="button" class="sheet-toggle" aria-expanded={sheetOpen} aria-controls="explore-body" onclick={() => (sheetOpen = !sheetOpen)}>
               <Icon name={sheetOpen ? 'chevronDown' : 'chevronUp'} />
-              <span>{sheetOpen ? 'Chiudi' : `Luoghi e dati di ${def.name}`}</span>
+              <span>{sheetOpen ? t('viewer.close') : t('viewer.placesAndData', { name: bodyName(body) })}</span>
             </button>
           {/if}
         </header>
@@ -748,25 +850,25 @@
           {#if allPlaces.length}
             {#if allPlaces.length > 6}
               <label class="search">
-                <span class="visually-hidden">Cerca un luogo</span>
+                <span class="visually-hidden">{t('viewer.searchPlace')}</span>
                 <Icon name="search" />
-                <input type="search" placeholder="Cerca un luogo" bind:value={query} autocomplete="off" />
+                <input type="search" placeholder={t('viewer.searchPlace')} bind:value={query} autocomplete="off" />
               </label>
-              <div class="chips" role="group" aria-label="Filtra per tipo">
-                <button type="button" class="chip" aria-pressed={kind === 'all'} onclick={() => (kind = 'all')}>Tutti</button>
+              <div class="chips" role="group" aria-label={t('viewer.filterByType')}>
+                <button type="button" class="chip" aria-pressed={kind === 'all'} onclick={() => (kind = 'all')}>{t('viewer.all')}</button>
                 {#each kinds as k (k)}
-                  <button type="button" class="chip" aria-pressed={kind === k} onclick={() => (kind = k)}>{KIND_LABEL[k]}</button>
+                  <button type="button" class="chip" aria-pressed={kind === k} onclick={() => (kind = k)}>{kindLabel(k)}</button>
                 {/each}
               </div>
             {/if}
             {#if body === 'moon'}<CustomSiteControl />{/if}
             {#if shown.length}
-              <ul class="places" aria-label={body === 'earth' ? 'Complessi DSN' : 'Luoghi'}>
+              <ul class="places" aria-label={body === 'earth' ? t('viewer.dsnComplexes') : t('viewer.places')}>
                 {#each shown as p (p.id)}
                   {@const info = markerInfo(p)}
                   <li>
                     <button type="button" class="place" data-place={p.id} data-state={info.state} aria-pressed={selected === p.id} onclick={() => goTo(p)}>
-                      <span class="place-name">{p.name}</span>
+                      <span class="place-name">{placeName(p)}</span>
                       <span class="place-meta num">{latLon(p)}</span>
                       {#if info.text}<span class="place-state" data-state={info.state}><span class="state-glyph" aria-hidden="true"></span>{info.text}</span>{/if}
                     </button>
@@ -774,65 +876,65 @@
                 {/each}
               </ul>
             {:else}
-              <p class="empty">Nessun luogo corrisponde a “{query}”. Prova con un altro nome o scegli “Tutti”.</p>
+              <p class="empty">{t('viewer.noPlaceMatches', { query })}</p>
             {/if}
             {#if current}
               <div class="detail" aria-live="polite" data-testid="place-detail">
-                <p class="detail-name">{current.name}</p>
-                <p class="muted">{current.note}</p>
+                <p class="detail-name">{placeName(current)}</p>
+                <p class="muted">{placeNote(current)}</p>
                 {#if body === 'moon'}
                   {#if selSite}
-                    <p class="earth-line num" data-testid="detail-earth">{earthAngleText(selSite.earthEl)}, azimut {formatNumber(selSite.earthAz, 1)}° (parallasse e librazione)</p>
+                    <p class="earth-line num" data-testid="detail-earth">{t(selSite.earthEl < 0 ? 'viewer.earthBelow' : 'viewer.earthAbove', { angle: formatNumber(Math.abs(selSite.earthEl), 1) })}, {t('viewer.azimuthParallax', { azimuth: formatNumber(selSite.earthAz, 1) })}</p>
                     <p class="link-line" data-testid="detail-state">
-                      Link: <strong class="place-state" data-state={selSite.state}><span class="state-glyph" aria-hidden="true"></span>{STATE_LABEL[selSite.state]}</strong>
-                      {#if selSite.marginDb !== null}, margine <span class="num">{formatNumber(selSite.marginDb, 1)} dB</span> a {rateText(rate)}{/if}
+                      {t('viewer.link')} <strong class="place-state" data-state={selSite.state}><span class="state-glyph" aria-hidden="true"></span>{stateLabel(selSite.state)}</strong>
+                      {#if selSite.marginDb !== null}, {t('viewer.margin')} <span class="num">{formatNumber(selSite.marginDb, 1)} dB</span> {t('viewer.atRate', { rate: rateText(rate) })}{/if}
                     </p>
-                    <p class="muted small">{STATE_HELP[selSite.state]}.</p>
+                    <p class="muted small">{stateHelp(selSite.state)}.</p>
                     {#if selSite.ridgeEl !== null}
-                      <p class="muted small num">Crinale dominante a {formatNumber(selSite.ridgeEl, 2)}° di elevazione{selSite.ridgeEl > selSite.earthEl ? ', sopra il centro della Terra' : ''}.</p>
+                      <p class="muted small num">{t('viewer.dominantRidge', { angle: formatNumber(selSite.ridgeEl, 2) })}{selSite.ridgeEl > selSite.earthEl ? t('viewer.ridgeAboveEarth') : ''}.</p>
                     {/if}
-                    {#if selSite.demCovered}
-                      <p class="muted small">Terreno: DEM LOLA (cache locale); correzione della cresta da ITU-R P.526-9, non misurata. Calcolato per {snap?.tUtc.replace('T', ' ').replace('Z', ' UTC')}.</p>
+                    {#if selSite.demCovered && snap}
+                      <p class="muted small">{t('viewer.demTerrain', { time: snap.tUtc.replace('T', ' ').replace('Z', '') })}</p>
                     {/if}
                   {:else if current.siteId && snapProblem}
-                    <p class="muted small">Nessuno stato del link: {snapProblem}</p>
+                    <p class="muted small">{t('viewer.noLinkState', { problem: snapProblem })}</p>
                   {:else if current.siteId}
-                    <p class="muted small">Stato del link in calcolo…</p>
+                    <p class="muted small">{t('viewer.linkCalculating')}</p>
                   {:else}
-                    <p class="muted small" data-testid="detail-nosite">{STATE_LABEL.out_of_coverage}: questo luogo non è tra i siti dell’analisi, nessun valore stimato.</p>
+                    <p class="muted small" data-testid="detail-nosite">{t('viewer.outOfCoverage', { state: stateLabel('out_of_coverage') })}</p>
                   {/if}
                 {:else if selComplex && snap}
-                  <p class="earth-line" data-testid="detail-moon">{moonSeenText(selComplex, snap.minElevationDeg)}, azimut {formatNumber(selComplex.moonAz, 0)}°.</p>
+                  <p class="earth-line" data-testid="detail-moon">{moonSeen(selComplex, snap.minElevationDeg)}, azimuth {formatNumber(selComplex.moonAz, 0)}°.</p>
                   <ul class="antennas">
                     {#each selComplex.antennas as a (a.id)}
-                      <li>{a.diameterM} m ({a.name}){a.verified ? '' : ': ipotesi senza fonte'}</li>
+                      <li>{a.diameterM} m ({a.name}){a.verified ? '' : `: ${t('viewer.unverifiedAssumption')}`}</li>
                     {/each}
                   </ul>
                 {/if}
-                <p class="muted small">Fonte: {current.source}</p>
+                <p class="muted small">{t('viewer.source', { source: current.source })}</p>
                 {#if body === 'moon' && current.siteId}
                   <div class="actions" data-testid="detail-actions">
                     {#if landerAvailable}
-                      <a class="btn" href={crossLinks.lander} data-testid="open-lander">Apri scena lander</a>
+                      <a class="btn" href={crossLinks.lander} data-testid="open-lander">{t('viewer.openLander')}</a>
                     {:else}
-                      <button type="button" class="btn" disabled aria-disabled="true" data-testid="open-lander" title="La scena lander non è ancora disponibile">Apri scena lander <em>(in arrivo)</em></button>
+                      <button type="button" class="btn" disabled aria-disabled="true" data-testid="open-lander" title={t('viewer.landerUnavailable')}>{t('viewer.openLander')} <em>{t('viewer.comingSoon')}</em></button>
                     {/if}
                     {#if selSite?.demCovered}
-                      <a class="btn" href={crossLinks.analysis} data-testid="open-analysis">Analisi completa</a>
+                      <a class="btn" href={crossLinks.analysis} data-testid="open-analysis">{t('viewer.fullAnalysis')}</a>
                     {:else}
-                      <p class="muted small" data-testid="analysis-unavailable">Analisi completa solo per i siti coperti dal DEM.</p>
+                      <p class="muted small" data-testid="analysis-unavailable">{t('viewer.analysisDemOnly')}</p>
                     {/if}
                   </div>
-                  <p><a class="analyze-link" href={crossLinks.compare}>Analizza in Confronto siti</a></p>
+                  <p><a class="analyze-link" href={crossLinks.compare}>{t('viewer.analyzeComparison')}</a></p>
                 {/if}
               </div>
             {/if}
           {:else if body === 'earth'}
             <p class="empty" data-testid="stations-empty">
-              {snapProblem ?? 'Complessi DSN in caricamento…'}
+              {snapProblem ?? t('viewer.dsnLoading')}
             </p>
           {:else}
-            <p class="empty">Per {def.name} non ci sono ancora luoghi con coordinate verificate.</p>
+            <p class="empty">{t('viewer.noVerifiedPlaces', { name: bodyName(body) })}</p>
           {/if}
 
           {#if snapProblem && allPlaces.length}
@@ -842,23 +944,23 @@
           {#if snap && body === 'earth'}
             <ul class="moon-seen" data-testid="moon-seen">
               {#each snap.complexes as c (c.complex)}
-                <li class:is-best={c.complex === bestComplex}>{moonSeenText(c, snap.minElevationDeg)}{c.complex === bestComplex ? ' (evidenziata)' : ''}</li>
+                <li class:is-best={c.complex === bestComplex}>{moonSeen(c, snap.minElevationDeg)}{c.complex === bestComplex ? ` ${t('viewer.highlighted')}` : ''}</li>
               {/each}
             </ul>
-            <p class="muted small">Coordinate: {snap.source.document}{snap.source.url ? '' : ''}. La stazione da 34 m è quella delle coordinate; quella da 18 m è un’ipotesi dello script della ricerca, senza fonte.</p>
+            <p class="muted small">{t('viewer.coordinates', { source: snap.source.document })}</p>
           {/if}
 
           <fieldset class="scenario">
-            <legend>Scenario del link</legend>
+            <legend>{t('viewer.linkScenario')}</legend>
             <label>
-              Stazione di terra
+              {t('viewer.groundStation')}
               <select value={sc.station} onchange={setStation} data-testid="sel-station">
                 <option value="dsn34">DSN 34 m</option>
-                <option value="dsn18">18 m (ipotesi)</option>
+                <option value="dsn18">18 m ({t('viewer.illustrativeAssumption')})</option>
               </select>
             </label>
             <label>
-              Bit-rate
+              {t('viewer.bitRate')}
               <select value={String(rate)} onchange={setRate} data-testid="sel-rate">
                 {#each BITRATES as r (r)}<option value={String(r)}>{rateText(r)}</option>{/each}
               </select>
@@ -866,33 +968,26 @@
           </fieldset>
 
           <section class="why" aria-labelledby="why-h" data-testid="why-grazinglink">
-            <h3 id="why-h">Perché RAVEN</h3>
-            <p>
-              Dal polo Sud lunare la Terra sta radente all’orizzonte, tra 0,5° e 1,5°. Un crinale la nasconde o la sfiora, e la sola
-              geometria («vista / non vista») non basta: ai bordi la diffrazione lascia passare parte del segnale.
-            </p>
-            <p>
-              RAVEN calcola quel margine nel tempo, con la Terra e la librazione reali. Il globo mostra solo il contesto geometrico:
-              la fisica d’onda sta in Onda 3D, nella scena lander e nell’analisi.
-            </p>
+            <h3 id="why-h">{t('viewer.whyRaven')}</h3>
+            <p>{t('viewer.whyBody1')}</p>
+            <p>{t('viewer.whyBody2')}</p>
           </section>
 
           <dl class="facts">
             {#each def.facts as f (f.label)}
-              <div><dt>{f.label}</dt><dd class="num">{formatNumber(f.value, f.digits ?? 0)} {f.unit}</dd></div>
+              <div><dt>{factLabel(f.label)}</dt><dd class="num">{formatNumber(f.value, f.digits ?? 0)} {f.unit}</dd></div>
             {/each}
           </dl>
-          <p class="facts-source small"><a href={def.factsSource} rel="noreferrer">Dati: NSSDCA Planetary Fact Sheet</a></p>
+          <p class="facts-source small"><a href={def.factsSource} rel="noreferrer">{t('viewer.factsNssdca')}</a></p>
         </div>
       </section>
 
       <p class="hud-limits" data-testid="limits-line" aria-busy={snapBusy}>
-        <strong>Limiti:</strong> copertura DEM solo a latitudine ≤ −85°; un solo ostacolo dominante; parametri radio ipotesi illustrative (tag I);
-        Cresta: T(m,n) di ITU-R P.526-9 con lo split-step come banda; nessuna misura.
+        <strong>{t('viewer.limits')}</strong> {t('viewer.limitText')}
       </p>
 
       <p class="hud-credit">
-        <span>{def.shortCredit}. {def.emissive ? 'Immagine fissa: la rotazione sposta il cielo.' : 'Trascina per ruotare.'}</span>
+        <span>{shortCredit}. {def.emissive ? t('viewer.fixedImage') : t('viewer.dragRotate')}</span>
         <span class="mode" data-testid="viewer-mode" role="status" data-mode={mode ?? ''}>{modeLabel}</span>
       </p>
     </div>
@@ -902,20 +997,20 @@
   <div class="container container--wide below">
     {#if error}<p role="alert">{error}</p>{/if}
     <section aria-labelledby="desc-h" class="desc">
-      <h2 id="desc-h">Descrizione della scena</h2>
+      <h2 id="desc-h">{t('viewer.sceneDescription')}</h2>
       <p id="scene-description">{description}</p>
       {#if !motionAllowed}
-        <p class="muted">Rotazione automatica disattivata: il sistema richiede meno movimento.</p>
+        <p class="muted">{t('viewer.reducedMotion')}</p>
       {/if}
     </section>
     <section aria-labelledby="cred-h" class="credits">
-      <h2 id="cred-h">Crediti delle immagini</h2>
+      <h2 id="cred-h">{t('viewer.imageCredits')}</h2>
       <ul>
         {#each [...assetsFor(body, 'hi'), starsAsset('hi')] as a (a)}
-          <li>{ASSETS[a].credit}. {ASSETS[a].licence}. <a href={ASSETS[a].sourcePage} rel="noreferrer">Pagina della fonte</a></li>
+          <li>{ASSETS[a].credit}. {ASSETS[a].licence}. <a href={ASSETS[a].sourcePage} rel="noreferrer">{t('viewer.sourcePage')}</a></li>
         {/each}
       </ul>
-      <p class="muted small">Rilievo lunare esagerato 3 volte per renderlo leggibile. Nessuna immagine implica l'approvazione della NASA.</p>
+      <p class="muted small">{t('viewer.reliefNote')}</p>
     </section>
   </div>
 </div>

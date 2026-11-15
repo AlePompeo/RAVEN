@@ -39,7 +39,7 @@
 
 <svelte:window onpopstate={() => (mode = modeFromUrl())} />
 
-<SubNav title={mode === 'site' ? 'Scena lander' : 'Simulatore'} learn={t('scene.help')}>
+<SubNav title={mode === 'site' ? t('scene.landerTitle') : t('scene.simulatorTitle')} learn={t('scene.help')}>
   {#snippet toolbar()}
     <div class="scene-choice" role="group" aria-label={t('scene.choice')}>
       <button type="button" aria-pressed={mode === 'didactic'} onclick={() => selectMode('didactic')}>{t('scene.didactic')}</button>

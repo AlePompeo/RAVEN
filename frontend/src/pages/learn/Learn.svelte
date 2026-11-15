@@ -14,14 +14,14 @@
     { id: 'radio', correct: 2, path: '/mission-planner?mp_step=radio' },
     { id: 'simulation', correct: 1, path: '/mission-planner?mp_step=compare' },
     { id: 'report', correct: 2, path: '/mission-planner?mp_step=report' },
-    { id: 's0', correct: 0, path: '/model' },
-    { id: 's1', correct: 1, path: '/model' },
-    { id: 's2', correct: 2, path: '/model' },
-    { id: 's3', correct: 1, path: '/model' },
-    { id: 's4', correct: 2, path: '/model' },
-    { id: 's5', correct: 1, path: '/model' },
-    { id: 's6', correct: 0, path: '/model' },
-    { id: 's7', correct: 2, path: '/model' },
+    { id: 's0', correct: 0, path: null },
+    { id: 's1', correct: 1, path: null },
+    { id: 's2', correct: 2, path: null },
+    { id: 's3', correct: 1, path: null },
+    { id: 's4', correct: 2, path: null },
+    { id: 's5', correct: 1, path: null },
+    { id: 's6', correct: 0, path: null },
+    { id: 's7', correct: 2, path: null },
   ] as const;
   const options = ['a', 'b', 'c'] as const;
   const store = scenarioStore();
@@ -67,8 +67,10 @@
     <h3 id="lesson-heading" bind:this={heading} tabindex="-1">{t(key('title'))}</h3>
     <p>{t(key('body'))}</p>
     <div class="example"><strong>{t('course.example')}</strong><p>{t(key('example'))}</p></div>
-    <p class="practice">{t('course.toolNote')}</p>
-    <a class="tool" href={href(lesson.path)} target="_blank" rel="noopener noreferrer">{t(current < 7 ? 'course.openPlanner' : 'course.openModel')}</a>
+    {#if lesson.path}
+      <p class="practice">{t('course.toolNote')}</p>
+      <a class="tool" href={href(lesson.path)} target="_blank" rel="noopener noreferrer">{t('course.openPlanner')}</a>
+    {/if}
     <fieldset>
       <legend>{t(key('question'))}</legend>
       {#each options as option, i}

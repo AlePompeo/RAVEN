@@ -32,5 +32,5 @@ it('condizioni non presenta il prototipo come contratto commerciale approvato', 
   render(Terms);
   expect(screen.getByRole('heading', { name: "Condizioni d'uso", level: 1 })).toBeTruthy();
   expect(screen.getByText(/Non sono un contratto commerciale approvato/)).toBeTruthy();
-  expect(screen.getByRole('link', { name: 'Modello e validazione' }).getAttribute('href')).toBe('/model');
+  expect(screen.queryByRole('link', { name: 'Modello e validazione' })).toBeNull();
 });

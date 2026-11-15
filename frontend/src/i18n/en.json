@@ -51,7 +51,7 @@
   "explain.fail": "The assistant could not be loaded. Check your connection and try again.",
   "home.question": "Compare two lunar sites over a mission window: when can a lander generate power and stay connected to Earth?",
   "home.pitch": "RAVEN combines sunlight, battery charge, radio-link margin and Deep Space Network visibility to estimate useful operating hours on NASA lunar terrain.",
-  "home.try": "Try the simulator",
+  "home.try": "Try and learn",
   "home.how": "How it works",
   "home.credit": "Moon from NASA LRO maps (LROC and LOLA), NASA Scientific Visualization Studio.",
   "title.model": "Model and validation",

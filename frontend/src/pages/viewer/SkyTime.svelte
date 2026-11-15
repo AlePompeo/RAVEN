@@ -9,6 +9,7 @@
   import { onDestroy, untrack } from 'svelte';
   import Icon from '../../components/ui/Icon.svelte';
   import { LightClient, type Light, type SkyBody, type SkyError } from './skyLight';
+  import { t, type MessageKey } from '../../i18n/i18n.svelte';
   import {
     advance,
     clampMs,
@@ -66,10 +67,7 @@
     },
     onError: (e: SkyError, errorBody, errorMs) => {
       if (invalidFields || errorMs !== ms || errorBody !== body) return;
-      problem =
-        e.kind === 'range'
-          ? `Data fuori dall’intervallo supportato (${RANGE_TEXT}). Resta l’ultima luce valida.`
-          : `${e.message} Resta l’ultima luce valida.`;
+      problem = t(e.kind === 'range' ? 'sky.rangeError' : 'sky.unavailableError', { range: RANGE_TEXT });
       playing = false;
       onLightError?.(errorMs);
     },
@@ -93,18 +91,18 @@
   }
   function step(delta: number) {
     const r = stepMs(ms, delta);
-    setTime(r.ms, r.clamped ? `Raggiunto il limite dell’intervallo supportato (${RANGE_TEXT}).` : '');
+    setTime(r.ms, r.clamped ? t('sky.rangeReached', { range: RANGE_TEXT }) : '');
   }
   function commitFields() {
     const parsed = parseDateTime(dateStr, timeStr);
     if (parsed === null) {
       invalidFields = true;
-      problem = 'Data o ora non valida: usa il formato aaaa-mm-gg e hh:mm:ss (UTC). Resta l’ultima luce valida.';
+      problem = t('sky.invalidDate');
       return;
     }
     if (!inRange(parsed)) {
       invalidFields = true;
-      problem = `Data fuori dall’intervallo supportato (${RANGE_TEXT}). Resta l’ultima luce valida.`;
+      problem = t('sky.rangeError', { range: RANGE_TEXT });
       return;
     }
     problem = null;
@@ -115,12 +113,12 @@
     playing = false;
     problem = null;
     invalidFields = false;
-    setTime(clampMs(Math.floor(Date.now() / 1000) * 1000), 'Ora attuale.');
+    setTime(clampMs(Math.floor(Date.now() / 1000) * 1000), t('sky.now'));
   }
   function togglePlay() {
     playing = !playing;
     if (playing) problem = null;
-    note = playing ? `Riproduzione: ${SPEEDS.find((s) => s.id === speed)!.label} di tempo simulato.` : 'Riproduzione ferma.';
+    note = playing ? t('sky.playing', { speed: t(`sky.speed.${speed}` as MessageKey) }) : t('sky.stopped');
   }
 
   export function pause() {
@@ -185,12 +183,12 @@
 
   const fmtDeg = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(2)}° ${v >= 0 ? pos : neg}`;
   const status = $derived(
-    problem ?? (note || (light && !playing ? `Luce calcolata per ${dateStr} ${timeStr} UTC.` : '')),
+    problem ?? (note || (light && !playing ? t('sky.calculated', { date: dateStr, time: timeStr }) : '')),
   );
 </script>
 
 <div class="sky" class:belowScene role="group" aria-labelledby="sky-h" data-testid="sky-time">
-  <p id="sky-h" class="title"><Icon name="sun" /> Data e ora (UTC)</p>
+  <p id="sky-h" class="title"><Icon name="sun" /> {t('sky.heading')}</p>
   <button
     type="button"
     class="toggle"
@@ -200,16 +198,16 @@
   >
     <Icon name="sun" />
     <span class="num">{dateStr} {timeStr.slice(0, 5)}</span>
-    <span class="vh">Data e ora UTC: {open ? 'chiudi' : 'modifica'}</span>
+    <span class="vh">{t('sky.toggleLabel', { action: open ? t('sky.close') : t('sky.edit') })}</span>
     <span aria-hidden="true">{open ? '▾' : '▴'}</span>
   </button>
   <div id="sky-panel" class="sky-body" class:is-open={open}>
   {#if disabled}
-    <p class="hint" id="sky-hint">Il Sole è la sorgente di luce: qui non c’è nulla da regolare. Scegli la Luna o la Terra.</p>
+    <p class="hint" id="sky-hint">{t('sky.sunDisabled')}</p>
   {/if}
   <div class="grid" aria-describedby={disabled ? 'sky-hint' : undefined}>
     <div class="field">
-      <label for="sky-date">Data</label>
+      <label for="sky-date">{t('sky.date')}</label>
       <input
         id="sky-date"
         type="date"
@@ -224,7 +222,7 @@
       />
     </div>
     <div class="field">
-      <label for="sky-time">Ora UTC</label>
+      <label for="sky-time">{t('sky.timeUtc')}</label>
       <input
         id="sky-time"
         type="time"
@@ -237,23 +235,23 @@
         data-spatial-skip
       />
     </div>
-    <div class="steps" role="group" aria-label="Passi nel tempo">
-      <button type="button" aria-label="Un giorno indietro" onclick={() => step(STEPS.dayBack)} {disabled}>−1 giorno</button>
-      <button type="button" aria-label="Un’ora indietro" onclick={() => step(STEPS.hourBack)} {disabled}>−1 h</button>
-      <button type="button" class="btn-now" onclick={now} {disabled}>Adesso</button>
-      <button type="button" aria-label="Un’ora avanti" onclick={() => step(STEPS.hourFwd)} {disabled}>+1 h</button>
-      <button type="button" aria-label="Un giorno avanti" onclick={() => step(STEPS.dayFwd)} {disabled}>+1 giorno</button>
+    <div class="steps" role="group" aria-label={t('sky.steps')}>
+      <button type="button" aria-label={t('sky.dayBack')} onclick={() => step(STEPS.dayBack)} {disabled}>−1 d</button>
+      <button type="button" aria-label={t('sky.hourBack')} onclick={() => step(STEPS.hourBack)} {disabled}>−1 h</button>
+      <button type="button" class="btn-now" onclick={now} {disabled}>{t('sky.nowButton')}</button>
+      <button type="button" aria-label={t('sky.hourForward')} onclick={() => step(STEPS.hourFwd)} {disabled}>+1 h</button>
+      <button type="button" aria-label={t('sky.dayForward')} onclick={() => step(STEPS.dayFwd)} {disabled}>+1 d</button>
     </div>
 
     <div class="play">
       <button type="button" class="play-btn" aria-pressed={playing} onclick={togglePlay} {disabled}>
         <Icon name={playing ? 'pause' : 'play'} />
-        {playing ? 'Ferma' : 'Riproduci'}
+        {playing ? t('sky.stop') : t('sky.play')}
       </button>
       <div class="field speed">
-        <label for="sky-speed">Velocità</label>
+        <label for="sky-speed">{t('sky.speed')}</label>
         <select id="sky-speed" bind:value={speed} {disabled}>
-          {#each SPEEDS as s (s.id)}<option value={s.id}>{s.short}</option>{/each}
+          {#each SPEEDS as s (s.id)}<option value={s.id}>{t(`sky.speed.${s.id}` as MessageKey)}</option>{/each}
         </select>
       </div>
     </div>
@@ -263,13 +261,13 @@
   <p class="status" id="sky-status" role="status" aria-live="polite" data-testid="sky-status" data-problem={problem ? '1' : undefined}>{status}</p>
   <p class="subsolar num" data-testid="sky-subsolar" aria-busy={busy}>
     {#if light}
-      Punto subsolare: lat {fmtDeg(light.lat_deg, 'N', 'S')}, lon {fmtDeg(light.lon_deg_east, 'E', 'O')}
+      {t('sky.subsolar', { latitude: fmtDeg(light.lat_deg, 'N', 'S'), longitude: fmtDeg(light.lon_deg_east, 'E', t('sky.west')) })}
     {:else if !disabled}
-      Punto subsolare: in calcolo…
+      {t('sky.subsolarCalculating')}
     {/if}
   </p>
   </div>
-  <p class="help">Luce reale dal Sole (JPL DE440). L’“ombra” è il terminatore più l’ombreggiatura del rilievo, non ombre portate.</p>
+  <p class="help">{t('sky.help')}</p>
   </div>
 </div>
 

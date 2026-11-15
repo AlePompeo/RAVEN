@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { t } from '../../i18n/i18n.svelte';
   import { withBase } from '../../shell/router';
   import { loadLicenses, type LicensesResult } from './api';
 
@@ -13,46 +14,46 @@
 
 <div class="doc tile">
   <div class="container">
-    <h1>Licenze</h1>
-    <p>Questo progetto e distribuito con licenza Apache-2.0. Qui sono elencate le componenti di terze parti incluse.</p>
+    <h1>{t('licenses.title')}</h1>
+    <p>{t('licenses.intro')}</p>
 
-    <h2>Carattere e immagini</h2>
+    <h2>{t('licenses.assetsTitle')}</h2>
     <div class="table-scroll">
       <table>
-        <caption>Risorse grafiche incluse nell'interfaccia</caption>
+        <caption>{t('licenses.assetsCaption')}</caption>
         <thead>
-          <tr><th scope="col">Risorsa</th><th scope="col">Origine</th><th scope="col">Licenza</th></tr>
+          <tr><th scope="col">{t('licenses.resource')}</th><th scope="col">{t('licenses.origin')}</th><th scope="col">{t('licenses.licence')}</th></tr>
         </thead>
         <tbody>
           <tr>
-            <th scope="row">Carattere HB Sans</th>
-            <td>Sottoinsieme latino di Mona Sans (The Mona Sans Project Authors), rinominato come richiesto dalla licenza</td>
+            <th scope="row">{t('licenses.hbSans')}</th>
+            <td>{t('licenses.hbSansOrigin')}</td>
             <td>SIL Open Font License 1.1</td>
           </tr>
           <tr>
-            <th scope="row">Carattere Orbitron</th>
+            <th scope="row">{t('licenses.orbitron')}</th>
             <td>The Orbitron Project Authors</td>
-            <td><a href={withBase('/fonts/orbitron-OFL.txt', import.meta.env.BASE_URL)}>SIL Open Font License 1.1</a></td>
+            <td><a href={withBase('/fonts/orbitron-OFL.txt', import.meta.env.BASE_URL)}>{t('licenses.ofl')}</a></td>
           </tr>
           <tr>
-            <th scope="row">Foto della Terra che sorge</th>
-            <td>NASA, missione Apollo 8, 24 dicembre 1968 (AS08-14-2383)</td>
-            <td>Pubblico dominio</td>
+            <th scope="row">{t('licenses.earthrise')}</th>
+            <td>{t('licenses.earthriseOrigin')}</td>
+            <td>{t('licenses.publicDomain')}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <h2>Componenti software</h2>
+    <h2>{t('licenses.softwareTitle')}</h2>
 
     {#if result === null}
-      <p role="status">Caricamento...</p>
+      <p role="status">{t('licenses.loading')}</p>
     {:else if result.status === 'ok'}
       <div class="table-scroll">
         <table>
-          <caption>Componenti di terze parti e relative licenze</caption>
+          <caption>{t('licenses.softwareCaption')}</caption>
           <thead>
-            <tr><th scope="col">Componente</th><th scope="col">Versione</th><th scope="col">Licenza</th></tr>
+            <tr><th scope="col">{t('licenses.component')}</th><th scope="col">{t('licenses.version')}</th><th scope="col">{t('licenses.licence')}</th></tr>
           </thead>
           <tbody>
             {#each result.entries as e (e.name + '@' + e.version)}
@@ -62,14 +63,11 @@
         </table>
       </div>
     {:else if result.status === 'error'}
-      <p role="alert">Impossibile leggere l'elenco delle licenze (errore di rete o file non valido). Riprova piu tardi.</p>
+      <p role="alert">{t('licenses.error')}</p>
     {:else if result.status === 'absent'}
-      <p>
-        L'elenco delle licenze di terze parti non e ancora disponibile: viene generato automaticamente durante la
-        compilazione del progetto (CI).
-      </p>
+      <p>{t('licenses.absent')}</p>
     {:else}
-      <p>L'elenco delle licenze e stato letto ma non contiene componenti di terze parti.</p>
+      <p>{t('licenses.empty')}</p>
     {/if}
   </div>
 </div>

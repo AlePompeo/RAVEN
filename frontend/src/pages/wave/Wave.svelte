@@ -45,12 +45,14 @@
     type Requester,
     type WaveForm,
     type WaveOutcome,
+    type WaveFailure,
     type WaveResult,
     type WaveSection,
   } from './wave';
   import { EMPTY_SCENE, legendGradient, orbit, resetCamera, zoomBy, type WaveScene } from './surface';
   import { modeNow } from '../../shell/modeState.svelte';
   import { getWaveHandoff } from '../simula/handoff';
+  import { t, type MessageKey } from '../../i18n/i18n.svelte';
   let { embedded = false }: { embedded?: boolean } = $props();
 
   const TABS = [
@@ -73,7 +75,7 @@
   let result = $state.raw<WaveResult | null>(null);
   let loading = $state(true);
   let error = $state('');
-  let errorKind = $state('');
+  let errorKind = $state<WaveFailure | ''>('');
   let cursor = $state(0);
   let tab = $state<TabId>('section');
   let mode = $state<ViewportMode | null>(null);
@@ -103,12 +105,40 @@
   const stats = $derived(section ? sectionStats(section) : null);
   const lambdaShown = $derived(form.spec === 'frequency' ? (form.frequencyGhz ? lambdaOf(form.frequencyGhz) : null) : form.wavelengthM);
   const freqShown = $derived(form.spec === 'wavelength' ? (form.wavelengthM ? 299792458 / form.wavelengthM / 1e9 : null) : form.frequencyGhz);
-  const warnings = $derived((result?.meta.warnings ?? []).map(warningText));
+  const warningKeys: Record<string, MessageKey> = {
+    kernel_aliasing: 'wave.warning.kernelAliasing',
+    dy_coarse: 'wave.warning.coarseGrid',
+    paraxial: 'wave.warning.paraxial',
+    step_raised: 'wave.warning.stepRaised',
+  };
+  const warnings = $derived((result?.meta.warnings ?? []).map((warning) => {
+    const key = warning.split(':')[0]!.trim();
+    return warningKeys[key] ? t(warningKeys[key]!) : warningText(warning);
+  }));
+  const errorKeys: Record<WaveFailure, MessageKey> = {
+    invalid: 'wave.error.invalid',
+    busy: 'wave.error.busy',
+    unavailable: 'wave.error.unavailable',
+    server: 'wave.error.server',
+    network: 'wave.error.network',
+  };
+  const errorMessage = $derived(errorKind ? t(errorKeys[errorKind]) : error);
+  const validationMessage = (field: keyof WaveForm) => {
+    if (!errors[field]) return '';
+    const key: MessageKey =
+      field === 'frequencyGhz' ? 'wave.validation.frequency'
+        : field === 'wavelengthM' ? 'wave.validation.wavelength'
+        : field === 'radiusM' ? 'wave.validation.radius'
+        : field === 'distanceM' && errors.distanceM?.includes('troppo corta') ? 'wave.validation.distanceShort'
+        : field === 'distanceM' ? 'wave.validation.distance'
+        : 'wave.validation.window';
+    return t(key);
+  };
   const tableStride = $derived(section ? Math.max(1, Math.ceil(section.y.length / 80)) : 1);
-  const series: ChartSpec[] = [
-    { label: 'Simulazione (split-step)', token: '--c-uplink' },
-    { label: 'Bordo a lama esatto', token: '--c-power', dash: [8, 5] },
-  ];
+  const series = $derived<ChartSpec[]>([
+    { label: t('wave.simulationSplitStep'), token: '--c-uplink' },
+    { label: t('wave.exactKnifeEdgeColumn'), token: '--c-power', dash: [8, 5] },
+  ]);
   const gradient = legendGradient();
   const zTop = $derived(result ? scene.zTop : 1.2);
 
@@ -357,13 +387,18 @@
    * della distanza con nomi semplici e le schede "Il segnale a questa distanza" e "Cosa mostra"; banda, frequenza,
    * finestra, tabella e parametri sono in Avanzato (i valori restano quelli scelti). Chiavi stabili (i18n in arrivo).
    */
-  const STR = {
-    learn: 'come si comporta l’onda radio subito dopo il crinale: in basso è in ombra e si indebolisce piano, in alto oscilla. Più è alta la superficie, più forte è il segnale.',
-    introSimple:
-      'Il segnale radio è un’onda: quando sfiora la cima di un crinale si piega un po’ verso il basso (diffrazione). Per questo dietro il crinale non c’è un buio netto ma un’ombra che sfuma.',
-    radius: 'Quanto è arrotondata la cima (m)',
-    tabs: { section: 'Il segnale a questa distanza', table: 'Tabella', meta: 'Parametri e avvisi', about: 'Cosa mostra' } as Record<TabId, string>,
-  } as const;
+  const STR = $derived({
+    learn: t('wave.learn'),
+    introSimple: t('wave.introSimple'),
+    radius: t('wave.ridgeRadius'),
+    tabs: {
+      section: t('wave.sectionAtTab'),
+      table: t('wave.sectionTable'),
+      meta: t('wave.metaTab'),
+      about: t('wave.aboutTab'),
+    } as Record<TabId, string>,
+  });
+  const tabLabel = (id: TabId) => STR.tabs[id];
   const LEARN_TABS: readonly TabId[] = ['section', 'about'];
   const adv = $derived(modeNow.advanced);
   const visibleTabs = $derived(adv ? TABS : TABS.filter((t) => LEARN_TABS.includes(t.id)));
@@ -379,102 +414,96 @@
     void tick().then(() => document.getElementById(`wtab-${t.id}`)?.focus());
   }
 
-  const MODE_LABEL: Record<string, string> = {
-    webgl: 'Rendering WebGL',
-    canvas2d: 'Modalità compatibile (senza WebGL)',
-    none: 'Grafica 3D non disponibile',
-  };
+  const modeLabel = $derived(mode === 'webgl' ? t('wave.mode.webgl') : mode === 'canvas2d' ? t('wave.mode.canvas') : mode === 'none' ? t('wave.mode.none') : '');
+  const presetLabel = (id: string) => t(`wave.preset.${id}` as MessageKey);
+  const bandLabel = (id: string) => t(`wave.band.${id}` as MessageKey);
 </script>
 
-{#if !embedded}<SubNav title="Onda 3D" learn={STR.learn} />{/if}
+{#if !embedded}<SubNav title={t('wave.title')} learn={STR.learn} />{/if}
 
 <div class="workspace tile tile--alt">
   <div class:container={!embedded} class:container--wide={!embedded}>
     {#snippet setup()}
-    <Callout title="L’onda dopo il crinale: perché l’intensità oscilla" id="intro">
+    <Callout title={t('wave.introTitle')} id="intro">
       {#if !adv}<p>{STR.introSimple}</p>{:else}
       <p>
-        Un’onda piana che sfiora un crinale non si ferma in una linea netta: dietro lo spigolo l’intensità <strong>cala dolcemente nell’ombra</strong>
-        e, sopra la linea di vista, <strong>oscilla</strong> (frange di Fresnel). La superficie mostra l’intensità relativa |E|² in funzione della distanza dal
-        crinale e della quota. Muovi il cursore per tagliare la superficie e confrontare la sezione con il bordo a lama esatto.
+        {t('wave.introAdvanced')}
       </p>
-      <p class="small">
-        Simulazione <strong>scalare e parassiale</strong> (split-step di Fresnel con FFT): un solo crinale, onda piana, nessun regolite. I parametri sono illustrativi.
-      </p>{/if}
+      <p class="small">{t('wave.modelNote')}</p>{/if}
     </Callout>
 
     <form class="panel setup" onsubmit={(e) => (e.preventDefault(), request(true))} novalidate aria-labelledby="setup-h">
-      <h2 id="setup-h">Scenario</h2>
-      <div class="presets" role="group" aria-label="Preset della cresta">
+      <h2 id="setup-h">{t('wave.scenario')}</h2>
+      <div class="presets" role="group" aria-label={t('wave.ridgePresets')}>
         {#each PRESETS as p (p.id)}
-          <button type="button" aria-pressed={form.radiusM === p.radiusM} onclick={() => applyPreset(p.radiusM)}>{p.label}</button>
+          <button type="button" aria-pressed={form.radiusM === p.radiusM} onclick={() => applyPreset(p.radiusM)}>{presetLabel(p.id)}</button>
         {/each}
       </div>
       {#if adv}
-      <div class="presets" role="group" aria-label="Preset della banda">
+      <div class="presets" role="group" aria-label={t('wave.bandPresets')}>
         {#each BANDS as b (b.id)}
-          <button type="button" aria-pressed={form.spec === 'frequency' && form.frequencyGhz === b.ghz} onclick={() => applyBand(b.ghz)}>{b.label}</button>
+          <button type="button" aria-pressed={form.spec === 'frequency' && form.frequencyGhz === b.ghz} onclick={() => applyBand(b.ghz)}>{bandLabel(b.id)}</button>
         {/each}
       </div>
       {/if}
       <div class="grid">
         {#if adv}
         <fieldset class="field spec">
-          <legend>Si specifica</legend>
-          <label class="check"><input type="radio" name="spec" value="frequency" bind:group={form.spec} /> Frequenza</label>
-          <label class="check"><input type="radio" name="spec" value="wavelength" bind:group={form.spec} /> Lunghezza d’onda</label>
+          <legend>{t('wave.specification')}</legend>
+          <label class="check"><input type="radio" name="spec" value="frequency" bind:group={form.spec} /> {t('wave.frequency')}</label>
+          <label class="check"><input type="radio" name="spec" value="wavelength" bind:group={form.spec} /> {t('wave.wavelength')}</label>
         </fieldset>
         {#if form.spec === 'frequency'}
           <p class="field">
-            <label for="f-freq">Frequenza (GHz)</label>
+            <label for="f-freq">{t('wave.frequencyGhz')}</label>
             <input id="f-freq" type="number" step="any" inputmode="decimal" bind:value={form.frequencyGhz} aria-invalid={errors.frequencyGhz ? 'true' : undefined} aria-describedby="f-freq-hint{errors.frequencyGhz ? ' f-freq-err' : ''}" />
             <span id="f-freq-hint" class="hint">{lambdaShown ? `λ = ${fmt(lambdaShown, 4)} m` : ''}</span>
-            {#if errors.frequencyGhz}<span id="f-freq-err" class="field-error">{errors.frequencyGhz}</span>{/if}
+            {#if errors.frequencyGhz}<span id="f-freq-err" class="field-error">{validationMessage('frequencyGhz')}</span>{/if}
           </p>
         {:else}
           <p class="field">
-            <label for="f-lambda">Lunghezza d’onda (m)</label>
+            <label for="f-lambda">{t('wave.wavelengthM')}</label>
             <input id="f-lambda" type="number" step="any" inputmode="decimal" bind:value={form.wavelengthM} aria-invalid={errors.wavelengthM ? 'true' : undefined} aria-describedby="f-lambda-hint{errors.wavelengthM ? ' f-lambda-err' : ''}" />
             <span id="f-lambda-hint" class="hint">{freqShown ? `f = ${fmt(freqShown, 3)} GHz` : ''}</span>
-            {#if errors.wavelengthM}<span id="f-lambda-err" class="field-error">{errors.wavelengthM}</span>{/if}
+            {#if errors.wavelengthM}<span id="f-lambda-err" class="field-error">{validationMessage('wavelengthM')}</span>{/if}
           </p>
         {/if}
         {/if}
         <p class="field">
-          <label for="f-radius">{adv ? 'Raggio della cresta (m)' : STR.radius}</label>
+          <label for="f-radius">{STR.radius}</label>
           <input id="f-radius" type="number" step="any" inputmode="decimal" bind:value={form.radiusM} aria-invalid={errors.radiusM ? 'true' : undefined} aria-describedby="f-radius-hint{errors.radiusM ? ' f-radius-err' : ''}" />
-          <span id="f-radius-hint" class="hint">0 = bordo a lama; fino a 400 m</span>
-          {#if errors.radiusM}<span id="f-radius-err" class="field-error">{errors.radiusM}</span>{/if}
+          <span id="f-radius-hint" class="hint">{t('wave.ridgeRadiusHint')}</span>
+          {#if errors.radiusM}<span id="f-radius-err" class="field-error">{validationMessage('radiusM')}</span>{/if}
         </p>
         {#if adv}
         <p class="field">
-          <label for="f-distance">Distanza massima (m)</label>
+          <label for="f-distance">{t('wave.distanceM')}</label>
           <input id="f-distance" type="number" step="any" inputmode="decimal" bind:value={form.distanceM} aria-invalid={errors.distanceM ? 'true' : undefined} aria-describedby="f-distance-hint{errors.distanceM ? ' f-distance-err' : ''}" />
-          <span id="f-distance-hint" class="hint">dal crinale, da 100 a 5000 m</span>
-          {#if errors.distanceM}<span id="f-distance-err" class="field-error">{errors.distanceM}</span>{/if}
+          <span id="f-distance-hint" class="hint">{t('wave.distanceHint')}</span>
+          {#if errors.distanceM}<span id="f-distance-err" class="field-error">{validationMessage('distanceM')}</span>{/if}
         </p>
         <p class="field">
-          <label for="f-window">Finestra verticale ± (m)</label>
+          <label for="f-window">{t('wave.verticalWindow')}</label>
           <input id="f-window" type="number" step="any" inputmode="decimal" bind:value={form.halfWindowM} aria-invalid={errors.halfWindowM ? 'true' : undefined} aria-describedby="f-window-hint{errors.halfWindowM ? ' f-window-err' : ''}" />
-          <span id="f-window-hint" class="hint">quota da −h a +h sulla linea di vista</span>
-          {#if errors.halfWindowM}<span id="f-window-err" class="field-error">{errors.halfWindowM}</span>{/if}
+          <span id="f-window-hint" class="hint">{t('wave.windowHint')}</span>
+          {#if errors.halfWindowM}<span id="f-window-err" class="field-error">{validationMessage('halfWindowM')}</span>{/if}
         </p>
         {/if}
       </div>
-      <p class="hint">Le modifiche si applicano da sole dopo una breve pausa; i preset subito.</p>
+      <p class="hint">{t('wave.autoApply')}</p>
     </form>
 
     <p class="status" role="status" data-testid="wave-status">
-      {#if loading}{result ? 'Aggiornamento della superficie...' : 'Calcolo della superficie...'}{:else if result}Superficie aggiornata: {result.meta.grid_shape[0]} × {result.meta.grid_shape[1]} punti.{/if}
+      {#if loading}{result ? t('wave.updateSurface') : t('wave.calculateSurface')}{:else if result}{t('wave.surfaceUpdated', { x: result.meta.grid_shape[0], y: result.meta.grid_shape[1] })}{/if}
     </p>
     {#if error}
       <div role="alert" class="notice" data-kind={errorKind} data-testid="wave-error">
-        <p>{error}</p>
-        <p><button type="button" onclick={retry}>Riprova</button></p>
+        <p>{errorMessage}</p>
+        <p><button type="button" onclick={retry}>{t('wave.retry')}</button></p>
       </div>
     {/if}
     {#if warnings.length}
-      <ul class="notice warn" data-testid="wave-warnings" aria-label="Avvisi del simulatore">
+      <ul class="notice warn" data-testid="wave-warnings" aria-label={t('wave.warnings')}>
         {#each warnings as w (w)}<li>{w}</li>{/each}
       </ul>
     {/if}
@@ -482,7 +511,7 @@
 
     <div class="scene-layout">
     <section class="figure tone-dark" aria-labelledby="fig-h">
-      <h2 id="fig-h" class="visually-hidden">Superficie 3D dell’intensità</h2>
+      <h2 id="fig-h" class="visually-hidden">{t('wave.surfaceTitle')}</h2>
       <!-- La scena è focalizzabile e risponde a frecce e trascinamento; gli stessi comandi esistono come pulsanti. -->
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
       <div
@@ -491,8 +520,8 @@
         id="wave-stage"
         role="group"
         tabindex="0"
-        aria-roledescription="grafico 3D"
-        aria-label="Superficie dell’intensità dopo il crinale. Trascina o usa le frecce per ruotare e inclinare, più e meno per ingrandire, parentesi quadre per spostare la sezione."
+        aria-roledescription={t('wave.graph3d')}
+        aria-label={t('wave.stageLabel')}
         aria-describedby="wave-help wave-desc"
         aria-busy={loading}
         data-spatial-skip
@@ -505,19 +534,19 @@
         onwheel={onWheel}
       ></div>
       <p id="wave-help" class="visually-hidden">
-        Con il focus sul grafico: frecce per ruotare e inclinare, più e meno per ingrandire, zero per ripristinare, parentesi quadre o Pagina su e giù per spostare il piano della sezione.
+        {t('wave.stageHelp')}
       </p>
-      {#if !result && loading}<p class="stage-note" aria-hidden="true">Calcolo della superficie...</p>{/if}
-      {#if loading && result}<p class="stage-badge" aria-hidden="true">Aggiornamento...</p>{/if}
+      {#if !result && loading}<p class="stage-note" aria-hidden="true">{t('wave.calculateSurface')}</p>{/if}
+      {#if loading && result}<p class="stage-badge" aria-hidden="true">{t('wave.updateSurface')}</p>{/if}
       <div class="hud">
-        <div class="view-controls" role="group" aria-label="Controlli della vista">
-          <button type="button" aria-label="Ruota a sinistra" onclick={() => rotate(-STEP_DEG, 0)}>◀</button>
-          <button type="button" aria-label="Ruota a destra" onclick={() => rotate(STEP_DEG, 0)}>▶</button>
-          <button type="button" aria-label="Inclina verso l’alto" onclick={() => rotate(0, STEP_DEG)}>▲</button>
-          <button type="button" aria-label="Inclina verso il basso" onclick={() => rotate(0, -STEP_DEG)}>▼</button>
-          <button type="button" aria-label="Ingrandisci" onclick={() => zoom(1.2)}>+</button>
-          <button type="button" aria-label="Riduci" onclick={() => zoom(1 / 1.2)}>−</button>
-          <button type="button" onclick={reset}>Ripristina</button>
+        <div class="view-controls" role="group" aria-label={t('wave.viewControls')}>
+          <button type="button" aria-label={t('wave.rotateLeft')} onclick={() => rotate(-STEP_DEG, 0)}>◀</button>
+          <button type="button" aria-label={t('wave.rotateRight')} onclick={() => rotate(STEP_DEG, 0)}>▶</button>
+          <button type="button" aria-label={t('wave.tiltUp')} onclick={() => rotate(0, STEP_DEG)}>▲</button>
+          <button type="button" aria-label={t('wave.tiltDown')} onclick={() => rotate(0, -STEP_DEG)}>▼</button>
+          <button type="button" aria-label={t('wave.zoomIn')} onclick={() => zoom(1.2)}>+</button>
+          <button type="button" aria-label={t('wave.zoomOut')} onclick={() => zoom(1 / 1.2)}>−</button>
+          <button type="button" onclick={reset}>{t('wave.reset')}</button>
         </div>
       </div>
     </section>
@@ -525,25 +554,24 @@
     {@render setup()}
     </SceneSettings>
     </div>
-    <span class="mode" data-testid="wave-mode" role="status" data-mode={mode ?? ''}>{mode ? (MODE_LABEL[mode] ?? '') : ''}</span>
+    <span class="mode" data-testid="wave-mode" role="status" data-mode={mode ?? ''}>{modeLabel}</span>
     {#if viewError}<p role="alert">{viewError}</p>{/if}
 
-    <div class="legend" aria-label="Legenda della scala di colore">
-      <span class="legend-title">Intensità relativa |E|² (1 = onda libera)</span>
-      <div class="bar" style:background={gradient} role="img" aria-label="Scala di colore viridis, dal viola (intensità 0) al giallo ({fmt(zTop, 1)})"></div>
+    <div class="legend" aria-label={t('wave.legend')}>
+      <span class="legend-title">{t('wave.relativeIntensity')}</span>
+      <div class="bar" style:background={gradient} role="img" aria-label={t('wave.colorScale', { value: fmt(zTop, 1) })}></div>
       <div class="ticks" aria-hidden="true">
         <span>0</span><span>{fmt(zTop / 2, 2)}</span><span>{fmt(zTop, 1)}</span>
       </div>
     </div>
     <p id="wave-desc" class="small muted">
-      Asse lungo: distanza dal crinale (il crinale è al bordo sinistro del riquadro). Asse in profondità: quota sopra (+) o sotto (−) la linea di vista.
-      Altezza e colore: intensità relativa. {#if result}Distanza massima {sizeText(result.x_m[result.x_m.length - 1]!)}, quota da −{sizeText(Math.abs(result.y_m[0] ?? 0))} a +{sizeText(Math.abs(result.y_m[result.y_m.length - 1] ?? 0))}; il piano bianco è la sezione a {Math.round(cursor)} m.{/if}
+      {t('wave.axisDescription')} {#if result}{t('wave.surfaceExtent', { distance: sizeText(result.x_m[result.x_m.length - 1]!), low: sizeText(Math.abs(result.y_m[0] ?? 0)), high: sizeText(Math.abs(result.y_m[result.y_m.length - 1] ?? 0)), cursor: Math.round(cursor) })}{/if}
     </p>
 
     <section class="panel cursor" aria-labelledby="cur-h">
-      <h2 id="cur-h">Distanza della sezione</h2>
+      <h2 id="cur-h">{t('wave.sectionDistance')}</h2>
       <div class="cursor-row">
-        <label for="f-cursor">Distanza dal crinale: <output for="f-cursor" data-testid="cursor-value">{Math.round(cursor)}</output> m</label>
+        <label for="f-cursor">{t('wave.distanceFromRidge', { value: Math.round(cursor) })}</label>
         <input
           id="f-cursor"
           type="range"
@@ -552,50 +580,54 @@
           step="1"
           value={Math.round(cursor)}
           disabled={!result}
-          aria-valuetext="{Math.round(cursor)} metri dal crinale"
+          aria-valuetext={t('wave.cursorAria', { value: Math.round(cursor) })}
           oninput={(e) => (cursor = Number((e.currentTarget as HTMLInputElement).value))}
         />
-        <button type="button" aria-pressed={playing} disabled={reduced || !result} onclick={togglePlay}>{playing ? 'Pausa' : 'Avanza lungo la distanza'}</button>
+        <button type="button" aria-pressed={playing} disabled={reduced || !result} onclick={togglePlay}>{playing ? t('wave.pause') : t('wave.advance')}</button>
       </div>
-      {#if reduced}<p class="hint">Animazione disattivata: il sistema richiede meno movimento. Usa il cursore.</p>{/if}
+      {#if reduced}<p class="hint">{t('wave.reducedMotion')}</p>{/if}
     </section>
 
     {#if result && section}
       <section class="panel" aria-labelledby="res-h">
-        <h2 id="res-h">Sezione a {Math.round(cursor)} m</h2>
-        <div class="tablist" role="tablist" aria-label="Dettagli della sezione" tabindex="-1">
-          {#each visibleTabs as t (t.id)}
-            <button type="button" role="tab" id="wtab-{t.id}" aria-selected={shown === t.id} aria-controls="wpanel-{t.id}" tabindex={shown === t.id ? 0 : -1} onclick={() => (tab = t.id)} onkeydown={onTabKey}>{adv ? t.label : STR.tabs[t.id]}</button>
+        <h2 id="res-h">{t('wave.sectionAt', { distance: Math.round(cursor) })}</h2>
+        <div class="tablist" role="tablist" aria-label={t('wave.sectionDetails')} tabindex="-1">
+          {#each visibleTabs as item (item.id)}
+            <button type="button" role="tab" id="wtab-{item.id}" aria-selected={shown === item.id} aria-controls="wpanel-{item.id}" tabindex={shown === item.id ? 0 : -1} onclick={() => (tab = item.id)} onkeydown={onTabKey}>{tabLabel(item.id)}</button>
           {/each}
         </div>
-        {#each TABS as t (t.id)}
-          <div role="tabpanel" id="wpanel-{t.id}" aria-labelledby="wtab-{t.id}" hidden={shown !== t.id} tabindex="0" class="tabpanel">
-            {#if shown === t.id}
-              {#if t.id === 'section'}
+        {#each TABS as tabItem (tabItem.id)}
+          <div role="tabpanel" id="wpanel-{tabItem.id}" aria-labelledby="wtab-{tabItem.id}" hidden={shown !== tabItem.id} tabindex="0" class="tabpanel">
+            {#if shown === tabItem.id}
+              {#if tabItem.id === 'section'}
                 <p class="small muted" data-testid="section-note" data-source={section.fromApi ? 'api' : 'interp'}>
-                  Intensità relativa lungo la quota alla distanza scelta: la linea piena è la simulazione ({section.fromApi ? 'calcolata dal simulatore proprio a questa distanza' : 'anteprima interpolata dalla griglia, in aggiornamento: le frange lontane dall’asse sono approssimate'}), la tratteggiata il bordo a lama esatto.
-                  Differenza massima {fmt(stats?.maxAbs ?? 0, 3)}, scarto quadratico medio {fmt(stats?.rms ?? 0, 3)}{result.meta.radius_m > 0 ? ' (la cresta arrotondata non coincide con la lama: è atteso)' : ''}.
+                  {t('wave.sectionNote', {
+                    source: t(section.fromApi ? 'wave.sectionComputed' : 'wave.sectionPreview'),
+                    max: fmt(stats?.maxAbs ?? 0, 3),
+                    rms: fmt(stats?.rms ?? 0, 3),
+                    rounded: result.meta.radius_m > 0 ? t('wave.roundedRidgeNote') : '',
+                  })}
                 </p>
                 <ChartBox
                   {series}
                   x={section.y}
                   ys={[section.simulated, section.exact]}
                   xNumeric
-                  xLabel="quota y sulla linea di vista (m)"
-                  axisLabels={{ y: 'intensità relativa' }}
-                  label="Grafico dell’intensità relativa contro la quota alla distanza del cursore: simulazione e bordo a lama esatto; i valori sono nella tabella"
+                  xLabel={t('wave.heightAxis')}
+                  axisLabels={{ y: t('wave.intensityAxis') }}
+                  label={t('wave.chartLabel')}
                 />
-                <ul class="key-list small" aria-label="Legenda del grafico">
-                  <li><span class="key solid" aria-hidden="true"></span>simulazione (split-step)</li>
-                  <li><span class="key dashed" aria-hidden="true"></span>bordo a lama esatto (Fresnel)</li>
+                <ul class="key-list small" aria-label={t('wave.chartLegend')}>
+                  <li><span class="key solid" aria-hidden="true"></span>{t('wave.simulationSplitStep')}</li>
+                  <li><span class="key dashed" aria-hidden="true"></span>{t('wave.exactKnifeEdge')}</li>
                 </ul>
                 <ExportBar name="onda-sezione" csv={() => sectionCsv(section, result!.meta.wavelength_m)} json={() => sectionJson(section, result!)} />
-              {:else if t.id === 'table'}
+              {:else if tabItem.id === 'table'}
                 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-                <div class="table-scroll" tabindex="0" role="region" aria-label="Tabella della sezione">
+                <div class="table-scroll" tabindex="0" role="region" aria-label={t('wave.sectionTable')}>
                   <table>
-                    <caption>Sezione a {Math.round(cursor)} m: ogni {tableStride}° punto di {section.y.length}</caption>
-                    <thead><tr><th scope="col">Quota y (m)</th><th scope="col">ν</th><th scope="col">Simulazione</th><th scope="col">Lama esatta</th></tr></thead>
+                    <caption>{t('wave.sectionTableCaption', { distance: Math.round(cursor), stride: tableStride, count: section.y.length })}</caption>
+                    <thead><tr><th scope="col">{t('wave.heightM')}</th><th scope="col">ν</th><th scope="col">{t('wave.simulation')}</th><th scope="col">{t('wave.exactKnifeEdgeColumn')}</th></tr></thead>
                     <tbody>
                       {#each Array.from(section.y, (y, i) => i).filter((i) => i % tableStride === 0) as i (i)}
                         <tr>
@@ -609,39 +641,39 @@
                   </table>
                 </div>
                 <ExportBar name="onda-griglia" csv={() => gridCsv(result!)} json={() => gridJson(result!)} />
-                <p class="small muted">I file della griglia contengono tutta la superficie ({result.x_m.length} × {result.y_m.length} punti); quelli della sezione, solo la curva mostrata.</p>
-              {:else if t.id === 'meta'}
+                <p class="small muted">{t('wave.gridFiles', { x: result.x_m.length, y: result.y_m.length })}</p>
+              {:else if tabItem.id === 'meta'}
                 <dl class="meta" data-testid="wave-meta">
-                  <dt>Modello</dt><dd>{result.meta.model}</dd>
-                  <dt>Lunghezza d’onda, frequenza</dt><dd>{fmt(result.meta.wavelength_m, 4)} m, {fmt(result.meta.frequency_ghz, 3)} GHz</dd>
-                  <dt>Cresta</dt><dd>{result.meta.ridge}{result.meta.radius_m > 0 ? `, raggio ${fmt(result.meta.radius_m, 0)} m` : ''}</dd>
-                  <dt>Griglia</dt><dd>{result.meta.grid_shape[0]} distanze × {result.meta.grid_shape[1]} quote; passo {fmt(result.meta.step_m_effective, 1)} m (richiesto {fmt(result.meta.step_m_requested, 1)} m)</dd>
-                  <dt>FFT</dt><dd>{result.meta.fft_size} punti, finestra {fmt(result.meta.window_m, 0)} m, passo verticale {fmt(result.meta.dy_m, 2)} m</dd>
-                  <dt>Riferimento onda libera</dt><dd>{fmt(result.meta.free_field_reference, 4)} (le intensità sono divise per questo valore)</dd>
-                  <dt>Passo del nucleo</dt><dd>massimo {fmt(result.meta.kernel_dz_max_m, 1)} m, limite {fmt(result.meta.kernel_dz_limit_m, 0)} m</dd>
+                  <dt>{t('wave.model')}</dt><dd>{result.meta.model}</dd>
+                  <dt>{t('wave.wavelengthFrequency')}</dt><dd>{fmt(result.meta.wavelength_m, 4)} m, {fmt(result.meta.frequency_ghz, 3)} GHz</dd>
+                  <dt>{t('wave.ridge')}</dt><dd>{result.meta.ridge}{result.meta.radius_m > 0 ? `, ${t('wave.ridgeRadius')} ${fmt(result.meta.radius_m, 0)} m` : ''}</dd>
+                  <dt>{t('wave.grid')}</dt><dd>{t('wave.gridDimensions', { x: result.meta.grid_shape[0], y: result.meta.grid_shape[1], effective: fmt(result.meta.step_m_effective, 1), requested: fmt(result.meta.step_m_requested, 1) })}</dd>
+                  <dt>{t('wave.fft')}</dt><dd>{t('wave.fftDetails', { size: result.meta.fft_size, window: fmt(result.meta.window_m, 0), step: fmt(result.meta.dy_m, 2) })}</dd>
+                  <dt>{t('wave.freeWaveReference')}</dt><dd>{fmt(result.meta.free_field_reference, 4)} ({t('wave.intensitiesNormalized')})</dd>
+                  <dt>{t('wave.kernelStep')}</dt><dd>{t('wave.maximumLimit', { maximum: fmt(result.meta.kernel_dz_max_m, 1), limit: fmt(result.meta.kernel_dz_limit_m, 0) })}</dd>
                 </dl>
                 {#if warnings.length}
-                  <h3>Avvisi di campionamento</h3>
+                  <h3>{t('wave.samplingWarnings')}</h3>
                   <ul>{#each warnings as w (w)}<li>{w}</li>{/each}</ul>
                 {:else}
-                  <p>Nessun avviso di campionamento per questi parametri.</p>
+                  <p>{t('wave.noSamplingWarnings')}</p>
                 {/if}
-                <p class="small muted">{result.disclaimer}</p>
+                <p class="small muted">{t('wave.disclaimer')}</p>
               {:else}
                 <div class="about">
-                  <h3>Che cosa mostra la figura</h3>
-                  <p>Ogni punto della superficie è l’intensità |E|² del campo, divisa per quella dell’onda libera lontano dal crinale. Dove la superficie vale 1 l’onda passa come se il crinale non ci fosse; sotto 1 il crinale la indebolisce; sopra 1 c’è una frangia di Fresnel che la rinforza.</p>
-                  <h3>Perché l’intensità oscilla</h3>
-                  <p>Dietro lo spigolo arrivano contributi con cammini diversi: sopra la linea di vista l’onda diretta e quella diffratta dal bordo si sommano ora in fase, ora in opposizione. Le frange sono più larghe quanto più si è lontani dal crinale e quanto più è lunga l’onda (scala √(λx)); nell’ombra l’intensità cala senza oscillare.</p>
-                  <h3>Il parametro ν e il segno</h3>
-                  <p>ν = −y·√(2/(λx)), con y la quota sopra la linea di vista (la cima del crinale è a y = 0) e x la distanza. ν &gt; 0 è l’ombra (y &lt; 0), ν &lt; 0 la zona illuminata. Il bordo a lama esatto è |F(ν)|² con gli integrali di Fresnel, la curva tratteggiata del grafico.</p>
-                  <h3>Limiti dichiarati</h3>
+                  <h3>{t('wave.figureShows')}</h3>
+                  <p>{t('wave.figureDescription')}</p>
+                  <h3>{t('wave.whyOscillates')}</h3>
+                  <p>{t('wave.oscillationDescription')}</p>
+                  <h3>{t('wave.nuSign')}</h3>
+                  <p>{t('wave.nuDescription')}</p>
+                  <h3>{t('wave.declaredLimits')}</h3>
                   <ul>
-                    <li>Modello scalare e parassiale 2D (split-step di Fresnel con FFT): niente polarizzazione né onde a grande angolo.</li>
-                    <li>Un solo crinale, onda piana incidente, nessun regolite, nessun suolo e nessuna curvatura lunare.</li>
-                    <li>La cresta arrotondata è una parabola assorbente: simulata, non validata (a passo fine resta circa 15-45 % sotto ITU-R P.526-9 eq. 30-32).</li>
-                    <li>La finestra di calcolo è periodica: vale solo per quote molto minori di metà finestra (limite di 200 m).</li>
-                    <li>Gli avvisi di campionamento compaiono quando la griglia è troppo grossolana per la lunghezza d’onda.</li>
+                    <li>{t('wave.limit.scalar')}</li>
+                    <li>{t('wave.limit.singleRidge')}</li>
+                    <li>{t('wave.limit.roundedRidge')}</li>
+                    <li>{t('wave.limit.periodicWindow')}</li>
+                    <li>{t('wave.limit.sampling')}</li>
                   </ul>
                 </div>
               {/if}
@@ -651,8 +683,8 @@
       </section>
     {:else if !loading}
       <section class="panel" aria-labelledby="empty-h">
-        <h2 id="empty-h">Sezione</h2>
-        <p class="muted">Nessuna superficie valida: correggi i parametri o ripremi un preset.</p>
+        <h2 id="empty-h">{t('wave.sectionUnavailable')}</h2>
+        <p class="muted">{t('wave.noValidSurface')}</p>
       </section>
     {/if}
   </div>
